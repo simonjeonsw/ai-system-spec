@@ -49,3 +49,4 @@ The system follows a **"Cache-First, API-Last"** approach to maximize the utilit
     * **Rate-Limit Guard:** Monitors RPM (Requests Per Minute) to prevent 429 errors from Google/DeepSeek APIs.
 * **Agent Worker Pool:** Distributed tasks across Gemini (Research), DeepSeek (Scripting), and Local TTS (Voice).
 * **Human-in-the-Loop (HITL) Portal:** A simple UI (Streamlit) for the user to approve scripts before final rendering.
+Centralized Data Layer: Use Supabase to sync research data and script history across sessions.
