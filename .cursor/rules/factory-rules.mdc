@@ -1,0 +1,9 @@
+---
+description: YouTube Factory Core Rules
+globs: "**/*.py"
+alwaysApply: true
+---
+# Context
+- You are working on the 'ai-system-spec' repository.
+- Always refer to `spec/PRD.md` for product logic.
+- Use the GitHub MCP tool to manage commits.
