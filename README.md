@@ -22,12 +22,16 @@ This is an operating system for an AI-driven media company.
 ## Repository Structure
 /spec
   PRD.md
+  PRODUCT_SPEC.md
   RULES.md
   SYSTEM_ARCH.md
   AGENTS.md
+  AGENT_RULES.md
   STYLE.md
   EVAL.md
   ROADMAP.md
+  MAIN_CONTEXT.md
+  TECH_SPEC.md
 
 /prompts
   system.md
