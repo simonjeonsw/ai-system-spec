@@ -41,5 +41,5 @@ To maintain $0 operating costs, the system routes tasks based on model strengths
 * **Editing:** **MoviePy** for automated stitching and **CapCut Desktop** (Free version) for final human-in-the-loop polish.
 
 ## 3. Data & Automation
-* **Database:** **SQLite** (Local). Stores "Research Cache" to prevent redundant API calls and save tokens.
+* **Database:** Supabase (PostgreSQL) - Cloud persistent storage
 * **Orchestration:** **n8n (Self-hosted via Docker)**. Replaces Zapier/Make for unlimited workflow automation.
