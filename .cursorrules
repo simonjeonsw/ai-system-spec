@@ -1,0 +1,6 @@
+# Project rules — YouTube Automation Factory
+
+- All code and content MUST follow **spec/STYLE.md** (tone, visual language, script standards).
+- All agent and automation behavior MUST follow **spec/AGENT_RULES.md** (global rules, token economy, verification, fallbacks).
+- Load spec context before acting; MAIN_CONTEXT.md overrides when present.
+- No creative guessing; report uncertainty explicitly.
