@@ -1,5 +1,10 @@
 # YouTube Automation Factory — core deps
-supabase>=2.0.0
-python-dotenv>=1.0.0
+# Existing
 google-api-python-client
+supabase
+python-dotenv
+
+# Added for Deep Analysis
+yt-dlp
 google-generativeai
+webvtt-py
