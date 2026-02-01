@@ -1,0 +1,91 @@
+ --- Your Accessible Gemini Models ---
+ID: models/gemini-2.5-flash
+Capabilities: ['generateContent', 'countTokens', 'createCachedContent', 'batchGenerateContent']
+------------------------------
+ID: models/gemini-2.5-pro
+Capabilities: ['generateContent', 'countTokens', 'createCachedContent', 'batchGenerateContent']
+------------------------------
+ID: models/gemini-2.0-flash
+Capabilities: ['generateContent', 'countTokens', 'createCachedContent', 'batchGenerateContent']
+------------------------------
+ID: models/gemini-2.0-flash-001
+Capabilities: ['generateContent', 'countTokens', 'createCachedContent', 'batchGenerateContent']
+------------------------------
+ID: models/gemini-2.0-flash-exp-image-generation
+Capabilities: ['generateContent', 'countTokens', 'bidiGenerateContent']
+------------------------------
+ID: models/gemini-2.0-flash-lite-001
+Capabilities: ['generateContent', 'countTokens', 'createCachedContent', 'batchGenerateContent']
+------------------------------
+ID: models/gemini-2.0-flash-lite
+Capabilities: ['generateContent', 'countTokens', 'createCachedContent', 'batchGenerateContent']
+------------------------------
+ID: models/gemini-exp-1206
+Capabilities: ['generateContent', 'countTokens', 'createCachedContent', 'batchGenerateContent']
+------------------------------
+ID: models/gemini-2.5-flash-preview-tts
+Capabilities: ['countTokens', 'generateContent']
+------------------------------
+ID: models/gemini-2.5-pro-preview-tts
+Capabilities: ['countTokens', 'generateContent', 'batchGenerateContent']
+------------------------------
+ID: models/gemma-3-1b-it
+Capabilities: ['generateContent', 'countTokens']
+------------------------------
+ID: models/gemma-3-4b-it
+Capabilities: ['generateContent', 'countTokens']
+------------------------------
+ID: models/gemma-3-12b-it
+Capabilities: ['generateContent', 'countTokens']
+------------------------------
+ID: models/gemma-3-27b-it
+Capabilities: ['generateContent', 'countTokens']
+------------------------------
+ID: models/gemma-3n-e4b-it
+Capabilities: ['generateContent', 'countTokens']
+------------------------------
+ID: models/gemma-3n-e2b-it
+Capabilities: ['generateContent', 'countTokens']
+------------------------------
+ID: models/gemini-flash-latest
+Capabilities: ['generateContent', 'countTokens', 'createCachedContent', 'batchGenerateContent']
+------------------------------
+ID: models/gemini-flash-lite-latest
+Capabilities: ['generateContent', 'countTokens', 'createCachedContent', 'batchGenerateContent']
+------------------------------
+ID: models/gemini-pro-latest
+Capabilities: ['generateContent', 'countTokens', 'createCachedContent', 'batchGenerateContent']
+------------------------------
+ID: models/gemini-2.5-flash-lite
+Capabilities: ['generateContent', 'countTokens', 'createCachedContent', 'batchGenerateContent']
+------------------------------
+ID: models/gemini-2.5-flash-image
+Capabilities: ['generateContent', 'countTokens', 'batchGenerateContent']
+------------------------------
+ID: models/gemini-2.5-flash-preview-09-2025
+Capabilities: ['generateContent', 'countTokens', 'createCachedContent', 'batchGenerateContent']
+------------------------------
+ID: models/gemini-2.5-flash-lite-preview-09-2025
+Capabilities: ['generateContent', 'countTokens', 'createCachedContent', 'batchGenerateContent']
+------------------------------
+ID: models/gemini-3-pro-preview
+Capabilities: ['generateContent', 'countTokens', 'createCachedContent', 'batchGenerateContent']
+------------------------------
+ID: models/gemini-3-flash-preview
+Capabilities: ['generateContent', 'countTokens', 'createCachedContent', 'batchGenerateContent']
+------------------------------
+ID: models/gemini-3-pro-image-preview
+Capabilities: ['generateContent', 'countTokens', 'batchGenerateContent']
+------------------------------
+ID: models/nano-banana-pro-preview
+Capabilities: ['generateContent', 'countTokens', 'batchGenerateContent']
+------------------------------
+ID: models/gemini-robotics-er-1.5-preview
+Capabilities: ['generateContent', 'countTokens']
+------------------------------
+ID: models/gemini-2.5-computer-use-preview-10-2025
+Capabilities: ['generateContent', 'countTokens']
+------------------------------
+ID: models/deep-research-pro-preview-12-2025
+Capabilities: ['generateContent', 'countTokens']
+------------------------------
