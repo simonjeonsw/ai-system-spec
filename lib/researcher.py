@@ -11,7 +11,7 @@ class DeepResearcher:
     def __init__(self):
         self.youtube = build("youtube", "v3", developerKey=os.getenv("YOUTUBE_API_KEY"))
         genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-        self.model = genai.GenerativeModel('gemini-2.0-flash')
+        self.model = genai.GenerativeModel('gemini-2.5-flash-lite')
 
     def get_video_transcript(self, video_id):
         """Extract subtitles using yt-dlp."""
