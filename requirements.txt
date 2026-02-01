@@ -6,5 +6,5 @@ python-dotenv
 
 # Added for Deep Analysis
 yt-dlp
-google-generativeai
+google-genai
 webvtt-py

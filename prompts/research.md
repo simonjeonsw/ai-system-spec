@@ -33,3 +33,7 @@ Please provide the final analysis in both **English** and **Korean**. Ensure the
 
 # [FOR FUTURE EXPANSION]
 - Maintain a clear key-value structure so that a "ZH-TW" (Traditional Chinese) output can be added as a third key later.
+
+## OUTPUT INSTRUCTIONS
+- Final Analysis MUST be provided in both English and Korean.
+- Structure the JSON so it can be easily translated to Traditional Chinese (ZH-TW) later.

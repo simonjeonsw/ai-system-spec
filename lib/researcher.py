@@ -1,3 +1,4 @@
+from multiprocessing.dummy.connection import Client
 import os
 import yt_dlp
 import google.generativeai as genai
@@ -6,7 +7,12 @@ from .supabase_client import supabase
 from dotenv import load_dotenv
 
 load_dotenv()
-
+client = Client(api_key=os.getenv("GEMINI_API_KEY"))
+# 호출 부분 문법 변경
+response = client.models.generate_content(
+    model="gemini-2.5-flash-lite",  # 무료 가성비 모델
+    contents=f"Analyze this: {transcript_text}"
+)
 class DeepResearcher:
     def __init__(self):
         self.youtube = build("youtube", "v3", developerKey=os.getenv("YOUTUBE_API_KEY"))
