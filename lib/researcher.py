@@ -76,6 +76,7 @@ class VideoResearcher:
             supabase.table("research_cache").insert({
                 "topic": topic,
                 "deep_analysis": analysis_result
+                "raw_transcript": transcript_text
             }).execute()
 
         return analysis_result
