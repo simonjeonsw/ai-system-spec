@@ -1,6 +1,6 @@
 import os
 from .supabase_client import supabase
-import google.generativeai as genai
+from google.genai import genai
 from dotenv import load_dotenv
 
 load_dotenv()
