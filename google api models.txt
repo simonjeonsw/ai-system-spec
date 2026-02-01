@@ -89,3 +89,8 @@ Capabilities: ['generateContent', 'countTokens']
 ID: models/deep-research-pro-preview-12-2025
 Capabilities: ['generateContent', 'countTokens']
 ------------------------------
+
+
+
+
+작업 성격추천 모델이유검색 및 리스트업gemini-2.0-flash-lite속도가 가장 빠르고 단순 텍스트 처리에 RPD 소모가 적음.심층 영상 분석gemini-1.5-flash**TPM(100만 토큰)**이 Lite 모델(25만)보다 4배나 넉넉하여 긴 자막 분석에 최적.최종 평가 및 요약gemini-2.0-flash지능이 가장 높아 복잡한 전략 추출에 적합.
