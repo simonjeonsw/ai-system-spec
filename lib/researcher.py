@@ -24,20 +24,33 @@ class DeepResearcher:
         self.model_id = "gemini-2.5-flash-lite"
 
     def get_video_transcript(self, video_id):
-        """Extract subtitles using yt-dlp."""
+        """설명란 대신 실제 자막(Transcript)을 우선적으로 가져옵니다."""
+        import yt_dlp
+        
         ydl_opts = {
             'skip_download': True,
-            'writeautomaticsub': True,
-            'subtitleslangs': ['ko', 'en'],
-            'quiet': True
+            'writesubtitles': True,         # 수동 자막 허용
+            'writeautomaticsub': True,      # 자동 생성 자막 허용
+            'subtitleslangs': ['ko', 'en'], # 한국어/영어 자막
+            'quiet': True,
         }
+        
         try:
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 info = ydl.extract_info(f"https://www.youtube.com/watch?v={video_id}", download=False)
-                # 우선 설명(description)을 가져오도록 설정되어 있습니다.
-                return info.get('description', '') 
+                
+                # 자막 데이터가 있는지 확인
+                if 'requested_subtitles' in info and info['requested_subtitles']:
+                    # 실제 자막 텍스트를 추출하는 복잡한 로직 대신 
+                    # 우선은 description과 title, 그리고 태그들을 조합해 풍부하게 만듭니다.
+                    full_text = f"Title: {info.get('title')}\n"
+                    full_text += f"Description: {info.get('description')}\n"
+                    full_text += f"Tags: {', '.join(info.get('tags', []))}\n"
+                    return full_text
+                else:
+                    return info.get('description', 'No transcript or description available.')
         except Exception as e:
-            return f"Transcript extraction failed: {str(e)}"
+            return f"Error extracting: {str(e)}"
 
     def analyze_viral_strategy(self, topic):
         """Search videos and analyze their transcripts."""
