@@ -16,12 +16,20 @@ class ContentPlanner:
     def __init__(self):
         self.client = Client(api_key=os.getenv("GEMINI_API_KEY"))
         # 안정적인 기획을 위해 main_model(2.0-flash) 사용
-        self.main_model = "gemini-2.0-flash"
+        self.main_model = "gemini-2.5-flash"
 
     def fetch_research_data(self, topic):
-        """리서처가 수집한 모든 데이터(대본, 분석, 댓글 등)를 가져옴"""
-        res = supabase.table("research_cache").select("*").eq("topic", topic).execute()
-        return res.data[0] if res.data else None
+            """URL의 일부만 맞아도 데이터를 가져오도록 유연하게 검색"""
+            # topic 전체 일치 검색
+            res = supabase.table("research_cache").select("*").eq("topic", topic).execute()
+            
+            # 만약 전체 일치로 안 나오면, ID(마지막 11자)만 추출해서 검색 시도
+            if not res.data and len(topic) > 11:
+                video_id = topic.split("v=")[-1].split("&")[0] if "v=" in topic else topic.split("/")[-1]
+                print(f"🔍 전체 URL로 검색 실패. ID({video_id})로 재검색 중...")
+                res = supabase.table("research_cache").select("*").ilike("topic", f"%{video_id}%").execute()
+                
+            return res.data[0] if res.data else None
 
     def create_project_plan(self, topic, target_persona="친절하지만 날카로운 통찰력을 가진 지식 전달자"):
         """리서치 원료를 바탕으로 터지는 영상을 위한 전략 기획안 작성"""
@@ -89,18 +97,7 @@ class ContentPlanner:
         except Exception as e:
             return f"❌ 기획 공정 중 오류 발생: {str(e)}"
 
-def fetch_research_data(self, topic):
-        """URL의 일부만 맞아도 데이터를 가져오도록 유연하게 검색"""
-        # topic 전체 일치 검색
-        res = supabase.table("research_cache").select("*").eq("topic", topic).execute()
-        
-        # 만약 전체 일치로 안 나오면, ID(마지막 11자)만 추출해서 검색 시도
-        if not res.data and len(topic) > 11:
-            video_id = topic.split("v=")[-1].split("&")[0] if "v=" in topic else topic.split("/")[-1]
-            print(f"🔍 전체 URL로 검색 실패. ID({video_id})로 재검색 중...")
-            res = supabase.table("research_cache").select("*").ilike("topic", f"%{video_id}%").execute()
-            
-        return res.data[0] if res.data else None
+
 
 # --- 파일 하단 실행부(Main)를 리서처와 똑같이 입력 방식으로 변경 ---
 if __name__ == "__main__":

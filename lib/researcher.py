@@ -50,7 +50,7 @@ class VideoResearcher:
         except Exception as e:
             return f"Error: {str(e)}"
 
-    def analyze_viral_strategy(self, topic, force_update=True):
+    def analyze_viral_strategy(self, topic, force_update=False):
         """
         force_update=True: 매번 새로 분석 (로직 수정 중일 때 추천)
         force_update=False: 기존 데이터 있으면 재사용
