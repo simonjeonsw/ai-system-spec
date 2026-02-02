@@ -50,13 +50,21 @@ class VideoResearcher:
         except Exception as e:
             return f"Error: {str(e)}"
 
-    def analyze_viral_strategy(self, topic):
-        # 1. 기존 캐시 확인 로직 유지
-        cached = supabase.table("research_cache").select("*").eq("topic", topic).execute()
-        if cached.data:
-            return cached.data[0]["deep_analysis"]
+    def analyze_viral_strategy(self, topic, force_update=True):
+        """
+        force_update=True: 매번 새로 분석 (로직 수정 중일 때 추천)
+        force_update=False: 기존 데이터 있으면 재사용
+        """
 
-        # 2. 데이터 수집
+        # 1. 캐시 확인 (force_update가 False일 때만 작동)
+        if not force_update:
+            cached = supabase.table("research_cache").select("*").eq("topic", topic).execute()
+            if cached.data:
+                print(f"💡 기존 분석 데이터를 불러옵니다: {topic}")
+                return cached.data[0]["deep_analysis"]
+
+        # 2. 데이터 수집 및 분석 (업그레이드된 로직 가동)
+        print(f"🚀 [신규/갱신] 알고리즘 정밀 분석 시작: {topic}")
         transcript_text = self.get_video_transcript(topic)
         
         # 모델 선택 로직 (데이터 길이에 따라)
@@ -103,13 +111,18 @@ class VideoResearcher:
             else:
                 raise e
 
-        # 3. DB 저장 (기존 컬럼명 topic, deep_analysis 유지 + raw_transcript 추가)
-        if analysis_result:
-            supabase.table("research_cache").insert({
-                "topic": topic,
-                "deep_analysis": analysis_result,
-                "raw_transcript": transcript_text # 대본 및 댓글 통합 데이터 저장
-            }).execute()
+        # on_conflict='topic'을 통해 URL이 같으면 덮어쓰기 합니다.
+        if 'analysis_result' in locals() and analysis_result:
+            try:
+                supabase.table("research_cache").upsert({
+                    "topic": topic,
+                    "deep_analysis": analysis_result,
+                    "raw_transcript": transcript_text,
+                    "updated_at": "now()" # 데이터가 언제 갱신되었는지 기록
+                }, on_conflict='topic').execute()
+                print("✅ 성공적으로 분석 데이터가 갱신되었습니다.")
+            except Exception as e:
+                print(f"⚠️ 저장 중 오류 발생: {e}")
 
         return analysis_result
 
