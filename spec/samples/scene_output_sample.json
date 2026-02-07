@@ -1,0 +1,16 @@
+{
+  "scene_id": "s1-hook",
+  "objective": "Establish the core tension between CPI and wages.",
+  "key_claims": ["Real wages are trailing CPI in 2024."],
+  "source_refs": [
+    {
+      "claim": "Real wages are trailing CPI in 2024.",
+      "sources": ["src-001"]
+    }
+  ],
+  "evidence_sources": ["src-001"],
+  "visual_prompt": "Line chart of CPI vs. real wage growth.",
+  "narration_prompt": "Open with a data-backed contrast.",
+  "transition_note": "Move to inflation expectations data.",
+  "schema_version": "1.0"
+}

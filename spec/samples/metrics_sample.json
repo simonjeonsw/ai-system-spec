@@ -1,0 +1,8 @@
+{
+  "channel_type": "finance",
+  "metrics": {
+    "ctr": 5.2,
+    "avd": 41.0,
+    "retention_30s": 66.0
+  }
+}
