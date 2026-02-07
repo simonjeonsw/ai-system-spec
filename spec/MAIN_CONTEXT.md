@@ -4,6 +4,9 @@
 This document defines the absolute truth of the system.
 All agents must load and follow this document before acting.
 
+## Success Definition
+Success means the system consistently ships finance/economics and adjacent channel content that improves revenue (RPM/CPM and total revenue per video), retention (AVD, retention curve stability, and return viewer rate), and automation efficiency (shortening idea → publish time while reducing rewrites and QA failures) across multiple channel types.
+
 ## System Identity
 This system is an AI-native operating system for building,
 testing, and scaling monetized media automation pipelines.
