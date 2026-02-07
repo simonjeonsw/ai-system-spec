@@ -17,6 +17,7 @@ Convert structured research outputs into the Scene Structuring Spec for downstre
 - Populate evidence_sources only from source_refs.sources (no extra sources).
 
 ## Output Format (JSON)
+- Return JSON only. Do not add commentary outside the JSON.
 ```json
 {
   "type": "structured_output",

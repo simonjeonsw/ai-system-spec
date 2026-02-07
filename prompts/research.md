@@ -13,6 +13,7 @@ Produce structured, source-backed research that can be converted into scenes wit
 - Use stable source_id values and reference them in key_fact_sources and data_points.
 
 ## Output Format (JSON)
+- Return JSON only. Do not add commentary outside the JSON.
 ```json
 {
   "executive_summary": "",

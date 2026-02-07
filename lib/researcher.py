@@ -19,7 +19,7 @@ class VideoResearcher:
     def __init__(self):
         self.client = Client(api_key=os.getenv("GEMINI_API_KEY"))
         # 실제 사용 가능한 모델 매핑 유지
-        self.fast_model = "gemini-2.0-flash-lite"
+        self.fast_model = "gemini-2.0-flash"
         self.main_model = "gemini-2.0-flash"
         self.heavy_model = "gemini-2.5-flash"
 
