@@ -9,6 +9,7 @@ sys.path.append(str(venv_path))
 from google.genai import Client
 from .supabase_client import supabase
 from .trend_scout import TrendScout
+from .run_logger import emit_run_log
 import yt_dlp
 from dotenv import load_dotenv
 
@@ -61,6 +62,12 @@ class VideoResearcher:
             cached = supabase.table("research_cache").select("*").eq("topic", topic).execute()
             if cached.data:
                 print(f"💡 기존 분석 데이터를 불러옵니다: {topic}")
+                emit_run_log(
+                    stage="research",
+                    status="success",
+                    input_refs={"topic": topic},
+                    output_refs={"cache": "hit"},
+                )
                 return cached.data[0]["deep_analysis"]
 
         # 2. 데이터 수집 및 분석 (업그레이드된 로직 가동)
@@ -109,6 +116,12 @@ class VideoResearcher:
                 response = self.client.models.generate_content(model=fallback, contents=prompt_text)
                 analysis_result = response.text
             else:
+                emit_run_log(
+                    stage="research",
+                    status="failure",
+                    input_refs={"topic": topic},
+                    error_summary=str(e),
+                )
                 raise e
 
         # on_conflict='topic'을 통해 URL이 같으면 덮어쓰기 합니다.
@@ -124,6 +137,12 @@ class VideoResearcher:
             except Exception as e:
                 print(f"⚠️ 저장 중 오류 발생: {e}")
 
+        emit_run_log(
+            stage="research",
+            status="success",
+            input_refs={"topic": topic},
+            output_refs={"cache": "updated" if analysis_result else "skipped"},
+        )
         return analysis_result
 
 if __name__ == "__main__":
