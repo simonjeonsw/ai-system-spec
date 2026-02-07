@@ -41,11 +41,16 @@
 
 ## Research → Scene Alignment Checklist
 - Every scene key_claim matches a research key_fact or data_point.
+- Every scene source_refs entry resolves to research sources or data_points.source_id.
 - Every scene source_refs entry resolves to research sources or data_points.source.
 - Any unmatched claim must be flagged in risk_flags.
 
 **Pass criteria**
 - Any unmatched claim or missing source mapping fails the review.
+
+## Risk Flags Validation
+- All risk_flags values must match the TECH_SPEC risk flag vocabulary.
+- Any unknown value fails the review.
 
 ## QA Failure criteria
 - Includes unverifiable facts or unclear sources.

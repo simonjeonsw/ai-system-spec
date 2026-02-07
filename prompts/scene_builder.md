@@ -12,6 +12,8 @@ Convert structured research outputs into the Scene Structuring Spec for downstre
 - Each scene must declare a narrative_role: hook, proof, insight, or payoff.
 - Every key claim must have at least one evidence source.
 - For each key claim, create a source_refs entry that maps the claim to research sources.
+- Prefer research.sources identifiers and research.data_points.source_id values.
+- Use only allowed risk_flags values from the TECH_SPEC risk flag vocabulary.
 - Prefer research.sources identifiers and research.data_points.source values.
 
 ## Output Format (JSON)
@@ -35,6 +37,7 @@ Convert structured research outputs into the Scene Structuring Spec for downstre
       "narration_prompt": "",
       "transition_note": "",
       "narrative_role": "hook",
+      "risk_flags": ["missing_source"]
       "risk_flags": []
     }
   ]

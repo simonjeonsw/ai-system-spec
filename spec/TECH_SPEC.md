@@ -85,6 +85,17 @@ Scene outputs must be traceable to the research output format in PRODUCT_SPEC.
 
 **Rules**
 - Each `scene.key_claims` item must map to either `research.key_facts[]` or `research.data_points[]`.
+- Each `scene.source_refs` entry must reference IDs/URLs present in `research.sources[]` or `research.data_points[].source_id`.
+- If a claim cannot be mapped, the Scene Builder must flag it in `risk_flags` and request research revisions.
+
+## Scene Risk Flags Vocabulary
+Use only the following values in `risk_flags`:
+- `missing_source` (claim lacks a valid source mapping)
+- `stale_data` (source is outdated relative to the topic window)
+- `causal_claim` (causation asserted; needs stronger proof)
+- `regulatory_risk` (compliance or legal sensitivity)
+- `sensitive_topic` (elevated audience or brand risk)
+
 - Each `scene.source_refs` entry must reference IDs/URLs present in `research.sources[]` or `research.data_points[].source`.
 - If a claim cannot be mapped, the Scene Builder must flag it in `risk_flags` and request research revisions.
 

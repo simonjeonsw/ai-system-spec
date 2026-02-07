@@ -28,6 +28,9 @@ Research outputs must be structured to support downstream scene generation.
 **Required fields**
 - `executive_summary` (string)
 - `key_facts` (array of strings)
+- `key_fact_sources` (array of objects: `{ "claim": "", "source_ids": [""] }`)
+- `data_points` (array of objects: `{ "metric": "", "value": "", "timeframe": "", "source_id": "" }`)
+- `sources` (array of objects: `{ "source_id": "", "title": "", "url": "", "as_of_date": "" }`)
 - `data_points` (array of objects: `{ "metric": "", "value": "", "timeframe": "", "source": "" }`)
 - `sources` (array of URLs or citation identifiers)
 - `contrarian_angle` (string)
@@ -38,6 +41,15 @@ Research outputs must be structured to support downstream scene generation.
 {
   "executive_summary": "...",
   "key_facts": ["...", "..."],
+  "key_fact_sources": [
+    { "claim": "...", "source_ids": ["src-001"] }
+  ],
+  "data_points": [
+    { "metric": "...", "value": "...", "timeframe": "...", "source_id": "src-001" }
+  ],
+  "sources": [
+    { "source_id": "src-001", "title": "...", "url": "https://example.com/source-1", "as_of_date": "2024-06-01" }
+  ],
   "data_points": [
     { "metric": "...", "value": "...", "timeframe": "...", "source": "..." }
   ],
@@ -59,6 +71,11 @@ Planner must score candidate topics before research begins.
 
 **Selection rule**
 - Provide a scored shortlist (3–5 topics) and select the top-ranked topic with a brief rationale.
+
+**Benchmarking weighting guidance**
+- Strong hook pattern alignment can increase the novelty score.
+- Clear packaging patterns (titles/thumbnails) can increase audience fit.
+- Proven pacing benchmarks can increase production feasibility.
 
 ## Benchmarking Outputs
 Competitor intelligence must produce actionable packaging and topic insights.

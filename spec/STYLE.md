@@ -35,3 +35,16 @@
   - 2–3 bullet takeaways
   - Source links + disclosure
   - CTA (subscribe / next episode link)
+
+## Weekly Experiment Report Template (Ops)
+**Period:** YYYY-MM-DD → YYYY-MM-DD  
+**Top Wins**
+- Title variant: <value> | CTR: <value> | AVD: <value> | Decision: keep/iterate
+- Thumbnail variant: <value> | CTR: <value> | AVD: <value> | Decision: keep/iterate
+
+**Top Losses**
+- Title variant: <value> | CTR: <value> | AVD: <value> | Decision: rollback
+- Thumbnail variant: <value> | CTR: <value> | AVD: <value> | Decision: rollback
+
+**Notes**
+- Reference metadata_experiments fields: title_variant, thumbnail_variant, ctr, avd.

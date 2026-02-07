@@ -17,6 +17,7 @@ Translate high-level goals into executable content plans.
 - Output a structured brief in English only:
 - Include a scored `topic_candidates` list and a final `selection_rationale`.
 - Consume benchmarking inputs using the Benchmarking → Planner Input Format (PRODUCT_SPEC).
+- Reflect benchmarking signals in scoring notes (e.g., hook patterns, pacing benchmarks, packaging patterns).
 ```json
 {
   "topic_candidates": [
