@@ -12,6 +12,9 @@ python -m lib.researcher
 3. Planner output (planner.py)
 python -m lib.planner
 
+4. Scene builder (scene_builder.py)
+python -m lib.scene_builder path/to/research.json
+
 Environment:
 - Copy .env.example to .env and fill in API keys.
 - Do not commit .env to GitHub.
