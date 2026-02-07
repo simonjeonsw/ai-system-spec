@@ -12,6 +12,7 @@
 ## Visual Agent
 - High-CTR thumbnail strategy
 - Information-dense but simple visuals
+- Thumbnail A/B test planning and variant tracking
 
 ## Voice Agent
 - Clear, authoritative delivery style
@@ -48,3 +49,5 @@
 - Scheduling (release calendar alignment, timezone checks, and contingency rescheduling)
 - Metadata optimization (titles, descriptions, tags, chapters, and pinned comment setup)
 - Thumbnail operations (asset handoff, version tracking, and A/B test coordination)
+- Log metadata experiment outcomes using the metadata_experiments schema
+- Set experiment_type when logging metadata experiments

@@ -23,6 +23,9 @@ User / Operator
 - Error tracking
 - Retry and escalation counters
 - Cost governance metrics (cache hit rate, API usage, 429 rate, fallback rate)
+- Run-log emission points at every stage (planner, research, scene, script, QA, ops)
+- Alerting on SLO breaches (latency, failure rate, retry rate, cache-hit)
+- Incident runbook reference (see OPERATIONS.md)
 
 ## 4. Data Flow
 Research
@@ -34,6 +37,16 @@ Research
  → QA
  → Upload
  → Performance Feedback (CTR, AVD, RPM) → Metadata/Thumbnail/Script iteration loop
+
+Experiment Logs (metadata_experiments)
+ → Packaging adjustments (titles/thumbnails)
+
+## 4.2 Benchmarking & Competitor Intelligence Flow
+Collection
+ → Normalization
+ → Insight Extraction (hook patterns, pacing, packaging)
+ → Recommendations (topic gaps, packaging guidance)
+ → Planner Inputs (topic scoring, constraints)
 
 ## 4.1 Learning Loop KPI Tracking (Research → Script → QA → Ops)
 - Research: topic demand signal, competitive saturation, predicted RPM band
@@ -52,10 +65,20 @@ Research
 - Apply exponential backoff and jitter on 429/5xx responses
 - Log per-provider RPM/RPD usage and cache hit rate
 
-## 7. Continuity & Handoff
+## 7. Security & Access Boundaries
+- Role-gated access to trigger pipeline runs and publish actions
+- API keys stored in a secrets manager (no plaintext in repo)
+- Audit logging for publish approvals and config changes (see SECURITY.md)
+
+## 8. Continuity & Handoff
 - Every pipeline run must emit a structured run log
 - Each decision that changes architecture requires an ADR entry
 - New operators must complete the Handoff checklist before executing changes
+
+## 9. Multi-Channel Tenancy Model
+- Each channel has a dedicated configuration profile (tone, format, KPI targets).
+- Shared research cache with per-channel attribution tracking.
+- Cost tracking and SLO reporting at the channel level.
 
 # 🏗 System Architecture
 
