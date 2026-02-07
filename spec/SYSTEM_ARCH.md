@@ -22,6 +22,7 @@ User / Operator
 - Performance metrics
 - Error tracking
 - Retry and escalation counters
+- Cost governance metrics (cache hit rate, API usage, 429 rate, fallback rate)
 
 ## 4. Data Flow
 Research
@@ -38,6 +39,17 @@ Research
 - Agent failure → retry
 - Quality failure → rewrite
 - Pipeline failure → rollback
+
+## 6. Cost Governance (Free-Tier First)
+- Enforce cache-first lookups before any external API call
+- Implement quota-aware routing (primary → secondary → local fallback)
+- Apply exponential backoff and jitter on 429/5xx responses
+- Log per-provider RPM/RPD usage and cache hit rate
+
+## 7. Continuity & Handoff
+- Every pipeline run must emit a structured run log
+- Each decision that changes architecture requires an ADR entry
+- New operators must complete the Handoff checklist before executing changes
 
 # 🏗 System Architecture
 
