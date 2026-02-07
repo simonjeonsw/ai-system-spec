@@ -23,6 +23,7 @@
 - Viewer perspective validation
 
 ## Ops Agent
-- Upload
-- Metadata optimization
-- Scheduling
+- Upload execution (final file validation, platform ingest, and publish confirmation)
+- Scheduling (release calendar alignment, timezone checks, and contingency rescheduling)
+- Metadata optimization (titles, descriptions, tags, chapters, and pinned comment setup)
+- Thumbnail operations (asset handoff, version tracking, and A/B test coordination)

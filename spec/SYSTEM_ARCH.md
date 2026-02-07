@@ -19,7 +19,7 @@ User / Operator
 
 ## 3. Observability
 - Agent output logs
-- Performance metrics
+- Performance metrics (CTR, AVD, RPM)
 - Error tracking
 - Retry and escalation counters
 - Cost governance metrics (cache hit rate, API usage, 429 rate, fallback rate)
@@ -33,7 +33,7 @@ Research
  → Video Assembly
  → QA
  → Upload
- → Performance Feedback
+ → Performance Feedback (CTR, AVD, RPM) → Metadata/Thumbnail/Script iteration loop
 
 ## 4.1 Learning Loop KPI Tracking (Research → Script → QA → Ops)
 - Research: topic demand signal, competitive saturation, predicted RPM band
