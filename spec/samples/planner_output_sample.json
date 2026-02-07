@@ -1,0 +1,25 @@
+{
+  "topic_candidates": [
+    {
+      "topic": "Why real wages lag inflation in 2024",
+      "scores": {
+        "audience_fit": 4,
+        "novelty": 3,
+        "monetization_potential": 4,
+        "evidence_availability": 5,
+        "production_feasibility": 4
+      },
+      "total_score": 20,
+      "notes": "Strong data availability and clear audience pain."
+    }
+  ],
+  "topic": "Why real wages lag inflation in 2024",
+  "target_audience": "Retail investors and working professionals",
+  "business_goal": "Maximize retention and CPM for finance audience",
+  "monetization_angle": "High-CPM macro analysis with sponsor potential",
+  "retention_hypothesis": "Data-backed contrast + clear payoff keeps viewers",
+  "content_constraints": ["1500-2000 words", "evidence-backed claims only"],
+  "research_requirements": ["Recent CPI data", "Real wage data", "Fed commentary"],
+  "selection_rationale": "Highest total score with strong evidence availability.",
+  "schema_version": "1.0"
+}

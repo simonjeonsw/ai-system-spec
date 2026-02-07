@@ -1,0 +1,36 @@
+{
+  "executive_summary": "Inflation expectations and wage growth diverged in 2024.",
+  "key_facts": [
+    "Real wage growth has trailed CPI for much of 2024.",
+    "Consumer inflation expectations remain elevated versus official CPI."
+  ],
+  "key_fact_sources": [
+    { "claim": "Real wage growth has trailed CPI for much of 2024.", "source_ids": ["src-001"] },
+    { "claim": "Consumer inflation expectations remain elevated versus official CPI.", "source_ids": ["src-002"] }
+  ],
+  "data_points": [
+    { "metric": "CPI YoY", "value": "3.4%", "timeframe": "2024-04", "source_id": "src-001" },
+    { "metric": "Median inflation expectations (1y)", "value": "3.6%", "timeframe": "2024-04", "source_id": "src-002" }
+  ],
+  "sources": [
+    {
+      "source_id": "src-001",
+      "title": "U.S. Consumer Price Index",
+      "url": "https://example.com/cpi",
+      "as_of_date": "2024-04-30",
+      "source_tier": "tier_1",
+      "freshness_window_days": 180
+    },
+    {
+      "source_id": "src-002",
+      "title": "Consumer Inflation Expectations",
+      "url": "https://example.com/expectations",
+      "as_of_date": "2024-04-30",
+      "source_tier": "tier_1",
+      "freshness_window_days": 180
+    }
+  ],
+  "contrarian_angle": "Official CPI may understate the lived cost of essentials.",
+  "viewer_takeaway": "Track wage growth vs. CPI before assuming inflation is cooling.",
+  "schema_version": "1.0"
+}

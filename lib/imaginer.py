@@ -8,6 +8,7 @@ sys.path.append(str(venv_path))
 
 from google.genai import Client
 from .supabase_client import supabase
+from .run_logger import emit_run_log
 from dotenv import load_dotenv
 import re
 
@@ -38,6 +39,12 @@ class ContentImaginer:
         data = self.fetch_script_data(topic)
         
         if not data:
+            emit_run_log(
+                stage="visual",
+                status="failure",
+                input_refs={"topic": topic},
+                error_summary="script data not found",
+            )
             return "❌ 대본 데이터를 찾을 수 없습니다. Scripter 공정을 먼저 완료해주세요."
 
         # 프롬프트 구성: 썸네일 전략 + 대본의 시각 요소를 결합
@@ -66,8 +73,19 @@ class ContentImaginer:
             
             # 결과 저장 (별도 컬럼이나 로그에 저장 권장)
             # 여기서는 결과를 화면에 출력하고 나중에 DB 확장을 고려합니다.
+            emit_run_log(
+                stage="visual",
+                status="success",
+                input_refs={"topic": topic},
+            )
             return response.text
         except Exception as e:
+            emit_run_log(
+                stage="visual",
+                status="failure",
+                input_refs={"topic": topic},
+                error_summary=str(e),
+            )
             return f"❌ 프롬프트 생성 중 오류 발생: {str(e)}"
 
 if __name__ == "__main__":
