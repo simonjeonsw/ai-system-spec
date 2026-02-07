@@ -25,3 +25,20 @@ Stores script history for session sync (see SYSTEM_ARCH.md).
 | id         | uuid        | PK, default gen_random_uuid() |
 | content    | text        | Script body                   |
 | created_at | timestamptz | default now()                 |
+
+## pipeline_runs
+
+Stores structured run logs for pipeline execution and observability.
+
+| Column        | Type        | Notes                                                  |
+|---------------|-------------|--------------------------------------------------------|
+| id            | uuid        | PK, default gen_random_uuid()                          |
+| run_id        | text        | Stable identifier per run                              |
+| stage         | text        | Pipeline stage name (research/script/qa/upload/etc.)    |
+| status        | text        | success / failure / retry / skipped                 |
+| attempts      | int         | Retry count for this stage                             |
+| input_refs    | jsonb       | References to inputs (topic IDs, cache keys, etc.)      |
+| output_refs   | jsonb       | References to outputs (artifact IDs, URLs, etc.)        |
+| error_summary | text        | Short error message if failed                           |
+| metrics       | jsonb       | Per-stage metrics (latency, tokens, cost, cache_hit)    |
+| created_at    | timestamptz | default now()                                          |
