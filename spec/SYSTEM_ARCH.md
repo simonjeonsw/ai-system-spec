@@ -35,6 +35,12 @@ Research
  → Upload
  → Performance Feedback
 
+## 4.1 Learning Loop KPI Tracking (Research → Script → QA → Ops)
+- Research: topic demand signal, competitive saturation, predicted RPM band
+- Script: hook CTR proxy, projected AVD, clarity score from QA heuristics
+- QA: retention risk flags, factual accuracy score, rewrite count per episode
+- Ops: publish latency, CTR/AVD/RPM actuals, return viewer rate by topic
+
 ## 5. Failure Handling
 - Agent failure → retry
 - Quality failure → rewrite
