@@ -64,3 +64,9 @@ All specs, tasks, and artifacts must be written in English.
 - All major changes require an ADR entry
 - All specs must be updated before code changes
 - Weekly review: KPI trend, failures, and cost usage
+
+## Current Work Order (Priority)
+1. Maintain the Planner → Research → Scene Builder → Script → QA → Ops execution chain.
+2. Keep research outputs compliant with the Product Spec format.
+3. Enforce Scene Structuring Spec before script drafting.
+4. Apply Scene-Level QA checklist prior to any publishing workflow.
