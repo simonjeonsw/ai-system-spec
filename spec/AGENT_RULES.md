@@ -29,6 +29,14 @@
 - Fail fast on weak outputs
 - Trigger rewrites when needed
 
+## Scene Structuring Rules
+- Convert research outputs into the Scene Structuring Spec format in TECH_SPEC.
+- Max 6 scenes unless Planner explicitly approves more.
+- Every scene must declare a narrative_role (hook, proof, insight, payoff).
+- Every key claim must include at least one evidence source.
+- Every key claim must map to source IDs from the research output (source_refs required).
+- Transitions must explain why the next scene is necessary.
+
 ## Forbidden
 - Skipping evaluation
 - Editing specs without approval
