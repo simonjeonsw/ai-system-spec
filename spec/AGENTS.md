@@ -21,6 +21,27 @@
 - Fact verification
 - Logical consistency
 - Viewer perspective validation
+### QA Checklist (by stage)
+**Research output**
+- Are sources clear (original links, data as-of date, scope)?
+- Can facts be verified (numbers, definitions, comparison baselines)?
+- Are bias/conflicts of interest disclosed?
+**Script draft**
+- Is the claim → evidence → interpretation flow logically connected?
+- Is evidence complete and not exaggerated for each key claim?
+- From the viewer perspective, is the question resolved or next action clear?
+**Final**
+- Is message consistency preserved (no distortion/exaggeration vs draft)?
+- Are terms, numbers, and citations accurate?
+- Are ambiguous or overly definitive statements removed to prevent confusion?
+### Failure criteria
+- Includes unverifiable facts or unclear sources.
+- Logical leaps (conclusions without evidence, conflicting claims).
+- Core viewer questions remain unanswered.
+### Rewrite triggers
+- Two or more checklist items fail.
+- One or more factual errors found.
+- Missing bias/conflict disclosure that could undermine trust.
 
 ## Ops Agent
 - Upload
