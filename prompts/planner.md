@@ -15,6 +15,7 @@ Translate high-level goals into executable content plans.
 
 ## Output Format
 - Output a structured brief in English only:
+- Include a scored `topic_candidates` list and a final `selection_rationale`.
 ```json
 {
   "topic_candidates": [
