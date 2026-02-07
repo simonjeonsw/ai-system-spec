@@ -42,3 +42,21 @@ Stores structured run logs for pipeline execution and observability.
 | error_summary | text        | Short error message if failed                           |
 | metrics       | jsonb       | Per-stage metrics (latency, tokens, cost, cache_hit)    |
 | created_at    | timestamptz | default now()                                          |
+
+## metadata_experiments
+
+Stores A/B testing results for titles and thumbnails.
+
+| Column            | Type        | Notes                                                  |
+|-------------------|-------------|--------------------------------------------------------|
+| id                | uuid        | PK, default gen_random_uuid()                          |
+| video_id          | text        | Stable video identifier                                |
+| experiment_type   | text        | title / thumbnail / other                              |
+| title_variant     | text        | Title variant label or value                           |
+| thumbnail_variant | text        | Thumbnail variant label or asset reference             |
+| start_date        | timestamptz | Experiment start                                       |
+| end_date          | timestamptz | Experiment end                                         |
+| ctr               | numeric     | Click-through rate                                     |
+| avd               | numeric     | Average view duration                                  |
+| notes             | text        | Optional insights/decisions                            |
+| created_at        | timestamptz | default now()                                          |

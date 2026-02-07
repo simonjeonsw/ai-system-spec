@@ -26,3 +26,5 @@
 ## 6) Immediate Next Steps
 - Next 7-day content plan assigned
 - Priority fixes agreed and scheduled
+- Confirm execution order: Planner → Research → Scene Builder → Script → QA → Ops
+- Verify research outputs match the Product Spec format before scene structuring
