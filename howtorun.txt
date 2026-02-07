@@ -1,13 +1,20 @@
 
-1.트렌드 스캔 및 주제 선정
+1. Trend scan and topic selection
 python -m lib.trend_scout
 
-2.대본 해킹 및 심층 분석 (researcher.py)
+2. Viral analysis (researcher.py)
 python -m lib.researcher
-    체크포인트: 
-    1. yt-dlp가 자막(Transcript)을 성공적으로 긁어오는가? 
-    2. 제미나이가 영어와 한국어 두 가지 버전으로 분석 보고서를 내놓는가? 
-    3. 최종 데이터가 Supabase의 research_cache 테이블에 저장되는가?
+    Checkpoints:
+    1. yt-dlp successfully fetches transcript/comments.
+    2. Gemini returns analysis output.
+    3. Data is stored in Supabase research_cache.
 
-3.기획안 생성 (planner.py)
+3. Planner output (planner.py)
 python -m lib.planner
+
+4. Scene builder (scene_builder.py)
+python -m lib.scene_builder path/to/research.json
+
+Environment:
+- Copy .env.example to .env and fill in API keys.
+- Do not commit .env to GitHub.

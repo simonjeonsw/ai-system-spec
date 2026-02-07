@@ -18,6 +18,7 @@ Translate high-level goals into executable content plans.
 - Include a scored `topic_candidates` list and a final `selection_rationale`.
 - Consume benchmarking inputs using the Benchmarking → Planner Input Format (PRODUCT_SPEC).
 - Reflect benchmarking signals in scoring notes (e.g., hook patterns, pacing benchmarks, packaging patterns).
+- Return JSON only. Do not add commentary outside the JSON.
 ```json
 {
   "topic_candidates": [
@@ -41,7 +42,8 @@ Translate high-level goals into executable content plans.
   "retention_hypothesis": "",
   "content_constraints": [],
   "research_requirements": [],
-  "selection_rationale": ""
+  "selection_rationale": "",
+  "schema_version": "1.0"
 }
 ```
 

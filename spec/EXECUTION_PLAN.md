@@ -9,6 +9,7 @@ All specs, tasks, and artifacts must be written in English.
   - Topic selection pipeline (weekly batch)
   - Research → Script → QA → Publish flow with minimal human review
   - Basic performance logging (CTR, AVD, RPM)
+  - Optional multi-skill execution for fast internal drafts (see MULTI_SKILL_MODE.md)
 - Exit Criteria
   - 10+ published videos
   - Stable upload cadence (>= 2/week)
