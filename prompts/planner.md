@@ -41,7 +41,8 @@ Translate high-level goals into executable content plans.
   "retention_hypothesis": "",
   "content_constraints": [],
   "research_requirements": [],
-  "selection_rationale": ""
+  "selection_rationale": "",
+  "schema_version": "1.0"
 }
 ```
 

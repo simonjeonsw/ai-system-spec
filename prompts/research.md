@@ -15,8 +15,6 @@ Produce structured, source-backed research that can be converted into scenes wit
 ## Output Format (JSON)
 ```json
 {
-  "topic": "",
-  "topic_total_score": 0,
   "executive_summary": "",
   "key_facts": ["", ""],
   "key_fact_sources": [
@@ -26,10 +24,18 @@ Produce structured, source-backed research that can be converted into scenes wit
     { "metric": "", "value": "", "timeframe": "", "source_id": "src-001" }
   ],
   "sources": [
-    { "source_id": "src-001", "title": "", "url": "https://example.com/source-1", "as_of_date": "" }
+    {
+      "source_id": "src-001",
+      "title": "",
+      "url": "https://example.com/source-1",
+      "as_of_date": "",
+      "source_tier": "tier_1",
+      "freshness_window_days": 180
+    }
   ],
   "contrarian_angle": "",
-  "viewer_takeaway": ""
+  "viewer_takeaway": "",
+  "schema_version": "1.0"
 }
 ```
 
@@ -38,3 +44,4 @@ Produce structured, source-backed research that can be converted into scenes wit
 - Data points are precise and time-bounded.
 - Contrarian angle is evidence-based, not speculative.
 - Every key_fact has at least one source_id in key_fact_sources.
+- Every source includes source_tier and freshness_window_days.

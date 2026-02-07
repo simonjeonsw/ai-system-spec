@@ -12,6 +12,9 @@ Used to avoid re-researching topics within 7 days (see SYSTEM_ARCH.md).
 | id         | uuid         | PK, default gen_random_uuid()  |
 | topic      | text         | NOT NULL; use "system" for boot logs |
 | content    | text         | Research summary or log text   |
+| deep_analysis | text      | Optional: extended analysis payload |
+| raw_transcript | text     | Optional: raw transcript/log data |
+| updated_at | timestamptz  | Optional: last update timestamp |
 | created_at | timestamptz  | default now()                  |
 
 **Boot log insert:** `{ "content": "System Boot" }`
@@ -25,6 +28,18 @@ Stores script history for session sync (see SYSTEM_ARCH.md).
 | id         | uuid        | PK, default gen_random_uuid() |
 | content    | text        | Script body                   |
 | created_at | timestamptz | default now()                 |
+
+## planning_cache
+
+Stores planner outputs and evaluator feedback for downstream stages.
+
+| Column      | Type        | Notes                         |
+|-------------|-------------|-------------------------------|
+| id          | uuid        | PK, default gen_random_uuid() |
+| topic       | text        | NOT NULL                      |
+| plan_content| text        | Planner output                |
+| eval_result | text        | Evaluator feedback            |
+| created_at  | timestamptz | default now()                 |
 
 ## pipeline_runs
 
