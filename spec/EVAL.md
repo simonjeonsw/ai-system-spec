@@ -27,6 +27,48 @@
 - Logic: Does the conclusion align with the evidence?
 - Viewer perspective: Are overconfident or overly simplified statements removed?
 
+## Scene-Level QA Checklist
+- Factual accuracy per scene (claims match cited sources).
+- Claim-evidence alignment (no unsupported leaps).
+- Source traceability (each key claim maps to source_refs from research output).
+- Evidence-source consistency (evidence_sources is a subset of source_refs.sources).
+- Logical continuity between scenes (transitions are justified).
+- Viewer clarity (scene objective is obvious within 5–10 seconds).
+- Retention risk scan (no dead air or redundant scenes).
+
+**Pass criteria**
+- Any scene scoring below 3/5 on factual accuracy or claim-evidence alignment fails the review.
+- Two or more scenes scoring below 3/5 on viewer clarity triggers a rewrite.
+
+## Research → Scene Alignment Checklist
+- Every scene key_claim matches a research key_fact or data_point.
+- Every scene source_refs entry resolves to research sources or data_points.source_id.
+- Any unmatched claim must be flagged in risk_flags.
+
+**Pass criteria**
+- Any unmatched claim or missing source mapping fails the review.
+
+## Risk Flags Validation
+- All risk_flags values must match the TECH_SPEC risk flag vocabulary.
+- Any unknown value fails the review.
+
+## Research Output Coverage Checklist
+- Every key_fact has a key_fact_sources entry with at least one source_id.
+- Any missing key_fact_sources mapping fails the review.
+
+## Source Governance Checklist
+- Each source includes source_tier and freshness_window_days.
+- Tier 3 sources are corroborated by Tier 1 or Tier 2 sources.
+- Sources outside freshness windows are flagged as `stale_data`.
+
+**Pass criteria**
+- Any missing governance metadata fails the review.
+- Any uncorroborated Tier 3 claim fails the review.
+
+## Automated Validation Gate
+- Structured outputs must pass schema validation (see VALIDATION_PLAN.md).
+- Publish is blocked if validation fails.
+
 ## QA Failure criteria
 - Includes unverifiable facts or unclear sources.
 - Missing evidence for key claims or logical leaps.
