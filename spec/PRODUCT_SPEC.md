@@ -31,6 +31,9 @@ Research outputs must be structured to support downstream scene generation.
 - `key_fact_sources` (array of objects: `{ "claim": "", "source_ids": [""] }`)
 - `data_points` (array of objects: `{ "metric": "", "value": "", "timeframe": "", "source_id": "" }`)
 - `sources` (array of objects: `{ "source_id": "", "title": "", "url": "", "as_of_date": "", "source_tier": "", "freshness_window_days": 0 }`)
+- `sources` (array of objects: `{ "source_id": "", "title": "", "url": "", "as_of_date": "" }`)
+- `data_points` (array of objects: `{ "metric": "", "value": "", "timeframe": "", "source": "" }`)
+- `sources` (array of URLs or citation identifiers)
 - `contrarian_angle` (string)
 - `viewer_takeaway` (string)
 
@@ -55,6 +58,12 @@ Research outputs must be structured to support downstream scene generation.
       "freshness_window_days": 180
     }
   ],
+    { "source_id": "src-001", "title": "...", "url": "https://example.com/source-1", "as_of_date": "2024-06-01" }
+  ],
+  "data_points": [
+    { "metric": "...", "value": "...", "timeframe": "...", "source": "..." }
+  ],
+  "sources": ["https://example.com/source-1"],
   "contrarian_angle": "...",
   "viewer_takeaway": "..."
 }

@@ -15,6 +15,7 @@ Convert structured research outputs into the Scene Structuring Spec for downstre
 - Prefer research.sources identifiers and research.data_points.source_id values.
 - Use only allowed risk_flags values from the TECH_SPEC risk flag vocabulary.
 - Populate evidence_sources only from source_refs.sources (no extra sources).
+- Prefer research.sources identifiers and research.data_points.source values.
 
 ## Output Format (JSON)
 ```json
@@ -38,6 +39,7 @@ Convert structured research outputs into the Scene Structuring Spec for downstre
       "transition_note": "",
       "narrative_role": "hook",
       "risk_flags": ["missing_source"]
+      "risk_flags": []
     }
   ]
 }

@@ -43,6 +43,7 @@
 ## Research → Scene Alignment Checklist
 - Every scene key_claim matches a research key_fact or data_point.
 - Every scene source_refs entry resolves to research sources or data_points.source_id.
+- Every scene source_refs entry resolves to research sources or data_points.source.
 - Any unmatched claim must be flagged in risk_flags.
 
 **Pass criteria**

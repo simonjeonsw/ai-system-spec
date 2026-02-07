@@ -111,3 +111,7 @@ All specs, tasks, and artifacts must be written in English.
 - Channel configuration stored and validated for each channel.
 - Per-channel cost tracking and KPI reporting enabled.
 - Access controls for publish approvals verified.
+1. Maintain the Planner → Research → Scene Builder → Script → QA → Ops execution chain.
+2. Keep research outputs compliant with the Product Spec format.
+3. Enforce Scene Structuring Spec before script drafting.
+4. Apply Scene-Level QA checklist prior to any publishing workflow.
