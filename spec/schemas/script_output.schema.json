@@ -1,0 +1,11 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ScriptOutput",
+  "type": "object",
+  "required": ["script", "citations", "schema_version"],
+  "properties": {
+    "script": { "type": "string" },
+    "citations": { "type": "array", "items": { "type": "string" } },
+    "schema_version": { "type": "string" }
+  }
+}

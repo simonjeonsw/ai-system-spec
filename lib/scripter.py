@@ -8,6 +8,7 @@ sys.path.append(str(venv_path))
 
 from google.genai import Client
 from .supabase_client import supabase
+from .run_logger import emit_run_log
 from dotenv import load_dotenv
 import re
 
@@ -38,6 +39,12 @@ class ContentScripter:
         plan_data = self.fetch_approved_plan(topic)
         
         if not plan_data:
+            emit_run_log(
+                stage="script",
+                status="failure",
+                input_refs={"topic": topic},
+                error_summary="approved plan not found",
+            )
             return "❌ 승인된 기획안이 없습니다. Evaluator 공정을 먼저 통과시켜주세요."
 
         # 프롬프트 구성: 기획안 + 검수 피드백 반영
@@ -69,8 +76,19 @@ class ContentScripter:
             # 대본 결과 저장 (컬럼이 없다면 추가가 필요할 수 있음)
             # 여기서는 편의상 planning_cache의 새로운 컬럼이나 별도 로그로 처리 가능
             # 일단 결과 반환에 집중합니다.
+            emit_run_log(
+                stage="script",
+                status="success",
+                input_refs={"topic": topic},
+            )
             return response.text
         except Exception as e:
+            emit_run_log(
+                stage="script",
+                status="failure",
+                input_refs={"topic": topic},
+                error_summary=str(e),
+            )
             return f"❌ 대본 집필 중 오류 발생: {str(e)}"
 
 if __name__ == "__main__":
