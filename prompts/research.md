@@ -26,6 +26,10 @@ Produce structured, source-backed research that can be converted into scenes wit
   "sources": [
     { "source_id": "src-001", "title": "", "url": "https://example.com/source-1", "as_of_date": "" }
   ],
+  "data_points": [
+    { "metric": "", "value": "", "timeframe": "", "source": "" }
+  ],
+  "sources": ["https://example.com/source-1"],
   "contrarian_angle": "",
   "viewer_takeaway": ""
 }

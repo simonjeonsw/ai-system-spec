@@ -34,6 +34,8 @@ Translate high-level goals into executable content plans.
       "notes": ""
     }
   ],
+```json
+{
   "topic": "",
   "target_audience": "",
   "business_goal": "",
@@ -42,6 +44,7 @@ Translate high-level goals into executable content plans.
   "content_constraints": [],
   "research_requirements": [],
   "selection_rationale": ""
+  "research_requirements": []
 }
 ```
 
