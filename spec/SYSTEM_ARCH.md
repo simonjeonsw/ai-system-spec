@@ -9,6 +9,11 @@ User / Operator
  → Evaluation Layer
  → Publishing & Analytics
 
+## 1.1 Optional Multi-Skill Execution Mode
+For early-phase speed and low-risk iterations, the system can run a single agent
+that performs multiple stages in one pass. This is opt-in and must still emit
+per-stage run logs and schema-compliant outputs. See `spec/MULTI_SKILL_MODE.md`.
+
 ## 2. Control Plane
 - Spec Loader
 - Global Project Memory

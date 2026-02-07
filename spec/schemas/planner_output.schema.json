@@ -1,0 +1,57 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "PlannerOutput",
+  "type": "object",
+  "required": [
+    "topic_candidates",
+    "topic",
+    "target_audience",
+    "business_goal",
+    "monetization_angle",
+    "retention_hypothesis",
+    "content_constraints",
+    "research_requirements",
+    "selection_rationale",
+    "schema_version"
+  ],
+  "properties": {
+    "topic_candidates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["topic", "scores", "total_score"],
+        "properties": {
+          "topic": { "type": "string" },
+          "scores": {
+            "type": "object",
+            "required": [
+              "audience_fit",
+              "novelty",
+              "monetization_potential",
+              "evidence_availability",
+              "production_feasibility"
+            ],
+            "properties": {
+              "audience_fit": { "type": "number" },
+              "novelty": { "type": "number" },
+              "monetization_potential": { "type": "number" },
+              "evidence_availability": { "type": "number" },
+              "production_feasibility": { "type": "number" }
+            }
+          },
+          "total_score": { "type": "number" },
+          "notes": { "type": "string" }
+        }
+      }
+    },
+    "topic": { "type": "string" },
+    "target_audience": { "type": "string" },
+    "business_goal": { "type": "string" },
+    "monetization_angle": { "type": "string" },
+    "retention_hypothesis": { "type": "string" },
+    "content_constraints": { "type": "array", "items": { "type": "string" } },
+    "research_requirements": { "type": "array", "items": { "type": "string" } },
+    "selection_rationale": { "type": "string" },
+    "schema_version": { "type": "string" }
+  }
+}
