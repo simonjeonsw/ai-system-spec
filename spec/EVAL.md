@@ -31,6 +31,7 @@
 - Factual accuracy per scene (claims match cited sources).
 - Claim-evidence alignment (no unsupported leaps).
 - Source traceability (each key claim maps to source_refs from research output).
+- Evidence-source consistency (evidence_sources is a subset of source_refs.sources).
 - Logical continuity between scenes (transitions are justified).
 - Viewer clarity (scene objective is obvious within 5–10 seconds).
 - Retention risk scan (no dead air or redundant scenes).
@@ -51,6 +52,10 @@
 ## Risk Flags Validation
 - All risk_flags values must match the TECH_SPEC risk flag vocabulary.
 - Any unknown value fails the review.
+
+## Research Output Coverage Checklist
+- Every key_fact has a key_fact_sources entry with at least one source_id.
+- Any missing key_fact_sources mapping fails the review.
 
 ## QA Failure criteria
 - Includes unverifiable facts or unclear sources.

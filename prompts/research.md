@@ -15,6 +15,8 @@ Produce structured, source-backed research that can be converted into scenes wit
 ## Output Format (JSON)
 ```json
 {
+  "topic": "",
+  "topic_total_score": 0,
   "executive_summary": "",
   "key_facts": ["", ""],
   "key_fact_sources": [
@@ -39,3 +41,4 @@ Produce structured, source-backed research that can be converted into scenes wit
 - Claims are supported by sources.
 - Data points are precise and time-bounded.
 - Contrarian angle is evidence-based, not speculative.
+- Every key_fact has at least one source_id in key_fact_sources.

@@ -59,6 +59,9 @@ Research outputs must be structured to support downstream scene generation.
 }
 ```
 
+**Rules**
+- Every key_fact must have a corresponding key_fact_sources entry.
+
 ## Topic Prioritization
 Planner must score candidate topics before research begins.
 

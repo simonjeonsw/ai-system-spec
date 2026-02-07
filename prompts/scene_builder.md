@@ -14,6 +14,7 @@ Convert structured research outputs into the Scene Structuring Spec for downstre
 - For each key claim, create a source_refs entry that maps the claim to research sources.
 - Prefer research.sources identifiers and research.data_points.source_id values.
 - Use only allowed risk_flags values from the TECH_SPEC risk flag vocabulary.
+- Populate evidence_sources only from source_refs.sources (no extra sources).
 - Prefer research.sources identifiers and research.data_points.source values.
 
 ## Output Format (JSON)

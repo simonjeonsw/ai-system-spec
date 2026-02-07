@@ -57,6 +57,7 @@ Scene structuring converts research output into ordered, self-contained scenes t
 - Maximum 6 scenes per video unless explicitly approved by Planner.
 - Every scene must map to one of: hook, proof, insight, payoff.
 - Claims must have at least one evidence source and a source_refs entry.
+- Every evidence_sources entry must appear in source_refs.sources.
 - Claims must have at least one evidence source.
 - Transitions must be explicit and explainable in one sentence.
 

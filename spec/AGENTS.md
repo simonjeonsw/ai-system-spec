@@ -50,3 +50,4 @@
 - Metadata optimization (titles, descriptions, tags, chapters, and pinned comment setup)
 - Thumbnail operations (asset handoff, version tracking, and A/B test coordination)
 - Log metadata experiment outcomes using the metadata_experiments schema
+- Set experiment_type when logging metadata experiments

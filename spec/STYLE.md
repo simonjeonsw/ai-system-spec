@@ -39,6 +39,15 @@
 ## Weekly Experiment Report Template (Ops)
 **Period:** YYYY-MM-DD → YYYY-MM-DD  
 **Top Wins**
+- Title variant: <value> | Type: title | CTR: <value> | AVD: <value> | Decision: keep/iterate
+- Thumbnail variant: <value> | Type: thumbnail | CTR: <value> | AVD: <value> | Decision: keep/iterate
+
+**Top Losses**
+- Title variant: <value> | Type: title | CTR: <value> | AVD: <value> | Decision: rollback
+- Thumbnail variant: <value> | Type: thumbnail | CTR: <value> | AVD: <value> | Decision: rollback
+
+**Notes**
+- Reference metadata_experiments fields: experiment_type, title_variant, thumbnail_variant, ctr, avd.
 - Title variant: <value> | CTR: <value> | AVD: <value> | Decision: keep/iterate
 - Thumbnail variant: <value> | CTR: <value> | AVD: <value> | Decision: keep/iterate
 
