@@ -8,6 +8,7 @@ sys.path.append(str(venv_path))
 
 from google.genai import Client
 from .supabase_client import supabase
+from .run_logger import emit_run_log
 from dotenv import load_dotenv
 import re
 
@@ -43,6 +44,12 @@ class ContentEvaluator:
         plan_data = self.fetch_latest_plan(topic)
         
         if not plan_data:
+            emit_run_log(
+                stage="qa",
+                status="failure",
+                input_refs={"topic": topic},
+                error_summary="planning_cache entry not found",
+            )
             return "❌ 검수할 기획안을 DB에서 찾을 수 없습니다. 플래너(planner.py)를 먼저 가동해주세요."
 
         # prompts/evaluator.md의 핵심 기준 반영
@@ -77,9 +84,21 @@ class ContentEvaluator:
             supabase.table("planning_cache").update({
                 "eval_result": response.text
             }).eq("id", plan_data['id']).execute()
-            
+
+            emit_run_log(
+                stage="qa",
+                status="success",
+                input_refs={"topic": topic},
+                output_refs={"planning_cache": plan_data["id"]},
+            )
             return response.text
         except Exception as e:
+            emit_run_log(
+                stage="qa",
+                status="failure",
+                input_refs={"topic": topic},
+                error_summary=str(e),
+            )
             return f"❌ 검수 공정 중 오류 발생: {str(e)}"
 
 if __name__ == "__main__":
