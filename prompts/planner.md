@@ -14,11 +14,18 @@ Translate high-level goals into executable content plans.
 - No creative guessing without business rationale
 
 ## Output Format
-- Topic
-- Target audience
-- Monetization angle
-- Retention hypothesis
-- Research requirements
+- Output a structured brief in English only:
+```json
+{
+  "topic": "",
+  "target_audience": "",
+  "business_goal": "",
+  "monetization_angle": "",
+  "retention_hypothesis": "",
+  "content_constraints": [],
+  "research_requirements": []
+}
+```
 
 ## Core Question
 "Is this worth producing from a profit and retention perspective?"

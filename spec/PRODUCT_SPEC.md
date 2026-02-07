@@ -22,6 +22,31 @@ optimized for retention and monetization.
 - Predictable production
 - Multi-channel scalability
 
+## Research Output Format (English Only)
+Research outputs must be structured to support downstream scene generation.
+
+**Required fields**
+- `executive_summary` (string)
+- `key_facts` (array of strings)
+- `data_points` (array of objects: `{ "metric": "", "value": "", "timeframe": "", "source": "" }`)
+- `sources` (array of URLs or citation identifiers)
+- `contrarian_angle` (string)
+- `viewer_takeaway` (string)
+
+**Template**
+```json
+{
+  "executive_summary": "...",
+  "key_facts": ["...", "..."],
+  "data_points": [
+    { "metric": "...", "value": "...", "timeframe": "...", "source": "..." }
+  ],
+  "sources": ["https://example.com/source-1"],
+  "contrarian_angle": "...",
+  "viewer_takeaway": "..."
+}
+```
+
 ## Revenue / Retention / Automation KPI
 Track KPIs by channel type to ensure revenue growth, viewer retention, and automation efficiency.
 
