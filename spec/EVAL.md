@@ -30,6 +30,7 @@
 ## Scene-Level QA Checklist
 - Factual accuracy per scene (claims match cited sources).
 - Claim-evidence alignment (no unsupported leaps).
+- Source traceability (each key claim maps to source_refs from research output).
 - Logical continuity between scenes (transitions are justified).
 - Viewer clarity (scene objective is obvious within 5–10 seconds).
 - Retention risk scan (no dead air or redundant scenes).

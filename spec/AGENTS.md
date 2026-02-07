@@ -12,6 +12,7 @@
 ## Visual Agent
 - High-CTR thumbnail strategy
 - Information-dense but simple visuals
+- Thumbnail A/B test planning and variant tracking
 
 ## Voice Agent
 - Clear, authoritative delivery style

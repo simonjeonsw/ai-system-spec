@@ -42,6 +42,7 @@ Scene structuring converts research output into ordered, self-contained scenes t
   - `scene_id` (string): Stable identifier for the scene.
   - `objective` (string): The intent/outcome of the scene.
   - `key_claims` (array): Bullet claims that must be stated in the scene.
+  - `source_refs` (array): Source mapping for each key claim (list of objects with `claim` + `sources`).
   - `evidence_sources` (array): Source URLs or citation identifiers for the key claims.
   - `visual_prompt` (string): Visual guidance for the scene.
   - `narration_prompt` (string): Narration guidance for the scene.
@@ -55,6 +56,7 @@ Scene structuring converts research output into ordered, self-contained scenes t
 **Scene rules**
 - Maximum 6 scenes per video unless explicitly approved by Planner.
 - Every scene must map to one of: hook, proof, insight, payoff.
+- Claims must have at least one evidence source and a source_refs entry.
 - Claims must have at least one evidence source.
 - Transitions must be explicit and explainable in one sentence.
 
@@ -64,6 +66,12 @@ Scene structuring converts research output into ordered, self-contained scenes t
   "scene_id": "s1-hook",
   "objective": "Establish the core question and tension.",
   "key_claims": ["Inflation expectations are diverging from official CPI trends."],
+  "source_refs": [
+    {
+      "claim": "Inflation expectations are diverging from official CPI trends.",
+      "sources": ["https://example.com/source-1"]
+    }
+  ],
   "evidence_sources": ["https://example.com/source-1"],
   "visual_prompt": "Split-screen chart of CPI vs. consumer inflation expectations.",
   "narration_prompt": "Open with a question that contrasts official data with lived experience.",
@@ -72,6 +80,31 @@ Scene structuring converts research output into ordered, self-contained scenes t
 }
 ```
 
+## Benchmarking Data Pipeline
+Define a consistent pipeline for competitor intelligence and topic gap analysis.
+
+**Target entities**
+- Channels (publisher-level metadata)
+- Videos (episode-level metadata)
+
+**Required fields (videos)**
+- `video_id`, `channel_id`, `title`, `publish_date`, `duration_sec`
+- `hook_text` (first 3–5 seconds or summarized)
+- `thumbnail_text` (OCR or manual extraction)
+- `description_summary` (1–2 sentence abstraction)
+- `topic_cluster` (normalized taxonomy tag)
+- `view_velocity` (views in first 24/72 hours)
+- `engagement_signals` (likes, comments, ratio)
+- `retention_proxy` (if available: AVD/relative retention estimates)
+- `format_tags` (analysis, explainer, debate, etc.)
+
+**Required fields (channels)**
+- `channel_id`, `channel_name`, `niche_tags`, `publish_cadence`, `avg_views_90d`
+
+**Outputs**
+- Top-performing hook patterns by topic cluster.
+- Thumbnail text patterns and visual motifs correlated with CTR proxies.
+- Topic gaps and underserved audience segments.
 ## Structured Output Schema
 Use this schema for scene-level structured outputs. It can be stored as JSON and is compatible with the existing research storage by serializing the object into `research_cache.content` (string) while leaving older text-only entries untouched.
 

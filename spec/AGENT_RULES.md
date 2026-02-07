@@ -34,6 +34,7 @@
 - Max 6 scenes unless Planner explicitly approves more.
 - Every scene must declare a narrative_role (hook, proof, insight, payoff).
 - Every key claim must include at least one evidence source.
+- Every key claim must map to source IDs from the research output (source_refs required).
 - Transitions must explain why the next scene is necessary.
 
 ## Forbidden

@@ -35,6 +35,13 @@ Research
  → Upload
  → Performance Feedback (CTR, AVD, RPM) → Metadata/Thumbnail/Script iteration loop
 
+## 4.2 Benchmarking & Competitor Intelligence Flow
+Collection
+ → Normalization
+ → Insight Extraction (hook patterns, pacing, packaging)
+ → Recommendations (topic gaps, packaging guidance)
+ → Planner Inputs (topic scoring, constraints)
+
 ## 4.1 Learning Loop KPI Tracking (Research → Script → QA → Ops)
 - Research: topic demand signal, competitive saturation, predicted RPM band
 - Script: hook CTR proxy, projected AVD, clarity score from QA heuristics

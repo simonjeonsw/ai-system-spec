@@ -66,6 +66,7 @@ All specs, tasks, and artifacts must be written in English.
 - Weekly review: KPI trend, failures, and cost usage
 
 ## Current Work Order (Priority)
+1. Maintain the Planner → Topic Scoring → Research → Scene Builder → Script → QA → Ops execution chain.
 1. Maintain the Planner → Research → Scene Builder → Script → QA → Ops execution chain.
 2. Keep research outputs compliant with the Product Spec format.
 3. Enforce Scene Structuring Spec before script drafting.

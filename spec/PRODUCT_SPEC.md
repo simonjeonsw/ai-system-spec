@@ -47,6 +47,28 @@ Research outputs must be structured to support downstream scene generation.
 }
 ```
 
+## Topic Prioritization
+Planner must score candidate topics before research begins.
+
+**Scoring rubric (1–5 each)**
+- Audience fit (target audience pain + search demand)
+- Novelty (non-obvious angle vs. crowded narratives)
+- Monetization potential (RPM/CPM likelihood, sponsor suitability)
+- Evidence availability (credible, recent sources available)
+- Production feasibility (data availability, visualizability, runtime)
+
+**Selection rule**
+- Provide a scored shortlist (3–5 topics) and select the top-ranked topic with a brief rationale.
+
+## Benchmarking Outputs
+Competitor intelligence must produce actionable packaging and topic insights.
+
+**Required outputs**
+- Top hook patterns by topic cluster.
+- Thumbnail text patterns (length, phrasing, motif).
+- Pacing benchmarks (scene counts, average segment duration).
+- Topic gaps (underserved audience questions).
+
 ## Revenue / Retention / Automation KPI
 Track KPIs by channel type to ensure revenue growth, viewer retention, and automation efficiency.
 

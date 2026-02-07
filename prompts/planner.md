@@ -15,6 +15,23 @@ Translate high-level goals into executable content plans.
 
 ## Output Format
 - Output a structured brief in English only:
+- Include a scored `topic_candidates` list and a final `selection_rationale`.
+```json
+{
+  "topic_candidates": [
+    {
+      "topic": "",
+      "scores": {
+        "audience_fit": 0,
+        "novelty": 0,
+        "monetization_potential": 0,
+        "evidence_availability": 0,
+        "production_feasibility": 0
+      },
+      "total_score": 0,
+      "notes": ""
+    }
+  ],
 ```json
 {
   "topic": "",
@@ -23,6 +40,8 @@ Translate high-level goals into executable content plans.
   "monetization_angle": "",
   "retention_hypothesis": "",
   "content_constraints": [],
+  "research_requirements": [],
+  "selection_rationale": ""
   "research_requirements": []
 }
 ```
