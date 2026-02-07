@@ -27,6 +27,13 @@
 - Quality failures trigger rewrite
 - System failures trigger rollback
 
+## Free-Tier Governance Rules
+- Always check local/Supabase cache before any external API call
+- Maintain per-provider quotas (RPM/RPD) with automatic throttling
+- Use exponential backoff with jitter for 429/5xx responses
+- Route requests in this priority order: cache → free tier API → local model
+- Log: cache_hit_rate, provider_usage, 429_rate, fallback_rate per day
+
 ## Structured Output Schema
 Use this schema for scene-level structured outputs. It can be stored as JSON and is compatible with the existing research storage by serializing the object into `research_cache.content` (string) while leaving older text-only entries untouched.
 

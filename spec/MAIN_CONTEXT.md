@@ -42,6 +42,7 @@ Idea
 - No skipping evaluation
 - No intuition-only decisions
 - No bypassing specs
+- All project artifacts, specs, schemas, and task outputs must be written in English
 
 ## Definitions
 Agent = Specialized autonomous role

@@ -1,0 +1,65 @@
+# Execution Plan (Goal: $2K/month per channel)
+
+## Operating Constraint
+All specs, tasks, and artifacts must be written in English.
+
+## Phase 0 — Validation (Pre-Revenue)
+**Goal:** Prove end-to-end automation using free-tier services only.
+- Deliverables
+  - Topic selection pipeline (weekly batch)
+  - Research → Script → QA → Publish flow with minimal human review
+  - Basic performance logging (CTR, AVD, RPM)
+- Exit Criteria
+  - 10+ published videos
+  - Stable upload cadence (>= 2/week)
+  - KPI baseline documented
+
+## Phase 1 — Reliability & Cost Control
+**Goal:** Stabilize pipeline and minimize failures.
+- Deliverables
+  - Cache-first governance fully enforced
+  - Retry/backoff and fallback routing
+  - Quality gate with rewrite triggers
+- Exit Criteria
+  - Cache hit rate > 50%
+  - 429 rate < 2%
+  - Rewrite rate tracked and trending down
+
+## Phase 2 — Scaling (Multi-Channel Readiness)
+**Goal:** Repeatable output across multiple channels.
+- Deliverables
+  - Channel templates (tone, format, visuals)
+  - Topic clustering and scheduling
+  - Shared research cache and attribution tracking
+- Exit Criteria
+  - Two channels operating with separate configs
+  - Consistent KPI reporting per channel
+
+## Phase 3 — Revenue Optimization
+**Goal:** Sustain $2K/month with measurable improvement loops.
+- Deliverables
+  - KPI-driven topic scoring
+  - A/B testing for hooks and thumbnails
+  - Monthly performance review and spec updates
+- Exit Criteria
+  - Revenue target met for 2+ consecutive months
+  - Documented optimization playbook
+
+## Foundation Checklist (Must Be True)
+- Specs are current and versioned in Git
+- Cache and quota policy enforced in code
+- Quality evaluation triggers are defined and used
+- Run logs and metrics are stored and reviewable
+- ADRs document material architecture decisions
+
+## Missing Essentials (Create if not present)
+- Run log schema and storage target (see SCHEMA.md: pipeline_runs)
+- ADR template and decision workflow
+- Operator handoff checklist
+- KPI definitions with thresholds and triggers
+
+## Continuity Protocol (CTO/Agent Change)
+- New owner must complete Handoff checklist
+- All major changes require an ADR entry
+- All specs must be updated before code changes
+- Weekly review: KPI trend, failures, and cost usage
