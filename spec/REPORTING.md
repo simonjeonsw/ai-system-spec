@@ -26,3 +26,13 @@ Executive reports summarize performance, risks, and decisions for stakeholders.
 
 **Notes**
 - Link to run logs and experiment logs for evidence.
+
+## Trend Rules
+- Two consecutive weeks of CTR decline → open investigation ticket.
+- AVD decline > 10% week-over-week → script pacing review.
+- Retention drop at 30s for 2 weeks → hook rewrite and scene audit.
+
+## Decision Rubric
+- Investigate: KPI declines exceed trend rules or SLO breach observed.
+- Iterate: KPIs are flat but within thresholds; test packaging variants.
+- Rollback: KPI declines persist after two iterations.

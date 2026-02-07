@@ -71,24 +71,6 @@ All specs, tasks, and artifacts must be written in English.
 - Page on two consecutive SLO breaches or any publish-stage failure.
 - Log incidents and link to OPERATIONS.md runbook.
 
-## Observability Policy (SLIs/SLOs)
-**SLIs**
-- Stage latency (p50/p95)
-- Failure rate per stage
-- Retry rate per stage
-- Cache hit rate
-- Cost per run
-
-**SLOs (targets)**
-- p95 stage latency: <= 10 minutes
-- Failure rate: < 2% per stage/week
-- Retry rate: < 5% per stage/week
-- Cache hit rate: > 50% (Phase 1+)
-
-**Alerting**
-- Page on two consecutive SLO breaches or any publish-stage failure.
-- Log incidents and link to OPERATIONS.md runbook.
-
 ## Missing Essentials (Create if not present)
 - Run log schema and storage target (see SCHEMA.md: pipeline_runs)
 - ADR template and decision workflow
@@ -110,6 +92,7 @@ All specs, tasks, and artifacts must be written in English.
 - Use semantic versioning for specs and prompts (MAJOR.MINOR.PATCH).
 - Record release notes and rollback steps in ADR entries.
 - Run validation checks before release (see VALIDATION_PLAN.md).
+- Require release notes for any minor/major release (see RELEASE_NOTES.md).
 
 ## Release Checklist
 - Specs updated and committed
@@ -123,6 +106,7 @@ All specs, tasks, and artifacts must be written in English.
 3. Enforce Scene Structuring Spec before script drafting.
 4. Apply Scene-Level QA checklist prior to any publishing workflow.
 5. Enforce KPI thresholds and rewrite triggers before publish (see EVAL.md).
+6. Apply channel governance rules before Ops publish (see EVAL.md).
 
 ## Handoff Checks
 - Research inputs must reference the selected Planner topic and include topic_candidates scoring context.
@@ -131,7 +115,3 @@ All specs, tasks, and artifacts must be written in English.
 - Channel configuration stored and validated for each channel.
 - Per-channel cost tracking and KPI reporting enabled.
 - Access controls for publish approvals verified.
-1. Maintain the Planner → Research → Scene Builder → Script → QA → Ops execution chain.
-2. Keep research outputs compliant with the Product Spec format.
-3. Enforce Scene Structuring Spec before script drafting.
-4. Apply Scene-Level QA checklist prior to any publishing workflow.

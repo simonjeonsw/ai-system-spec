@@ -27,6 +27,24 @@ Apply thresholds by channel type; adjust after 10+ published videos.
 - AVD: >= 35% of total duration
 - 30s retention: >= 60%
 
+## Channel Governance Rules
+Apply the governance rules before Ops publish.
+
+**Finance/Economics**
+- Publish: CTR >= 5.0% and AVD >= 40%.
+- Hold: CTR 4.0–4.9% or AVD 35–39% → iterate packaging or pacing.
+- Rework: CTR < 4.0% or AVD < 35% → rewrite script and rerun QA.
+
+**Education**
+- Publish: CTR >= 4.0% and AVD >= 45%.
+- Hold: CTR 3.2–3.9% or AVD 38–44% → improve clarity and hook.
+- Rework: CTR < 3.2% or AVD < 38% → rewrite structure and examples.
+
+**News/Analysis**
+- Publish: CTR >= 5.5% and AVD >= 35%.
+- Hold: CTR 4.5–5.4% or AVD 30–34% → adjust framing and evidence density.
+- Rework: CTR < 4.5% or AVD < 30% → re-research angle and script.
+
 ## Rewrite Trigger Matrix
 | Signal | Threshold | Action |
 |---|---|---|
@@ -70,7 +88,6 @@ Apply thresholds by channel type; adjust after 10+ published videos.
 ## Research → Scene Alignment Checklist
 - Every scene key_claim matches a research key_fact or data_point.
 - Every scene source_refs entry resolves to research sources or data_points.source_id.
-- Every scene source_refs entry resolves to research sources or data_points.source.
 - Any unmatched claim must be flagged in risk_flags.
 
 **Pass criteria**

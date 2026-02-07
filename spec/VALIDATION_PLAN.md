@@ -6,6 +6,7 @@ Validation ensures structured outputs match schemas and quality gates before pub
 - Schema validation for planner, research, scene, and script outputs.
 - Field-level checks for required keys and types.
 - Source governance checks (source_tier, freshness_window_days).
+- Validate against JSON Schemas in SCHEMAS.md.
 
 ## Integration Validation
 - End-to-end sample run from Planner → Ops using a fixed test topic.
