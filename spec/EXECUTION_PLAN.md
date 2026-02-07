@@ -54,6 +54,7 @@ All specs, tasks, and artifacts must be written in English.
 
 ## Missing Essentials (Create if not present)
 - Run log schema and storage target (see SCHEMA.md: pipeline_runs)
+- Run log schema and storage target
 - ADR template and decision workflow
 - Operator handoff checklist
 - KPI definitions with thresholds and triggers
