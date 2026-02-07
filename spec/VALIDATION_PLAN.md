@@ -5,6 +5,7 @@ Validation ensures structured outputs match schemas and quality gates before pub
 ## Unit Validation
 - Schema validation for planner, research, scene, and script outputs.
 - Field-level checks for required keys and types.
+- Source governance checks (source_tier, freshness_window_days).
 
 ## Integration Validation
 - End-to-end sample run from Planner → Ops using a fixed test topic.
@@ -17,3 +18,4 @@ Validation ensures structured outputs match schemas and quality gates before pub
 ## Quality Gate
 - Any schema failure blocks publish.
 - Any SLO breach triggers a review before release.
+- Any uncorroborated Tier 3 claim or stale source without risk_flags blocks publish.

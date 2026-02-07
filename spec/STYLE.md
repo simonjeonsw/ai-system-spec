@@ -48,12 +48,3 @@
 
 **Notes**
 - Reference metadata_experiments fields: experiment_type, title_variant, thumbnail_variant, ctr, avd.
-- Title variant: <value> | CTR: <value> | AVD: <value> | Decision: keep/iterate
-- Thumbnail variant: <value> | CTR: <value> | AVD: <value> | Decision: keep/iterate
-
-**Top Losses**
-- Title variant: <value> | CTR: <value> | AVD: <value> | Decision: rollback
-- Thumbnail variant: <value> | CTR: <value> | AVD: <value> | Decision: rollback
-
-**Notes**
-- Reference metadata_experiments fields: title_variant, thumbnail_variant, ctr, avd.

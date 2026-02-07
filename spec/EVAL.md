@@ -9,6 +9,33 @@
 ## Pass Criteria
 - Below threshold → auto rewrite
 
+## KPI Thresholds (Baseline)
+Apply thresholds by channel type; adjust after 10+ published videos.
+
+**Finance/Economics**
+- CTR: >= 5.0%
+- AVD: >= 40% of total duration
+- 30s retention: >= 65%
+
+**Education**
+- CTR: >= 4.0%
+- AVD: >= 45% of total duration
+- 30s retention: >= 70%
+
+**News/Analysis**
+- CTR: >= 5.5%
+- AVD: >= 35% of total duration
+- 30s retention: >= 60%
+
+## Rewrite Trigger Matrix
+| Signal | Threshold | Action |
+|---|---|---|
+| CTR below baseline | < baseline for 2 consecutive uploads | Visual Agent rewrite + packaging iteration |
+| AVD below baseline | < baseline for 2 consecutive uploads | Script Agent rewrite + pacing adjustment |
+| 30s retention drop | < baseline for 2 consecutive uploads | Hook rewrite and scene restructuring |
+| Source governance failure | any Tier 3-only claim or stale_data unflagged | Research revision + Scene Builder rerun |
+| QA failure | any pass criteria failure | Full rewrite of failing stage |
+
 ## Human Review (Optional)
 - Monetization potential
 - Legal & compliance risk

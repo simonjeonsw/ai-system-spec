@@ -51,6 +51,25 @@ All specs, tasks, and artifacts must be written in English.
 - Quality evaluation triggers are defined and used
 - Run logs and metrics are stored and reviewable
 - ADRs document material architecture decisions
+- KPI thresholds and rewrite triggers defined (see EVAL.md)
+
+## Observability Policy (SLIs/SLOs)
+**SLIs**
+- Stage latency (p50/p95)
+- Failure rate per stage
+- Retry rate per stage
+- Cache hit rate
+- Cost per run
+
+**SLOs (targets)**
+- p95 stage latency: <= 10 minutes
+- Failure rate: < 2% per stage/week
+- Retry rate: < 5% per stage/week
+- Cache hit rate: > 50% (Phase 1+)
+
+**Alerting**
+- Page on two consecutive SLO breaches or any publish-stage failure.
+- Log incidents and link to OPERATIONS.md runbook.
 
 ## Observability Policy (SLIs/SLOs)
 **SLIs**
@@ -103,6 +122,7 @@ All specs, tasks, and artifacts must be written in English.
 2. Keep research outputs compliant with the Product Spec format.
 3. Enforce Scene Structuring Spec before script drafting.
 4. Apply Scene-Level QA checklist prior to any publishing workflow.
+5. Enforce KPI thresholds and rewrite triggers before publish (see EVAL.md).
 
 ## Handoff Checks
 - Research inputs must reference the selected Planner topic and include topic_candidates scoring context.
