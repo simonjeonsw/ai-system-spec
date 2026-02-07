@@ -69,6 +69,21 @@ Competitor intelligence must produce actionable packaging and topic insights.
 - Pacing benchmarks (scene counts, average segment duration).
 - Topic gaps (underserved audience questions).
 
+## Benchmarking → Planner Input Format
+Benchmarking outputs must be normalized before they reach the Planner.
+
+**Schema (JSON)**
+```json
+{
+  "top_hooks": ["", ""],
+  "packaging_patterns": ["", ""],
+  "topic_gaps": ["", ""],
+  "pacing_benchmarks": [
+    { "avg_scene_count": 0, "avg_scene_duration_sec": 0 }
+  ]
+}
+```
+
 ## Revenue / Retention / Automation KPI
 Track KPIs by channel type to ensure revenue growth, viewer retention, and automation efficiency.
 

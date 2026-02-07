@@ -80,6 +80,14 @@ Scene structuring converts research output into ordered, self-contained scenes t
 }
 ```
 
+## Research → Scene Consistency Rules
+Scene outputs must be traceable to the research output format in PRODUCT_SPEC.
+
+**Rules**
+- Each `scene.key_claims` item must map to either `research.key_facts[]` or `research.data_points[]`.
+- Each `scene.source_refs` entry must reference IDs/URLs present in `research.sources[]` or `research.data_points[].source`.
+- If a claim cannot be mapped, the Scene Builder must flag it in `risk_flags` and request research revisions.
+
 ## Benchmarking Data Pipeline
 Define a consistent pipeline for competitor intelligence and topic gap analysis.
 

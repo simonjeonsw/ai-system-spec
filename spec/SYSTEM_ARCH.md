@@ -35,6 +35,9 @@ Research
  → Upload
  → Performance Feedback (CTR, AVD, RPM) → Metadata/Thumbnail/Script iteration loop
 
+Experiment Logs (metadata_experiments)
+ → Packaging adjustments (titles/thumbnails)
+
 ## 4.2 Benchmarking & Competitor Intelligence Flow
 Collection
  → Normalization

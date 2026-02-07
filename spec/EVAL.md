@@ -39,6 +39,14 @@
 - Any scene scoring below 3/5 on factual accuracy or claim-evidence alignment fails the review.
 - Two or more scenes scoring below 3/5 on viewer clarity triggers a rewrite.
 
+## Research → Scene Alignment Checklist
+- Every scene key_claim matches a research key_fact or data_point.
+- Every scene source_refs entry resolves to research sources or data_points.source.
+- Any unmatched claim must be flagged in risk_flags.
+
+**Pass criteria**
+- Any unmatched claim or missing source mapping fails the review.
+
 ## QA Failure criteria
 - Includes unverifiable facts or unclear sources.
 - Missing evidence for key claims or logical leaps.
