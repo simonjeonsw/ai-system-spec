@@ -1,0 +1,37 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "SceneOutput",
+  "type": "object",
+  "required": [
+    "scene_id",
+    "objective",
+    "key_claims",
+    "source_refs",
+    "evidence_sources",
+    "visual_prompt",
+    "narration_prompt",
+    "transition_note",
+    "schema_version"
+  ],
+  "properties": {
+    "scene_id": { "type": "string" },
+    "objective": { "type": "string" },
+    "key_claims": { "type": "array", "items": { "type": "string" } },
+    "source_refs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["claim", "sources"],
+        "properties": {
+          "claim": { "type": "string" },
+          "sources": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+    "evidence_sources": { "type": "array", "items": { "type": "string" } },
+    "visual_prompt": { "type": "string" },
+    "narration_prompt": { "type": "string" },
+    "transition_note": { "type": "string" },
+    "schema_version": { "type": "string" }
+  }
+}

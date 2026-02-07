@@ -3,6 +3,7 @@
 google-api-python-client
 supabase
 python-dotenv
+jsonschema
 
 # Added for Deep Analysis
 yt-dlp
