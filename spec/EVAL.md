@@ -13,6 +13,30 @@
 - Monetization potential
 - Legal & compliance risk
 
+## QA Checklist (by stage: factuality/logic/viewer perspective)
+### Research output
+- Factuality: Are sources, dates, and scope clearly stated?
+- Logic: Are comparison or estimation assumptions explicit?
+- Viewer perspective: Is the core question (why it matters/what to do) clear?
+### Script draft
+- Factuality: Do all numbers and citations match the original sources?
+- Logic: Is the claim → evidence → interpretation flow coherent?
+- Viewer perspective: Is the question–answer structure clear and easy to follow?
+### Final
+- Factuality: Is information preserved without distortion/exaggeration vs draft?
+- Logic: Does the conclusion align with the evidence?
+- Viewer perspective: Are overconfident or overly simplified statements removed?
+
+## QA Failure criteria
+- Includes unverifiable facts or unclear sources.
+- Missing evidence for key claims or logical leaps.
+- Core viewer question is not resolved.
+
+## QA Rewrite triggers
+- Two or more checklist items fail.
+- One or more factual errors found.
+- Missing bias/conflict disclosure that could undermine trust.
+
 ## Structure Design Quality Checklist
 - Flow quality
   - Retention curve sustained (no major drop-offs between beats)
