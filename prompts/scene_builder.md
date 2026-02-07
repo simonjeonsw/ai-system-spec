@@ -37,7 +37,8 @@ Convert structured research outputs into the Scene Structuring Spec for downstre
       "narration_prompt": "",
       "transition_note": "",
       "narrative_role": "hook",
-      "risk_flags": ["missing_source"]
+      "risk_flags": ["missing_source"],
+      "schema_version": "1.0"
     }
   ]
 }
@@ -65,6 +66,7 @@ Convert structured research outputs into the Scene Structuring Spec for downstre
   "narration_prompt": "Open with a concrete, data-backed contrast.",
   "transition_note": "Move to the causes behind the divergence.",
   "narrative_role": "hook",
-  "risk_flags": []
+  "risk_flags": [],
+  "schema_version": "1.0"
 }
 ```

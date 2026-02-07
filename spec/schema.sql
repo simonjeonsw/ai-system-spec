@@ -6,6 +6,9 @@ CREATE TABLE IF NOT EXISTS research_cache (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   topic text NOT NULL,
   content text NOT NULL,
+  deep_analysis text,
+  raw_transcript text,
+  updated_at timestamptz,
   created_at timestamptz DEFAULT now()
 );
 
@@ -16,5 +19,14 @@ CREATE TABLE IF NOT EXISTS research_cache (
 CREATE TABLE IF NOT EXISTS scripts (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   content text NOT NULL,
+  created_at timestamptz DEFAULT now()
+);
+
+-- planning_cache: planner outputs and evaluator feedback
+CREATE TABLE IF NOT EXISTS planning_cache (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  topic text NOT NULL,
+  plan_content text NOT NULL,
+  eval_result text,
   created_at timestamptz DEFAULT now()
 );
