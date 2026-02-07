@@ -26,6 +26,7 @@ This is an operating system for an AI-driven media company.
   RULES.md
   SYSTEM_ARCH.md
   MULTI_SKILL_MODE.md
+  schemas/
   AGENTS.md
   AGENT_RULES.md
   STYLE.md
