@@ -8,6 +8,7 @@ sys.path.append(str(venv_path))
 
 from google.genai import Client
 from .supabase_client import supabase
+from .run_logger import emit_run_log
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -92,9 +93,21 @@ class ContentPlanner:
                 "plan_content": plan_result
             }).execute()
 
+            emit_run_log(
+                stage="planner",
+                status="success",
+                input_refs={"topic": topic},
+                output_refs={"planning_cache": "inserted"},
+            )
             return plan_result
 
         except Exception as e:
+            emit_run_log(
+                stage="planner",
+                status="failure",
+                input_refs={"topic": topic},
+                error_summary=str(e),
+            )
             return f"❌ 기획 공정 중 오류 발생: {str(e)}"
 
 
