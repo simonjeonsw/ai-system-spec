@@ -5,7 +5,7 @@ User / Operator
  → Control Plane
  → Agent Orchestrator
  → Specialized Agents
- → Content Pipeline
+ → Content Pipeline (including Scene Structuring)
  → Evaluation Layer
  → Publishing & Analytics
 
@@ -15,6 +15,7 @@ User / Operator
 - State Management
 - GitHub Integration
 - MCP Context Injection
+- Orchestration requirements: stage gating, dependency resolution, and handoff criteria between agents
 
 ## 3. Observability
 - Agent output logs
