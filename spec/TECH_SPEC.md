@@ -58,6 +58,7 @@ Scene structuring converts research output into ordered, self-contained scenes t
 - Every scene must map to one of: hook, proof, insight, payoff.
 - Claims must have at least one evidence source and a source_refs entry.
 - Every evidence_sources entry must appear in source_refs.sources.
+- Claims must have at least one evidence source.
 - Transitions must be explicit and explainable in one sentence.
 
 **Minimal example**
@@ -95,6 +96,9 @@ Use only the following values in `risk_flags`:
 - `causal_claim` (causation asserted; needs stronger proof)
 - `regulatory_risk` (compliance or legal sensitivity)
 - `sensitive_topic` (elevated audience or brand risk)
+
+- Each `scene.source_refs` entry must reference IDs/URLs present in `research.sources[]` or `research.data_points[].source`.
+- If a claim cannot be mapped, the Scene Builder must flag it in `risk_flags` and request research revisions.
 
 ## Benchmarking Data Pipeline
 Define a consistent pipeline for competitor intelligence and topic gap analysis.
