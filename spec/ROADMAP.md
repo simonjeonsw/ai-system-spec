@@ -3,6 +3,7 @@
 ## Phase 1 — Single Channel Automation
 - End-to-end automation
 - Minimal human intervention
+- Milestone: Scene Structuring (depends on Research; prerequisite for Script/Visual)
 
 ## Phase 2 — Multi-Channel Scaling
 - Shared pipeline
