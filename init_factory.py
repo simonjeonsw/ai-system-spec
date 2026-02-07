@@ -1,7 +1,7 @@
 """Factory init: verify Supabase connection and required tables.
 
 - Connects using lib/supabase_client.
-- Checks existence of research_cache and scripts.
+- Checks existence of research_cache, scripts, and planning_cache.
 - Inserts a System Boot log entry into research_cache.
 - Schema: spec/SCHEMA.md, spec/schema.sql
 """
@@ -10,7 +10,7 @@ import sys
 
 from lib.supabase_client import get_client
 
-REQUIRED_TABLES = ("research_cache", "scripts")
+REQUIRED_TABLES = ("research_cache", "scripts", "planning_cache")
 BOOT_MESSAGE = "System Boot"
 # Text column for log body; try common names (schema may vary).
 TEXT_COLUMNS = ("content", "body", "summary", "message")
@@ -25,7 +25,7 @@ def main() -> int:
         except Exception as e:
             print(f"Table '{table}' missing or inaccessible: {e}", file=sys.stderr)
             return 1
-    print("Tables research_cache and scripts exist.")
+    print("Tables research_cache, scripts, and planning_cache exist.")
 
     # research_cache: topic NOT NULL, plus a text column. See spec/SCHEMA.md.
     last_error = None
