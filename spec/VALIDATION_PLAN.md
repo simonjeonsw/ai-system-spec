@@ -7,6 +7,7 @@ Validation ensures structured outputs match schemas and quality gates before pub
 - Field-level checks for required keys and types.
 - Source governance checks (source_tier, freshness_window_days).
 - Validate against JSON Schemas in SCHEMAS.md and `spec/schemas/*.schema.json`.
+- Use `python -m lib.validation_runner <stage> <json_path>` for local checks.
 
 ## Integration Validation
 - End-to-end sample run from Planner → Ops using a fixed test topic.
