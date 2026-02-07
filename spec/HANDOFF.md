@@ -4,6 +4,8 @@
 - GitHub repo access confirmed
 - API keys stored and documented
 - Supabase/N8N access confirmed
+- Credential rotation schedule verified
+- Access reviews completed for publish permissions
 
 ## 2) Current System State
 - Latest specs read (MAIN_CONTEXT, SYSTEM_ARCH, TECH_SPEC, EXECUTION_PLAN)
@@ -22,6 +24,10 @@
 ## 5) Decision Log
 - ADR entries updated for recent changes
 - Next decisions scheduled with owners
+
+## 5.1) Security & Audit
+- Audit logs enabled for publish approvals and config changes
+- PII handling requirements reviewed (see SECURITY.md)
 
 ## 6) Immediate Next Steps
 - Next 7-day content plan assigned

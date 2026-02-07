@@ -89,6 +89,17 @@ Scene outputs must be traceable to the research output format in PRODUCT_SPEC.
 - Each `scene.source_refs` entry must reference IDs/URLs present in `research.sources[]` or `research.data_points[].source_id`.
 - If a claim cannot be mapped, the Scene Builder must flag it in `risk_flags` and request research revisions.
 
+## Research Source Governance Fields
+Research sources must include governance metadata for trust and freshness.
+
+**Required fields (sources)**
+- `source_tier`: `tier_1` | `tier_2` | `tier_3`
+- `freshness_window_days`: integer maximum age allowed for the source
+
+**Validation rules**
+- Claims using Tier 3 sources require at least one Tier 1 or Tier 2 corroboration.
+- If `as_of_date` exceeds the `freshness_window_days`, mark the scene with `stale_data`.
+
 ## Scene Risk Flags Vocabulary
 Use only the following values in `risk_flags`:
 - `missing_source` (claim lacks a valid source mapping)

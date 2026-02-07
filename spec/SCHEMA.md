@@ -60,3 +60,31 @@ Stores A/B testing results for titles and thumbnails.
 | avd               | numeric     | Average view duration                                  |
 | notes             | text        | Optional insights/decisions                            |
 | created_at        | timestamptz | default now()                                          |
+
+## channel_configs
+
+Stores per-channel configuration profiles for multi-channel scaling.
+
+| Column        | Type        | Notes                                         |
+|---------------|-------------|-----------------------------------------------|
+| id            | uuid        | PK, default gen_random_uuid()                 |
+| channel_id    | text        | Unique channel identifier                     |
+| name          | text        | Display name                                  |
+| tone_profile  | text        | Tone or style profile                         |
+| format_profile| text        | Format template reference                     |
+| kpi_targets   | jsonb       | Target KPIs (CTR, AVD, RPM, cadence)          |
+| created_at    | timestamptz | default now()                                 |
+
+## channel_costs
+
+Tracks per-channel cost and usage for governance and scaling.
+
+| Column        | Type        | Notes                                         |
+|---------------|-------------|-----------------------------------------------|
+| id            | uuid        | PK, default gen_random_uuid()                 |
+| channel_id    | text        | Channel identifier                            |
+| run_id        | text        | Pipeline run reference                        |
+| provider      | text        | API/model provider                            |
+| cost_usd      | numeric     | Estimated cost in USD                         |
+| tokens        | int         | Token usage (if applicable)                   |
+| created_at    | timestamptz | default now()                                 |

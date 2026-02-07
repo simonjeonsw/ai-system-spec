@@ -57,6 +57,19 @@
 - Every key_fact has a key_fact_sources entry with at least one source_id.
 - Any missing key_fact_sources mapping fails the review.
 
+## Source Governance Checklist
+- Each source includes source_tier and freshness_window_days.
+- Tier 3 sources are corroborated by Tier 1 or Tier 2 sources.
+- Sources outside freshness windows are flagged as `stale_data`.
+
+**Pass criteria**
+- Any missing governance metadata fails the review.
+- Any uncorroborated Tier 3 claim fails the review.
+
+## Automated Validation Gate
+- Structured outputs must pass schema validation (see VALIDATION_PLAN.md).
+- Publish is blocked if validation fails.
+
 ## QA Failure criteria
 - Includes unverifiable facts or unclear sources.
 - Missing evidence for key claims or logical leaps.

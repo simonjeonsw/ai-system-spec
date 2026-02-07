@@ -30,6 +30,7 @@ Research outputs must be structured to support downstream scene generation.
 - `key_facts` (array of strings)
 - `key_fact_sources` (array of objects: `{ "claim": "", "source_ids": [""] }`)
 - `data_points` (array of objects: `{ "metric": "", "value": "", "timeframe": "", "source_id": "" }`)
+- `sources` (array of objects: `{ "source_id": "", "title": "", "url": "", "as_of_date": "", "source_tier": "", "freshness_window_days": 0 }`)
 - `sources` (array of objects: `{ "source_id": "", "title": "", "url": "", "as_of_date": "" }`)
 - `data_points` (array of objects: `{ "metric": "", "value": "", "timeframe": "", "source": "" }`)
 - `sources` (array of URLs or citation identifiers)
@@ -48,6 +49,15 @@ Research outputs must be structured to support downstream scene generation.
     { "metric": "...", "value": "...", "timeframe": "...", "source_id": "src-001" }
   ],
   "sources": [
+    {
+      "source_id": "src-001",
+      "title": "...",
+      "url": "https://example.com/source-1",
+      "as_of_date": "2024-06-01",
+      "source_tier": "tier_1",
+      "freshness_window_days": 180
+    }
+  ],
     { "source_id": "src-001", "title": "...", "url": "https://example.com/source-1", "as_of_date": "2024-06-01" }
   ],
   "data_points": [
@@ -61,6 +71,22 @@ Research outputs must be structured to support downstream scene generation.
 
 **Rules**
 - Every key_fact must have a corresponding key_fact_sources entry.
+- sources must include source_tier and freshness_window_days.
+
+## Data Governance (Sources)
+**Trust tiers**
+- `tier_1`: Primary sources (government, central banks, regulators, audited filings)
+- `tier_2`: Reputable secondary sources (major financial press, research firms)
+- `tier_3`: Other sources (blogs, social, unverified commentary)
+
+**Freshness rules**
+- Macro data: max 12 months unless explicitly labeled “historical.”
+- Market data: max 30 days unless a longer window is justified.
+- Policy/regulatory updates: max 90 days unless superseded.
+
+**Usage rules**
+- Tier 3 sources require a Tier 1 or Tier 2 corroboration.
+- Any source outside freshness rules must be flagged in risk_flags as `stale_data`.
 
 ## Topic Prioritization
 Planner must score candidate topics before research begins.
