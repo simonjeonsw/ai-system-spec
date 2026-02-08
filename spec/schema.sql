@@ -14,6 +14,8 @@ CREATE TABLE IF NOT EXISTS research_cache (
 
 -- If table exists with wrong columns, add content:
 -- ALTER TABLE research_cache ADD COLUMN IF NOT EXISTS content text;
+-- Ensure upserts on topic are supported:
+CREATE UNIQUE INDEX IF NOT EXISTS research_cache_topic_key ON research_cache (topic);
 
 -- scripts: script history for session sync
 CREATE TABLE IF NOT EXISTS scripts (
@@ -29,4 +31,27 @@ CREATE TABLE IF NOT EXISTS planning_cache (
   plan_content text NOT NULL,
   eval_result text,
   created_at timestamptz DEFAULT now()
+);
+-- Ensure upserts on topic are supported:
+CREATE UNIQUE INDEX IF NOT EXISTS planning_cache_topic_key ON planning_cache (topic);
+
+-- video_scenes: scene builder outputs per video
+CREATE TABLE IF NOT EXISTS video_scenes (
+  video_id text PRIMARY KEY,
+  content jsonb NOT NULL,
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now()
+);
+
+-- video_metadata: generated metadata per video
+CREATE TABLE IF NOT EXISTS video_metadata (
+  video_id text PRIMARY KEY,
+  title text NOT NULL,
+  description text NOT NULL,
+  tags jsonb NOT NULL,
+  chapters jsonb NOT NULL,
+  pinned_comment text NOT NULL,
+  schema_version text NOT NULL,
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now()
 );
