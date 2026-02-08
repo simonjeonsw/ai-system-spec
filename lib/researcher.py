@@ -116,6 +116,50 @@ class VideoResearcher:
                 details.append(f"non_tier12_claims={non_tier12_claims}")
             raise ValueError(f"Source governance validation failed: {', '.join(details)}")
 
+    def _is_general_knowledge(self, claim: str) -> bool:
+        return bool(
+            re.search(
+                r"\b(is|refers to|means|defined as|concept|principle|overview)\b",
+                claim,
+                re.IGNORECASE,
+            )
+        )
+
+    def _validate_source_governance(self, payload: dict) -> None:
+        sources = {item.get("source_id"): item for item in payload.get("sources", [])}
+        key_fact_sources = payload.get("key_fact_sources", [])
+        missing_sources = []
+        uncorroborated_claims = []
+        non_tier12_claims = []
+
+        for entry in key_fact_sources:
+            claim = entry.get("claim", "")
+            source_ids = entry.get("source_ids", [])
+            if not source_ids:
+                missing_sources.append(claim)
+                continue
+            unique_ids = list(dict.fromkeys(source_ids))
+            if len(unique_ids) < 2 and not self._is_general_knowledge(claim):
+                uncorroborated_claims.append(claim)
+            tiers = [
+                sources.get(source_id, {}).get("source_tier")
+                for source_id in unique_ids
+                if sources.get(source_id)
+            ]
+            if not self._is_general_knowledge(claim):
+                if not any(tier in {"tier_1", "tier_2"} for tier in tiers):
+                    non_tier12_claims.append(claim)
+
+        if missing_sources or uncorroborated_claims or non_tier12_claims:
+            details = []
+            if missing_sources:
+                details.append(f"missing_sources={missing_sources}")
+            if uncorroborated_claims:
+                details.append(f"uncorroborated_claims={uncorroborated_claims}")
+            if non_tier12_claims:
+                details.append(f"non_tier12_claims={non_tier12_claims}")
+            raise ValueError(f"Source governance validation failed: {', '.join(details)}")
+
     def get_video_transcript(self, video_id):
         """Fetch metadata and comments for analysis."""
         ydl_opts = {

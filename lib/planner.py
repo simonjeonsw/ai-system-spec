@@ -76,8 +76,9 @@ class ContentPlanner:
 
         Constraints:
         - Output English only.
-        - Provide 3-5 topic_candidates with scores from 1-5 and total_score (include viral_potential).
+        - Provide 3-5 topic_candidates with scores from 1-5 and total_score (include viral_potential scored 1-10).
         - Select the highest scoring topic and justify selection_rationale.
+        - If the selected topic has viral_potential < 7, explicitly justify why it was chosen in selection_rationale.
         - Use benchmark_insights to explain viral_potential scoring.
         - Use target persona: {target_persona}.
 

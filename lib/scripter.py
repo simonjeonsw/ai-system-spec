@@ -139,7 +139,7 @@ class ContentScripter:
             if mode == "long" and word_count < 1100:
                 script_payload = self._extend_script(script_payload, target_words)
             if mode == "shorts" and word_count > 180:
-                script_payload = self._shrink_script(script_payload, target_words)
+                script_payload = self._enforce_shorts_length(script_payload, target_words)
             ensure_schema_version(script_payload, "1.0")
             validate_payload("script_output", script_payload)
             word_count = len(script_payload.get("script", "").split())
@@ -227,6 +227,15 @@ class ContentScripter:
                 for item in shortened_payload["citations"]
             ]
         return shortened_payload
+
+    def _enforce_shorts_length(self, script_payload: dict, target_words: str) -> dict:
+        updated_payload = script_payload
+        for _ in range(2):
+            word_count = len(updated_payload.get("script", "").split())
+            if word_count <= 180:
+                break
+            updated_payload = self._shrink_script(updated_payload, target_words)
+        return updated_payload
 
 if __name__ == "__main__":
     scripter = ContentScripter()
