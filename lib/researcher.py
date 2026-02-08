@@ -119,11 +119,17 @@ class VideoResearcher:
 
         analysis_result = ""
         try:
-            analysis_result = self.router.generate_content(prompt_text)
+            analysis_result = self.router.generate_content(
+                prompt_text,
+                preferred_models=[selected_model],
+            )
         except Exception as e:
             if "429" in str(e):
                 print("⚠️ Quota exceeded. Retrying with model rotation.")
-                analysis_result = self.router.generate_content(prompt_text)
+                analysis_result = self.router.generate_content(
+                    prompt_text,
+                    preferred_models=[selected_model],
+                )
             else:
                 emit_run_log(
                     stage="research",

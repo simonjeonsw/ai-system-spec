@@ -121,6 +121,13 @@ def main() -> int:
     try:
         scene_output = builder.build_scenes(research_payload)
         save_json("scene_builder", topic, scene_output)
+        supabase.table("video_scenes").upsert(
+            {
+                "video_id": topic,
+                "content": json.dumps(scene_output, ensure_ascii=False),
+            },
+            on_conflict="video_id",
+        ).execute()
         emit_run_log(
             stage="scene_builder",
             status="success",

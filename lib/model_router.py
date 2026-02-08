@@ -35,10 +35,14 @@ class ModelRouter:
         models = _load_models_from_env("GEMINI_MODELS", DEFAULT_GEMINI_MODELS)
         return cls(api_key=api_key, models=models)
 
-    def generate_content(self, prompt: str) -> str:
+    def generate_content(self, prompt: str, preferred_models: Iterable[str] | None = None) -> str:
         client = Client(api_key=self.api_key)
         last_error: Exception | None = None
-        for model in self.models:
+        model_sequence: List[str] = []
+        if preferred_models:
+            model_sequence.extend([model for model in preferred_models if model])
+        model_sequence.extend([model for model in self.models if model not in model_sequence])
+        for model in model_sequence:
             try:
                 response = client.models.generate_content(model=model, contents=prompt)
                 return response.text

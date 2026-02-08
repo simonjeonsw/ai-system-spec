@@ -91,10 +91,13 @@ class ContentPlanner:
             validate_payload("planner_output", plan_payload)
 
             # 4. Store planner output
-            supabase.table("planning_cache").insert({
-                "topic": normalized_topic,
-                "plan_content": json.dumps(plan_payload, ensure_ascii=False)
-            }).execute()
+            supabase.table("planning_cache").upsert(
+                {
+                    "topic": normalized_topic,
+                    "plan_content": json.dumps(plan_payload, ensure_ascii=False),
+                },
+                on_conflict="topic",
+            ).execute()
             save_json("planner", normalized_topic, plan_payload)
 
             emit_run_log(

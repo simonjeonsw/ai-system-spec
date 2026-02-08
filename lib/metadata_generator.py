@@ -13,6 +13,8 @@ from dotenv import load_dotenv
 from .json_utils import ensure_schema_version, extract_json
 from .model_router import ModelRouter
 from .run_logger import build_metrics, emit_run_log
+from .storage_utils import save_json
+from .supabase_client import supabase
 
 
 DEFAULT_SCHEMA_VERSION = "1.0"
@@ -94,6 +96,10 @@ def main() -> int:
 
     plan_payload = _load_json(plan_path)
     script_payload = _load_json(script_path)
+    video_id = script_payload.get("video_id")
+    if not video_id:
+        print("Missing video_id in script payload.", file=sys.stderr)
+        return 1
 
     try:
         metadata_payload = generate_metadata(
@@ -104,6 +110,19 @@ def main() -> int:
         if errors:
             raise ValueError("; ".join(errors))
 
+        save_json("metadata", video_id, metadata_payload)
+        supabase.table("video_metadata").upsert(
+            {
+                "video_id": video_id,
+                "title": metadata_payload.get("title"),
+                "description": metadata_payload.get("description"),
+                "tags": metadata_payload.get("tags"),
+                "chapters": metadata_payload.get("chapters"),
+                "pinned_comment": metadata_payload.get("pinned_comment"),
+                "schema_version": metadata_payload.get("schema_version"),
+            },
+            on_conflict="video_id",
+        ).execute()
         emit_run_log(
             stage="metadata",
             status="success",
