@@ -2,13 +2,13 @@ import os
 import sys
 from pathlib import Path
 
-# 경로 및 라이브러리 연동 (더블체크 완료)
+# Path and library wiring.
 venv_path = Path(__file__).resolve().parent.parent / ".venv" / "Lib" / "site-packages"
 sys.path.append(str(venv_path))
 
 from google.genai import Client
 from .supabase_client import supabase
-from .run_logger import emit_run_log
+from .run_logger import build_metrics, emit_run_log
 from dotenv import load_dotenv
 import re
 
@@ -25,7 +25,7 @@ class ContentImaginer:
         return match.group(1) if match else url
 
     def fetch_script_data(self, topic):
-        """DB에서 최신 대본 및 기획안 데이터를 가져옴"""
+        """Fetch the latest plan data from the database."""
         video_id = self.extract_video_id(topic)
         res = supabase.table("planning_cache") \
             .select("*") \
@@ -44,11 +44,12 @@ class ContentImaginer:
                 status="failure",
                 input_refs={"topic": topic},
                 error_summary="script data not found",
+                metrics=build_metrics(cache_hit=False),
             )
-            return "❌ 대본 데이터를 찾을 수 없습니다. Scripter 공정을 먼저 완료해주세요."
+            return "❌ Script data not found. Run the scripter stage first."
 
-        # 프롬프트 구성: 썸네일 전략 + 대본의 시각 요소를 결합
-        # ⚠️ 변경된 부분: Style 규칙을 3D Isometric으로 업데이트
+        # Prompt composition: thumbnail strategy + visual cues from plan
+        # Style rule: 3D Isometric
         prompt_text = f"""
         # ROLE: Expert AI Image Prompt Engineer for YouTube
         # TASK: Create 3 high-performance image prompts (1 for Thumbnail, 2 for Key Visuals in Video).
@@ -65,18 +66,18 @@ class ContentImaginer:
         """
 
         try:
-            print(f"🎨 시각 에셋 프롬프트 생성 중... (스타일: 3D Isometric, 대상: {topic})")
+            print(f"🎨 Generating visual asset prompts... (style: 3D Isometric, topic: {topic})")
             response = self.client.models.generate_content(
                 model=self.model_id,
                 contents=prompt_text
             )
             
-            # 결과 저장 (별도 컬럼이나 로그에 저장 권장)
-            # 여기서는 결과를 화면에 출력하고 나중에 DB 확장을 고려합니다.
+            # Consider storing results in a dedicated table or log.
             emit_run_log(
                 stage="visual",
                 status="success",
                 input_refs={"topic": topic},
+                metrics=build_metrics(cache_hit=False),
             )
             return response.text
         except Exception as e:
@@ -85,17 +86,18 @@ class ContentImaginer:
                 status="failure",
                 input_refs={"topic": topic},
                 error_summary=str(e),
+                metrics=build_metrics(cache_hit=False),
             )
-            return f"❌ 프롬프트 생성 중 오류 발생: {str(e)}"
+            return f"❌ Prompt generation failed: {str(e)}"
 
 if __name__ == "__main__":
     imaginer = ContentImaginer()
     print("\n" + "="*50)
-    print("🎨 [IMAGINER] 시각 에셋 기획 공정 가동")
-    target_input = input("👉 프롬프트를 생성할 영상의 URL 또는 ID를 입력하세요: ").strip()
+    print("🎨 [IMAGINER] Visual asset planning stage")
+    target_input = input("👉 Enter a video URL or ID for prompt generation: ").strip()
     
     if target_input:
         prompts = imaginer.generate_image_prompts(target_input)
         print("\n" + "="*50)
-        print("📸 생성된 AI 이미지 프롬프트:\n")
+        print("📸 Generated AI image prompts:\n")
         print(prompts)
