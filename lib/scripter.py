@@ -96,6 +96,18 @@ class ContentScripter:
                     f"[{item.get('type', 'line').upper()}] {item.get('content', '').strip()}"
                     for item in script_payload["script"]
                 ).strip()
+            elif isinstance(script_payload.get("script"), dict):
+                script_payload["script"] = json.dumps(
+                    script_payload["script"],
+                    ensure_ascii=False,
+                )
+            if not isinstance(script_payload.get("script"), str):
+                script_payload["script"] = str(script_payload.get("script", ""))
+            if isinstance(script_payload.get("citations"), list):
+                script_payload["citations"] = [
+                    item if isinstance(item, str) else json.dumps(item, ensure_ascii=False)
+                    for item in script_payload["citations"]
+                ]
             ensure_schema_version(script_payload, "1.0")
             validate_payload("script_output", script_payload)
 

@@ -169,7 +169,7 @@ def run_pipeline(video_input: str, refresh: bool = False) -> Dict[str, Any]:
         if verification_result.status != "pass":
             feedback = "; ".join(verification_result.errors)
             script_text, _ = _run_stage(
-                stage="script",
+                stage="script_repair",
                 run_id=run_id,
                 input_refs={"video_id": video_id, "retry": "validator_feedback"},
                 action=lambda: scripter.write_full_script_with_feedback(video_id, feedback),
@@ -228,15 +228,27 @@ def run_pipeline(video_input: str, refresh: bool = False) -> Dict[str, Any]:
             on_conflict="video_id",
         ).execute()
     except Exception as exc:
-        supabase.table("video_uploads").upsert(
-            {
-                "video_id": video_id,
-                "status": "failed",
-                "metadata_path": None,
-                "video_path": None,
-            },
-            on_conflict="video_id",
-        ).execute()
+        failure_payload = {
+            "video_id": video_id,
+            "status": "failed",
+        }
+        try:
+            supabase.table("video_uploads").upsert(
+                {
+                    **failure_payload,
+                    "metadata_path": None,
+                    "video_path": None,
+                },
+                on_conflict="video_id",
+            ).execute()
+        except Exception as insert_exc:
+            if "metadata_path" in str(insert_exc):
+                supabase.table("video_uploads").upsert(
+                    failure_payload,
+                    on_conflict="video_id",
+                ).execute()
+            else:
+                raise
         raise exc
 
     return {

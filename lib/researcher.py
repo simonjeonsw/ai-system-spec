@@ -68,8 +68,11 @@ class VideoResearcher:
             'quiet': True,
             'get_comments': True, 
             'max_comments': 30,  # Limit for efficiency
-            'extract_flat': False
+            'extract_flat': False,
         }
+        js_runtime = os.getenv("YTDLP_JS_RUNTIME")
+        if js_runtime:
+            ydl_opts["js_runtimes"] = [js_runtime]
         try:
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 url = f"https://www.youtube.com/watch?v={video_id}" if len(video_id) == 11 else video_id
