@@ -24,9 +24,9 @@ class VideoResearcher:
     def __init__(self):
         self.router = ModelRouter.from_env()
         # Available model mapping.
-        self.fast_model = "gemini-2.0-flash"
-        self.main_model = "gemini-2.0-flash"
-        self.heavy_model = "gemini-2.5-flash"
+        self.fast_model = "gemini-2.5-flash"
+        self.main_model = "gemini-2.5-flash"
+        self.heavy_model = "gemini-2.5-flash-lite"
 
     def _is_general_knowledge(self, claim: str) -> bool:
         return bool(
