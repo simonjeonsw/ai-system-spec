@@ -1,3 +1,4 @@
+import json
 import os
 import sys
 from pathlib import Path
@@ -8,7 +9,9 @@ sys.path.append(str(venv_path))
 
 from google.genai import Client
 from .supabase_client import supabase
+from .json_utils import ensure_schema_version, extract_json
 from .run_logger import build_metrics, emit_run_log
+from .schema_validator import validate_payload
 from dotenv import load_dotenv
 import re
 
@@ -65,6 +68,13 @@ class ContentScripter:
         3. Reflection: Actively apply the 'Optimization Tips' from the evaluator (e.g., condensing the hook, brand integration).
         4. Structure: Include visual cues [Visual] and Narration text [Narration].
         5. Pacing: Maintain the 'Pattern Interrupts' defined in the plan.
+        6. Output JSON only with this schema:
+           {{
+             "script": "...",
+             "citations": ["..."],
+             "schema_version": "1.0"
+           }}
+        7. Provide citations for any factual claims when possible.
         """
 
         try:
@@ -74,6 +84,10 @@ class ContentScripter:
                 contents=script_prompt
             )
             
+            script_payload = extract_json(response.text)
+            ensure_schema_version(script_payload, "1.0")
+            validate_payload("script_output", script_payload)
+
             # Consider storing script results in a dedicated table.
             emit_run_log(
                 stage="script",
@@ -81,7 +95,7 @@ class ContentScripter:
                 input_refs={"topic": topic},
                 metrics=build_metrics(cache_hit=False),
             )
-            return response.text
+            return json.dumps(script_payload, ensure_ascii=False, indent=2)
         except Exception as e:
             emit_run_log(
                 stage="script",
