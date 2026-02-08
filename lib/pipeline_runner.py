@@ -26,6 +26,60 @@ def _parse_payload(text: str) -> Dict[str, Any]:
     except json.JSONDecodeError:
         return extract_json(text)
 
+def _is_transient_error(exc: Exception) -> bool:
+    message = str(exc).lower()
+    return any(token in message for token in ("429", "5xx", "timeout", "resource_exhausted"))
+
+def _run_stage(
+    *,
+    stage: str,
+    run_id: str,
+    input_refs: Dict[str, Any],
+    action: Callable[[], Any],
+    max_retries: int = 3,
+    base_delay_s: float = 1.0,
+) -> Tuple[Any, int]:
+    last_error: Optional[Exception] = None
+    for attempt in range(1, max_retries + 1):
+        start_time = time.monotonic()
+        try:
+            result = action()
+            latency_ms = int((time.monotonic() - start_time) * 1000)
+            emit_run_log(
+                stage=stage,
+                status="success",
+                input_refs=input_refs,
+                output_refs={"status": "completed"},
+                metrics=build_metrics(
+                    latency_ms=latency_ms,
+                    cache_hit=False,
+                    retry_count=attempt - 1,
+                ),
+                attempts=attempt,
+                run_id=run_id,
+            )
+            return result, attempt
+        except Exception as exc:
+            last_error = exc
+            latency_ms = int((time.monotonic() - start_time) * 1000)
+            emit_run_log(
+                stage=stage,
+                status="failure",
+                input_refs=input_refs,
+                error_summary=str(exc),
+                metrics=build_metrics(
+                    latency_ms=latency_ms,
+                    cache_hit=False,
+                    retry_count=attempt - 1,
+                ),
+                attempts=attempt,
+                run_id=run_id,
+            )
+            if not _is_transient_error(exc) or attempt >= max_retries:
+                break
+            time.sleep(base_delay_s * (2 ** (attempt - 1)))
+    raise RuntimeError(f"{stage} failed after {max_retries} attempts") from last_error
+
 
 def _run_stage(
     *,
@@ -92,76 +146,88 @@ def run_pipeline(video_input: str, refresh: bool = False) -> Dict[str, Any]:
         metrics=build_metrics(cache_hit=False),
     )
 
-    research_text, _ = _run_stage(
-        stage="research",
-        run_id=run_id,
-        input_refs={"video_id": video_id, "refresh": refresh},
-        action=lambda: researcher.analyze_viral_strategy(video_id, force_update=refresh),
-    )
-    research_payload = _parse_payload(research_text)
+    try:
+        research_text, _ = _run_stage(
+            stage="research",
+            run_id=run_id,
+            input_refs={"video_id": video_id, "refresh": refresh},
+            action=lambda: researcher.analyze_viral_strategy(video_id, force_update=refresh),
+        )
+        research_payload = _parse_payload(research_text)
 
-    plan_text, _ = _run_stage(
-        stage="planner",
-        run_id=run_id,
-        input_refs={"video_id": video_id},
-        action=lambda: planner.create_project_plan(video_id),
-    )
-    if plan_text.startswith("❌"):
-        raise ValueError(plan_text)
-    plan_payload = _parse_payload(plan_text)
+        plan_text, _ = _run_stage(
+            stage="planner",
+            run_id=run_id,
+            input_refs={"video_id": video_id},
+            action=lambda: planner.create_project_plan(video_id),
+        )
+        if plan_text.startswith("❌"):
+            raise ValueError(plan_text)
+        plan_payload = _parse_payload(plan_text)
 
-    scene_output, _ = _run_stage(
-        stage="scene_builder",
-        run_id=run_id,
-        input_refs={"video_id": video_id},
-        action=lambda: scene_builder.build_scenes(research_payload),
-    )
-    save_json("scene_builder", video_id, scene_output)
-    supabase.table("video_scenes").upsert(
-        {
-            "video_id": video_id,
-            "content": json.dumps(scene_output, ensure_ascii=False),
-        },
-        on_conflict="video_id",
-    ).execute()
+        scene_output, _ = _run_stage(
+            stage="scene_builder",
+            run_id=run_id,
+            input_refs={"video_id": video_id},
+            action=lambda: scene_builder.build_scenes(research_payload),
+        )
+        save_json("scene_builder", video_id, scene_output)
+        supabase.table("video_scenes").upsert(
+            {
+                "video_id": video_id,
+                "content": json.dumps(scene_output, ensure_ascii=False),
+            },
+            on_conflict="video_id",
+        ).execute()
 
-    script_text, _ = _run_stage(
-        stage="script",
-        run_id=run_id,
-        input_refs={"video_id": video_id},
-        action=lambda: scripter.write_full_script(video_id),
-    )
-    if script_text.startswith("❌"):
-        raise ValueError(script_text)
-    script_payload = _parse_payload(script_text)
-    script_payload["video_id"] = video_id
-    supabase.table("scripts").insert(
-        {"content": json.dumps(script_payload, ensure_ascii=False)}
-    ).execute()
-    save_json("script", video_id, script_payload)
+        script_text, _ = _run_stage(
+            stage="script",
+            run_id=run_id,
+            input_refs={"video_id": video_id},
+            action=lambda: scripter.write_full_script(video_id),
+        )
+        if script_text.startswith("❌"):
+            raise ValueError(script_text)
+        script_payload = _parse_payload(script_text)
+        script_payload["video_id"] = video_id
+        supabase.table("scripts").insert(
+            {"content": json.dumps(script_payload, ensure_ascii=False)}
+        ).execute()
+        save_json("script", video_id, script_payload)
 
-    metadata_payload, _ = _run_stage(
-        stage="metadata",
-        run_id=run_id,
-        input_refs={"video_id": video_id},
-        action=lambda: generate_metadata(
-            plan_payload=plan_payload,
-            script_payload=script_payload,
-        ),
-    )
-    save_json("metadata", video_id, metadata_payload)
-    supabase.table("video_metadata").upsert(
-        {
-            "video_id": video_id,
-            "title": metadata_payload.get("title"),
-            "description": metadata_payload.get("description"),
-            "tags": metadata_payload.get("tags"),
-            "chapters": metadata_payload.get("chapters"),
-            "pinned_comment": metadata_payload.get("pinned_comment"),
-            "schema_version": metadata_payload.get("schema_version"),
-        },
-        on_conflict="video_id",
-    ).execute()
+        metadata_payload, _ = _run_stage(
+            stage="metadata",
+            run_id=run_id,
+            input_refs={"video_id": video_id},
+            action=lambda: generate_metadata(
+                plan_payload=plan_payload,
+                script_payload=script_payload,
+            ),
+        )
+        save_json("metadata", video_id, metadata_payload)
+        supabase.table("video_metadata").upsert(
+            {
+                "video_id": video_id,
+                "title": metadata_payload.get("title"),
+                "description": metadata_payload.get("description"),
+                "tags": metadata_payload.get("tags"),
+                "chapters": metadata_payload.get("chapters"),
+                "pinned_comment": metadata_payload.get("pinned_comment"),
+                "schema_version": metadata_payload.get("schema_version"),
+            },
+            on_conflict="video_id",
+        ).execute()
+    except Exception as exc:
+        supabase.table("video_uploads").upsert(
+            {
+                "video_id": video_id,
+                "status": "failed",
+                "metadata_path": None,
+                "video_path": None,
+            },
+            on_conflict="video_id",
+        ).execute()
+        raise exc
 
     return {
         "run_id": run_id,
