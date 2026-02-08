@@ -2,13 +2,13 @@ import os
 import sys
 from pathlib import Path
 
-# 경로 설정 (기존 설정 유지)
+# Path configuration.
 venv_path = Path(__file__).resolve().parent.parent / ".venv" / "Lib" / "site-packages"
 sys.path.append(str(venv_path))
 
-from google.genai import Client
 from .supabase_client import supabase
-from .run_logger import emit_run_log
+from .run_logger import build_metrics, emit_run_log
+from .model_router import ModelRouter
 from dotenv import load_dotenv
 import re
 
@@ -16,21 +16,20 @@ load_dotenv()
 
 class ContentEvaluator:
     def __init__(self):
-        self.client = Client(api_key=os.getenv("GEMINI_API_KEY"))
-        self.eval_model = "gemini-2.5-flash-lite"
+        self.router = ModelRouter.from_env()
 
     def extract_video_id(self, url):
-        """URL에서 11자리 비디오 ID 추출 (Planner와 로직 통일)"""
+        """Extract the 11-char YouTube video ID."""
         pattern = r"(?:v=|\/)([0-9A-Za-z_-]{11}).*"
         match = re.search(pattern, url)
         return match.group(1) if match else url
 
     def fetch_latest_plan(self, topic):
-        """planner.py가 저장한 최신 기획안 소환"""
+        """Fetch the latest planner output."""
         video_id = self.extract_video_id(topic)
-        print(f"🔍 DB에서 기획안 찾는 중... (ID: {video_id})")
+        print(f"🔍 Looking up plan in DB... (ID: {video_id})")
         
-        # ⚠️ 오류 수정: order("created_at", desc=True)로 변경하여 호환성 확보
+        # Use descending order for latest entry.
         res = supabase.table("planning_cache") \
             .select("*") \
             .ilike("topic", f"%{video_id}%") \
@@ -49,10 +48,11 @@ class ContentEvaluator:
                 status="failure",
                 input_refs={"topic": topic},
                 error_summary="planning_cache entry not found",
+                metrics=build_metrics(cache_hit=False),
             )
-            return "❌ 검수할 기획안을 DB에서 찾을 수 없습니다. 플래너(planner.py)를 먼저 가동해주세요."
+            return "❌ Plan not found in DB. Run the planner stage first."
 
-        # prompts/evaluator.md의 핵심 기준 반영
+        # Evaluation criteria based on prompts/evaluator.md
         eval_prompt = f"""
         # ROLE: Viral Content Quality Auditor
         # TASK: Evaluate the following YouTube plan based on strict viral criteria.
@@ -66,7 +66,7 @@ class ContentEvaluator:
         3. [STRUCTURE]: Are there pattern interrupts every 2-3 mins?
         4. [FEASIBILITY]: Is this script producible for our channel?
 
-        --- OUTPUT FORMAT (KOREAN) ---
+        --- OUTPUT FORMAT (ENGLISH) ---
         - Status: [PASS / FAIL / NEEDS REVISION]
         - Score: (0-100)
         - Critical Flaws: (List if any)
@@ -74,15 +74,12 @@ class ContentEvaluator:
         """
 
         try:
-            print(f"🧐 기획안 최종 검수 시작... (모델: {self.eval_model})")
-            response = self.client.models.generate_content(
-                model=self.eval_model,
-                contents=eval_prompt
-            )
+            print("🧐 Running plan evaluation...")
+            response_text = self.router.generate_content(eval_prompt)
             
-            # 검수 결과 DB 업데이트
+            # Update evaluation result
             supabase.table("planning_cache").update({
-                "eval_result": response.text
+                "eval_result": response_text
             }).eq("id", plan_data['id']).execute()
 
             emit_run_log(
@@ -90,25 +87,27 @@ class ContentEvaluator:
                 status="success",
                 input_refs={"topic": topic},
                 output_refs={"planning_cache": plan_data["id"]},
+                metrics=build_metrics(cache_hit=False),
             )
-            return response.text
+            return response_text
         except Exception as e:
             emit_run_log(
                 stage="qa",
                 status="failure",
                 input_refs={"topic": topic},
                 error_summary=str(e),
+                metrics=build_metrics(cache_hit=False),
             )
-            return f"❌ 검수 공정 중 오류 발생: {str(e)}"
+            return f"❌ Evaluation failed: {str(e)}"
 
 if __name__ == "__main__":
     evaluator = ContentEvaluator()
     print("\n" + "="*50)
-    print("⚖️ [EVALUATOR] 품질 검수 공정 가동")
-    target_input = input("👉 검수할 영상의 URL 또는 ID를 입력하세요: ").strip()
+    print("⚖️ [EVALUATOR] Quality review stage")
+    target_input = input("👉 Enter a video URL or ID to evaluate: ").strip()
     
     if target_input:
         result = evaluator.evaluate_plan(target_input)
         print("\n" + "="*50)
-        print("📋 최종 검수 보고서:\n")
+        print("📋 Evaluation report:\n")
         print(result)
