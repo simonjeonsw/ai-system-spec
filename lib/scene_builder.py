@@ -9,7 +9,8 @@ sys.path.append(str(venv_path))
 
 from google.genai import Client
 
-from .run_logger import emit_run_log
+from .json_utils import ensure_schema_version, extract_json
+from .run_logger import build_metrics, emit_run_log
 from .schema_validator import validate_payload
 
 
@@ -38,9 +39,10 @@ class SceneBuilder:
             model=self.model_id,
             contents=prompt_text,
         )
-        scene_output = json.loads(response.text)
+        scene_output = extract_json(response.text)
         if "scenes" in scene_output:
             for scene in scene_output["scenes"]:
+                ensure_schema_version(scene, "1.0")
                 validate_payload("scene_output", scene)
         else:
             raise ValueError("Scene output missing 'scenes' array.")
@@ -62,6 +64,7 @@ def main() -> int:
             stage="scene_builder",
             status="success",
             input_refs={"research_path": str(research_path)},
+            metrics=build_metrics(cache_hit=False),
         )
         print(json.dumps(scene_output, ensure_ascii=False, indent=2))
         return 0
@@ -71,6 +74,7 @@ def main() -> int:
             status="failure",
             input_refs={"research_path": str(research_path)},
             error_summary=str(exc),
+            metrics=build_metrics(cache_hit=False),
         )
         print(f"Scene build failed: {exc}", file=sys.stderr)
         return 1
