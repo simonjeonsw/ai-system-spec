@@ -8,9 +8,8 @@ from pathlib import Path
 venv_path = Path(__file__).resolve().parent.parent / ".venv" / "Lib" / "site-packages"
 sys.path.append(str(venv_path))
 
-from google.genai import Client
-
 from .json_utils import ensure_schema_version, extract_json
+from .model_router import ModelRouter
 from .run_logger import build_metrics, emit_run_log
 from .schema_validator import validate_payload
 from .storage_utils import normalize_video_id, save_json
@@ -19,8 +18,7 @@ from .supabase_client import supabase
 
 class SceneBuilder:
     def __init__(self) -> None:
-        self.client = Client(api_key=os.getenv("GEMINI_API_KEY"))
-        self.model_id = "gemini-2.0-flash"
+        self.router = ModelRouter.from_env()
 
     def build_scenes(self, research_payload: dict) -> dict:
         validate_payload("research_output", research_payload)
@@ -71,19 +69,11 @@ class SceneBuilder:
 
     def _generate_with_retry(self, prompt_text: str) -> dict:
         try:
-            response = self.client.models.generate_content(
-                model=self.model_id,
-                contents=prompt_text,
-            )
-            return extract_json(response.text)
+            return extract_json(self.router.generate_content(prompt_text))
         except Exception as exc:
             if "429" in str(exc) or "RESOURCE_EXHAUSTED" in str(exc):
                 time.sleep(2)
-                response = self.client.models.generate_content(
-                    model="gemini-1.5-flash",
-                    contents=prompt_text,
-                )
-                return extract_json(response.text)
+                return extract_json(self.router.generate_content(prompt_text))
             raise
 
     def _validate_scene_output(self, scene_output: dict) -> None:
@@ -96,11 +86,7 @@ class SceneBuilder:
 
     def _repair_scene_output(self, scene_output: dict, research_payload: dict) -> dict:
         prompt_text = self._build_prompt(research_payload, retry=True)
-        response = self.client.models.generate_content(
-            model=self.model_id,
-            contents=prompt_text,
-        )
-        return extract_json(response.text)
+        return extract_json(self.router.generate_content(prompt_text))
 
 
 def main() -> int:

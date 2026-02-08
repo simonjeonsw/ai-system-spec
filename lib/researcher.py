@@ -7,10 +7,10 @@ from pathlib import Path
 venv_path = Path(__file__).resolve().parent.parent / ".venv" / "Lib" / "site-packages"
 sys.path.append(str(venv_path))
 
-from google.genai import Client
 from .supabase_client import supabase
 from .trend_scout import TrendScout
 from .storage_utils import normalize_video_id, save_json
+from .model_router import ModelRouter
 from .json_utils import ensure_schema_version, extract_json
 from .run_logger import build_metrics, emit_run_log
 from .schema_validator import validate_payload
@@ -21,7 +21,7 @@ load_dotenv()
 
 class VideoResearcher:
     def __init__(self):
-        self.client = Client(api_key=os.getenv("GEMINI_API_KEY"))
+        self.router = ModelRouter.from_env()
         # Available model mapping.
         self.fast_model = "gemini-2.0-flash"
         self.main_model = "gemini-2.0-flash"
@@ -119,17 +119,11 @@ class VideoResearcher:
 
         analysis_result = ""
         try:
-            response = self.client.models.generate_content(
-                model=selected_model,
-                contents=prompt_text
-            )
-            analysis_result = response.text
+            analysis_result = self.router.generate_content(prompt_text)
         except Exception as e:
             if "429" in str(e):
-                fallback = self.heavy_model
-                print(f"⚠️ {selected_model} quota exceeded. Switching to {fallback}.")
-                response = self.client.models.generate_content(model=fallback, contents=prompt_text)
-                analysis_result = response.text
+                print("⚠️ Quota exceeded. Retrying with model rotation.")
+                analysis_result = self.router.generate_content(prompt_text)
             else:
                 emit_run_log(
                     stage="research",

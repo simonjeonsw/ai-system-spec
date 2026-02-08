@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 import json
+import os
 import sys
 from pathlib import Path
 from typing import Any, Dict, List
 
 from google.genai import Client
+from dotenv import load_dotenv
 
 from .json_utils import ensure_schema_version, extract_json
 from .run_logger import build_metrics, emit_run_log
@@ -78,16 +80,20 @@ def _validate_metadata_payload(payload: Dict[str, Any]) -> List[str]:
 
 
 def main() -> int:
-    if len(sys.argv) < 4:
+    if len(sys.argv) < 3:
         print(
-            "Usage: python -m lib.metadata_generator <plan_json> <script_json> <api_key>",
+            "Usage: python -m lib.metadata_generator <plan_json> <script_json>",
             file=sys.stderr,
         )
         return 1
 
     plan_path = Path(sys.argv[1])
     script_path = Path(sys.argv[2])
-    api_key = sys.argv[3]
+    load_dotenv()
+    api_key = os.getenv("YOUTUBE_API_KEY")
+    if not api_key:
+        print("Missing YOUTUBE_API_KEY in environment.", file=sys.stderr)
+        return 1
 
     plan_payload = _load_json(plan_path)
     script_payload = _load_json(script_path)

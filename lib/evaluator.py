@@ -6,9 +6,9 @@ from pathlib import Path
 venv_path = Path(__file__).resolve().parent.parent / ".venv" / "Lib" / "site-packages"
 sys.path.append(str(venv_path))
 
-from google.genai import Client
 from .supabase_client import supabase
 from .run_logger import build_metrics, emit_run_log
+from .model_router import ModelRouter
 from dotenv import load_dotenv
 import re
 
@@ -16,8 +16,7 @@ load_dotenv()
 
 class ContentEvaluator:
     def __init__(self):
-        self.client = Client(api_key=os.getenv("GEMINI_API_KEY"))
-        self.eval_model = "gemini-2.5-flash-lite"
+        self.router = ModelRouter.from_env()
 
     def extract_video_id(self, url):
         """Extract the 11-char YouTube video ID."""
@@ -75,15 +74,12 @@ class ContentEvaluator:
         """
 
         try:
-            print(f"🧐 Running plan evaluation... (model: {self.eval_model})")
-            response = self.client.models.generate_content(
-                model=self.eval_model,
-                contents=eval_prompt
-            )
+            print("🧐 Running plan evaluation...")
+            response_text = self.router.generate_content(eval_prompt)
             
             # Update evaluation result
             supabase.table("planning_cache").update({
-                "eval_result": response.text
+                "eval_result": response_text
             }).eq("id", plan_data['id']).execute()
 
             emit_run_log(
@@ -93,7 +89,7 @@ class ContentEvaluator:
                 output_refs={"planning_cache": plan_data["id"]},
                 metrics=build_metrics(cache_hit=False),
             )
-            return response.text
+            return response_text
         except Exception as e:
             emit_run_log(
                 stage="qa",

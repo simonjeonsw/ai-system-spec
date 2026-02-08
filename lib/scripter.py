@@ -7,9 +7,9 @@ from pathlib import Path
 venv_path = Path(__file__).resolve().parent.parent / ".venv" / "Lib" / "site-packages"
 sys.path.append(str(venv_path))
 
-from google.genai import Client
 from .supabase_client import supabase
 from .json_utils import ensure_schema_version, extract_json
+from .model_router import ModelRouter
 from .run_logger import build_metrics, emit_run_log
 from .schema_validator import validate_payload
 from .storage_utils import normalize_video_id, save_json
@@ -20,8 +20,7 @@ load_dotenv()
 
 class ContentScripter:
     def __init__(self):
-        self.client = Client(api_key=os.getenv("GEMINI_API_KEY"))
-        self.model_id = "gemini-2.5-flash-lite"
+        self.router = ModelRouter.from_env()
 
     def extract_video_id(self, url):
         pattern = r"(?:v=|\/)([0-9A-Za-z_-]{11}).*"
@@ -80,12 +79,7 @@ class ContentScripter:
 
         try:
             print(f"🎬 Writing script... (topic: {topic})")
-            response = self.client.models.generate_content(
-                model=self.model_id,
-                contents=script_prompt
-            )
-            
-            script_payload = extract_json(response.text)
+            script_payload = extract_json(self.router.generate_content(script_prompt))
             if isinstance(script_payload.get("script"), list):
                 script_payload["script"] = "\n".join(
                     f"[{item.get('type', 'line').upper()}] {item.get('content', '').strip()}"

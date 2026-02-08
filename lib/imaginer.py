@@ -6,9 +6,9 @@ from pathlib import Path
 venv_path = Path(__file__).resolve().parent.parent / ".venv" / "Lib" / "site-packages"
 sys.path.append(str(venv_path))
 
-from google.genai import Client
 from .supabase_client import supabase
 from .run_logger import build_metrics, emit_run_log
+from .model_router import ModelRouter
 from dotenv import load_dotenv
 import re
 
@@ -16,8 +16,7 @@ load_dotenv()
 
 class ContentImaginer:
     def __init__(self):
-        self.client = Client(api_key=os.getenv("GEMINI_API_KEY"))
-        self.model_id = "gemini-2.5-flash-lite"
+        self.router = ModelRouter.from_env()
 
     def extract_video_id(self, url):
         pattern = r"(?:v=|\/)([0-9A-Za-z_-]{11}).*"
@@ -67,10 +66,7 @@ class ContentImaginer:
 
         try:
             print(f"🎨 Generating visual asset prompts... (style: 3D Isometric, topic: {topic})")
-            response = self.client.models.generate_content(
-                model=self.model_id,
-                contents=prompt_text
-            )
+            response_text = self.router.generate_content(prompt_text)
             
             # Consider storing results in a dedicated table or log.
             emit_run_log(
@@ -79,7 +75,7 @@ class ContentImaginer:
                 input_refs={"topic": topic},
                 metrics=build_metrics(cache_hit=False),
             )
-            return response.text
+            return response_text
         except Exception as e:
             emit_run_log(
                 stage="visual",
