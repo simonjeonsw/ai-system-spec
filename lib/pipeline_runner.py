@@ -81,6 +81,57 @@ def _run_stage(
     raise RuntimeError(f"{stage} failed after {max_retries} attempts") from last_error
 
 
+def _run_stage(
+    *,
+    stage: str,
+    run_id: str,
+    input_refs: Dict[str, Any],
+    action: Callable[[], Any],
+    max_retries: int = 3,
+    base_delay_s: float = 1.0,
+) -> Tuple[Any, int]:
+    last_error: Optional[Exception] = None
+    for attempt in range(1, max_retries + 1):
+        start_time = time.monotonic()
+        try:
+            result = action()
+            latency_ms = int((time.monotonic() - start_time) * 1000)
+            emit_run_log(
+                stage=stage,
+                status="success",
+                input_refs=input_refs,
+                output_refs={"status": "completed"},
+                metrics=build_metrics(
+                    latency_ms=latency_ms,
+                    cache_hit=False,
+                    retry_count=attempt - 1,
+                ),
+                attempts=attempt,
+                run_id=run_id,
+            )
+            return result, attempt
+        except Exception as exc:
+            last_error = exc
+            latency_ms = int((time.monotonic() - start_time) * 1000)
+            emit_run_log(
+                stage=stage,
+                status="failure",
+                input_refs=input_refs,
+                error_summary=str(exc),
+                metrics=build_metrics(
+                    latency_ms=latency_ms,
+                    cache_hit=False,
+                    retry_count=attempt - 1,
+                ),
+                attempts=attempt,
+                run_id=run_id,
+            )
+            if attempt >= max_retries:
+                break
+            time.sleep(base_delay_s * (2 ** (attempt - 1)))
+    raise RuntimeError(f"{stage} failed after {max_retries} attempts") from last_error
+
+
 def run_pipeline(video_input: str, refresh: bool = False) -> Dict[str, Any]:
     video_id = normalize_video_id(video_input)
     researcher = VideoResearcher()
