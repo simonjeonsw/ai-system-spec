@@ -1,14 +1,18 @@
+import json
 import os
 import sys
 from pathlib import Path
 
-# 가상환경 및 라이브러리 경로 유지
+# Keep virtual environment path if used locally.
 venv_path = Path(__file__).resolve().parent.parent / ".venv" / "Lib" / "site-packages"
 sys.path.append(str(venv_path))
 
 from google.genai import Client
 from .supabase_client import supabase
-from .run_logger import emit_run_log
+from .json_utils import ensure_schema_version, extract_json
+from .run_logger import build_metrics, emit_run_log
+from .schema_validator import validate_payload
+from .storage_utils import normalize_video_id, save_json
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -16,113 +20,134 @@ load_dotenv()
 class ContentPlanner:
     def __init__(self):
         self.client = Client(api_key=os.getenv("GEMINI_API_KEY"))
-        # 안정적인 기획을 위해 main_model(2.0-flash) 사용
+        # Stable model for planning output.
         self.main_model = "gemini-2.5-flash"
 
     def fetch_research_data(self, topic):
-            """URL의 일부만 맞아도 데이터를 가져오도록 유연하게 검색"""
-            # topic 전체 일치 검색
-            res = supabase.table("research_cache").select("*").eq("topic", topic).execute()
+            """Fetch cached research by full topic or URL fragment."""
+            # Full-topic match
+            normalized_topic = normalize_video_id(topic)
+            res = supabase.table("research_cache").select("*").eq("topic", normalized_topic).execute()
             
-            # 만약 전체 일치로 안 나오면, ID(마지막 11자)만 추출해서 검색 시도
+            # If no full match, try by video ID.
             if not res.data and len(topic) > 11:
                 video_id = topic.split("v=")[-1].split("&")[0] if "v=" in topic else topic.split("/")[-1]
-                print(f"🔍 전체 URL로 검색 실패. ID({video_id})로 재검색 중...")
+                print(f"🔍 Full URL lookup failed. Retrying with ID ({video_id})...")
                 res = supabase.table("research_cache").select("*").ilike("topic", f"%{video_id}%").execute()
                 
             return res.data[0] if res.data else None
 
-    def create_project_plan(self, topic, target_persona="친절하지만 날카로운 통찰력을 가진 지식 전달자"):
-        """리서치 원료를 바탕으로 터지는 영상을 위한 전략 기획안 작성"""
-        
-        # 1. 원료 확보
+    def load_research_payload(self, topic: str) -> dict | None:
         research_data = self.fetch_research_data(topic)
         if not research_data:
-            return "❌ 리서치 데이터가 없습니다. 먼저 리서치 공정(VideoResearcher)을 가동해주세요."
+            return None
+        content = research_data.get("content")
+        if not content:
+            return None
+        try:
+            return json.loads(content)
+        except json.JSONDecodeError:
+            return extract_json(content)
 
-        # 2. 전략기획형 프롬프트 (대본 공학 및 알고리즘 최적화 반영)
-        # [최종 보정] 지시문은 영어로(Logic), 출력은 한글로(Content)
+    def create_project_plan(self, topic, target_persona="insightful finance explainer"):
+        """Create a planner output that matches the planner_output schema."""
+        normalized_topic = normalize_video_id(topic)
+        # 1. Load research payload
+        research_payload = self.load_research_payload(normalized_topic)
+        if not research_payload:
+            return "❌ Research data not found. Run the research stage first."
+
+        # 2. Planner prompt (English JSON output only)
         prompt_text = f"""
-        # ROLE: World-class YouTube Content Strategist & Scriptwriter
-        # TASK: Create a high-performance video production plan based on research data.
-        
-        [INPUT DATA]
-        - Topic: {research_data['topic']}
-        - Research Analysis: {research_data['deep_analysis']}
-        - Raw Transcript: {research_data.get('raw_transcript', 'N/A')[:3000]}
+        You are the Planner agent. Return JSON only that matches this schema:
+        {{
+          "topic_candidates": [{{"topic": "...", "scores": {{"audience_fit": 0, "novelty": 0, "monetization_potential": 0, "evidence_availability": 0, "production_feasibility": 0}}, "total_score": 0, "notes": "..."}}],
+          "topic": "...",
+          "target_audience": "...",
+          "business_goal": "...",
+          "monetization_angle": "...",
+          "retention_hypothesis": "...",
+          "content_constraints": ["..."],
+          "research_requirements": ["..."],
+          "selection_rationale": "...",
+          "schema_version": "1.0"
+        }}
 
-        --- SYSTEM INSTRUCTIONS ---
-        1. PERSOAN: {target_persona}
-        2. GOAL: Maximize AVD (Average View Duration) and CTR (Click-Through Rate).
-        3. OUTPUT LANGUAGE: All content must be written in KOREAN, but technical terms can be in English.
+        Constraints:
+        - Output English only.
+        - Provide 3-5 topic_candidates with scores from 1-5 and total_score.
+        - Select the highest scoring topic and justify selection_rationale.
+        - Use target persona: {target_persona}.
 
-        --- REQUIRED OUTPUT SECTIONS ---
-        
-        1. [Title & Thumbnail Strategy]
-           - Suggest 3 high-CTR titles in Korean.
-           - Describe visual thumbnail concepts that evoke curiosity or FOMO.
-
-        2. [Retention-Driven Script Structure]
-           - 0~30s (Hook): Define the specific promise and stakes.
-           - Pacing: Plan 'Pattern Interrupts' every 2-3 minutes to maintain tension.
-
-        3. [Master Script Draft (KOREAN)]
-           - Write a full script draft using the tone of {target_persona}.
-           - Include visual cues and easy metaphors.
-
-        4. [Shorts Expansion]
-           - Recommend 2 highlight moments for YouTube Shorts with specific hook lines.
-
-        5. [Executive Summary (ENGLISH)]
-           - Brief strategic overview for reference.
+        Research JSON:
+        {json.dumps(research_payload, ensure_ascii=False)}
         """
 
-        print(f"🚀 전략기획 공정 가동 중... (대상: {topic})")
+        print(f"🚀 Planning stage running... (topic: {normalized_topic})")
         
         try:
-            # 3. AI 기획안 생성 (Gemini 호출)
+            # 3. Generate planner output
             response = self.client.models.generate_content(
                 model=self.main_model,
                 contents=prompt_text
             )
-            plan_result = response.text
+            plan_payload = extract_json(response.text)
+            ensure_schema_version(plan_payload, "1.0")
+            validate_payload("planner_output", plan_payload)
 
-            # 4. 기획안 저장 (planning_cache 테이블)
+            # 4. Store planner output
             supabase.table("planning_cache").insert({
-                "topic": topic,
-                "plan_content": plan_result
+                "topic": normalized_topic,
+                "plan_content": json.dumps(plan_payload, ensure_ascii=False)
             }).execute()
+            save_json("planner", normalized_topic, plan_payload)
 
             emit_run_log(
                 stage="planner",
                 status="success",
-                input_refs={"topic": topic},
+                input_refs={"topic": normalized_topic},
                 output_refs={"planning_cache": "inserted"},
+                metrics=build_metrics(cache_hit=False),
             )
-            return plan_result
+            return json.dumps(plan_payload, ensure_ascii=False, indent=2)
 
         except Exception as e:
             emit_run_log(
                 stage="planner",
                 status="failure",
-                input_refs={"topic": topic},
+                input_refs={"topic": normalized_topic},
                 error_summary=str(e),
+                metrics=build_metrics(cache_hit=False),
             )
-            return f"❌ 기획 공정 중 오류 발생: {str(e)}"
+            return f"❌ Planner stage failed: {str(e)}"
 
 
 
-# --- 파일 하단 실행부(Main)를 리서처와 똑같이 입력 방식으로 변경 ---
+# --- CLI entrypoint ---
 if __name__ == "__main__":
     planner = ContentPlanner()
     
     print("\n" + "="*50)
-    print("🚀 [PLANNING STAGE] 유튜브 기획 공정 가동")
-    target_url = input("👉 기획할 유튜브 URL을 입력하세요 (리서치가 완료된 것): ").strip()
+    print("🚀 [PLANNING STAGE] YouTube planning stage")
+    target_url = input("👉 Enter a YouTube URL (research must be completed): ").strip()
     
     if target_url:
-        # 기획안 생성 실행
-        result = planner.create_project_plan(target_url)
+        normalized_topic = normalize_video_id(target_url)
+        cached = supabase.table("planning_cache").select("*").eq("topic", normalized_topic).execute()
+        force_refresh = False
+        if cached.data:
+            choice = input("Existing data found. Use cached data or force a refresh? (y/n): ").strip().lower()
+            force_refresh = choice == "n"
+
+        if cached.data and cached.data[0].get("plan_content") and not force_refresh:
+            try:
+                cached_payload = json.loads(cached.data[0]["plan_content"])
+                save_json("planner", normalized_topic, cached_payload)
+                result = json.dumps(cached_payload, ensure_ascii=False, indent=2)
+            except json.JSONDecodeError:
+                result = cached.data[0]["plan_content"]
+        else:
+            result = planner.create_project_plan(normalized_topic)
         print("\n" + "="*50)
-        print("📝 생성된 기획안:\n")
+        print("📝 Generated plan:\n")
         print(result)

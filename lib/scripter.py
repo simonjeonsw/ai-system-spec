@@ -1,14 +1,18 @@
+import json
 import os
 import sys
 from pathlib import Path
 
-# 경로 설정 및 라이브러리 연동 (더블체크 완료)
+# Path and library wiring.
 venv_path = Path(__file__).resolve().parent.parent / ".venv" / "Lib" / "site-packages"
 sys.path.append(str(venv_path))
 
 from google.genai import Client
 from .supabase_client import supabase
-from .run_logger import emit_run_log
+from .json_utils import ensure_schema_version, extract_json
+from .run_logger import build_metrics, emit_run_log
+from .schema_validator import validate_payload
+from .storage_utils import normalize_video_id, save_json
 from dotenv import load_dotenv
 import re
 
@@ -25,8 +29,8 @@ class ContentScripter:
         return match.group(1) if match else url
 
     def fetch_approved_plan(self, topic):
-        """승인된 기획안과 검수 결과(피드백)를 소환"""
-        video_id = self.extract_video_id(topic)
+        """Fetch the latest approved plan and evaluator feedback."""
+        video_id = normalize_video_id(topic)
         res = supabase.table("planning_cache") \
             .select("*") \
             .ilike("topic", f"%{video_id}%") \
@@ -44,13 +48,14 @@ class ContentScripter:
                 status="failure",
                 input_refs={"topic": topic},
                 error_summary="approved plan not found",
+                metrics=build_metrics(cache_hit=False),
             )
-            return "❌ 승인된 기획안이 없습니다. Evaluator 공정을 먼저 통과시켜주세요."
+            return "❌ Approved plan not found. Run the evaluator stage first."
 
-        # 프롬프트 구성: 기획안 + 검수 피드백 반영
+        # Prompt composition: plan + evaluator feedback
         script_prompt = f"""
-        # ROLE: professional YouTube Scriptwriter (Channel: 유치한 경제학)
-        # TASK: Write a word-for-word narration script based on the approved plan and evaluator feedback.
+        # ROLE: professional YouTube Scriptwriter (Channel: Finance Explainer)
+        # TASK: Produce a JSON-only script output based on the approved plan and evaluator feedback.
 
         [APPROVED PLAN]
         {plan_data['plan_content']}
@@ -59,46 +64,93 @@ class ContentScripter:
         {plan_data.get('eval_result', 'No specific feedback')}
 
         --- WRITING RULES ---
-        1. Language: Natural, conversational KOREAN (구어체).
-        2. Tone: Kind but sharp (친절하지만 날카로운 통찰).
+        1. Language: Natural, conversational English.
+        2. Tone: Kind but incisive.
         3. Reflection: Actively apply the 'Optimization Tips' from the evaluator (e.g., condensing the hook, brand integration).
         4. Structure: Include visual cues [Visual] and Narration text [Narration].
         5. Pacing: Maintain the 'Pattern Interrupts' defined in the plan.
+        6. Output JSON only with this schema:
+           {{
+             "script": "...",
+             "citations": ["..."],
+             "schema_version": "1.0"
+           }}
+        7. Provide citations for any factual claims when possible.
         """
 
         try:
-            print(f"🎬 최종 대본 집필 중... (대상: {topic})")
+            print(f"🎬 Writing script... (topic: {topic})")
             response = self.client.models.generate_content(
                 model=self.model_id,
                 contents=script_prompt
             )
             
-            # 대본 결과 저장 (컬럼이 없다면 추가가 필요할 수 있음)
-            # 여기서는 편의상 planning_cache의 새로운 컬럼이나 별도 로그로 처리 가능
-            # 일단 결과 반환에 집중합니다.
+            script_payload = extract_json(response.text)
+            if isinstance(script_payload.get("script"), list):
+                script_payload["script"] = "\n".join(
+                    f"[{item.get('type', 'line').upper()}] {item.get('content', '').strip()}"
+                    for item in script_payload["script"]
+                ).strip()
+            ensure_schema_version(script_payload, "1.0")
+            validate_payload("script_output", script_payload)
+
+            # Consider storing script results in a dedicated table.
             emit_run_log(
                 stage="script",
                 status="success",
                 input_refs={"topic": topic},
+                metrics=build_metrics(cache_hit=False),
             )
-            return response.text
+            return json.dumps(script_payload, ensure_ascii=False, indent=2)
         except Exception as e:
             emit_run_log(
                 stage="script",
                 status="failure",
                 input_refs={"topic": topic},
                 error_summary=str(e),
+                metrics=build_metrics(cache_hit=False),
             )
-            return f"❌ 대본 집필 중 오류 발생: {str(e)}"
+            return f"❌ Script generation failed: {str(e)}"
 
 if __name__ == "__main__":
     scripter = ContentScripter()
     print("\n" + "="*50)
-    print("✍️ [SCRIPTER] 상세 대본 집필 공정 가동")
-    target_input = input("👉 대본을 쓸 영상의 URL 또는 ID를 입력하세요: ").strip()
+    print("✍️ [SCRIPTER] Script drafting stage")
+    target_input = input("👉 Enter a video URL or ID for script drafting: ").strip()
     
     if target_input:
-        script = scripter.write_full_script(target_input)
+        video_id = normalize_video_id(target_input)
+        cached = (
+            supabase.table("scripts")
+            .select("*")
+            .ilike("content", f"%{video_id}%")
+            .order("created_at", desc=True)
+            .limit(1)
+            .execute()
+        )
+        force_refresh = False
+        if cached.data:
+            choice = input("Existing data found. Use cached data or force a refresh? (y/n): ").strip().lower()
+            force_refresh = choice == "n"
+
+        if cached.data and cached.data[0].get("content") and not force_refresh:
+            cached_content = cached.data[0]["content"]
+            try:
+                cached_payload = json.loads(cached_content)
+                save_json("script", video_id, cached_payload)
+                script = json.dumps(cached_payload, ensure_ascii=False, indent=2)
+            except json.JSONDecodeError:
+                script = cached_content
+        else:
+            script = scripter.write_full_script(video_id)
+            try:
+                payload = json.loads(script)
+                payload["video_id"] = video_id
+                supabase.table("scripts").insert({"content": json.dumps(payload, ensure_ascii=False)}).execute()
+                save_json("script", video_id, payload)
+            except json.JSONDecodeError:
+                pass
+
         print("\n" + "="*50)
-        print("📜 최종 완성 대본:\n")
+        print("📜 Final script:\n")
         print(script)
