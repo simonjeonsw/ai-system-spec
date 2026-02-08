@@ -38,7 +38,30 @@ class ContentScripter:
             .execute()
         return res.data[0] if res.data else None
 
-    def write_full_script(self, topic):
+    def write_full_script(
+        self,
+        topic,
+        source_ids: list[str] | None = None,
+        mode: str = "long",
+    ):
+        return self._write_script(topic, feedback=None, source_ids=source_ids, mode=mode)
+
+    def write_full_script_with_feedback(
+        self,
+        topic,
+        feedback: str,
+        source_ids: list[str] | None = None,
+        mode: str = "long",
+    ):
+        return self._write_script(topic, feedback=feedback, source_ids=source_ids, mode=mode)
+
+    def _write_script(
+        self,
+        topic,
+        feedback: str | None,
+        source_ids: list[str] | None,
+        mode: str,
+    ):
         plan_data = self.fetch_approved_plan(topic)
         
         if not plan_data:
@@ -51,6 +74,10 @@ class ContentScripter:
             )
             return "❌ Approved plan not found. Run the evaluator stage first."
 
+        feedback_text = feedback or "No additional feedback."
+        target_words = "750-900" if mode == "long" else "120-160"
+        target_runtime = "5-6 minutes" if mode == "long" else "60 seconds"
+        source_list = ", ".join(source_ids or [])
         # Prompt composition: plan + evaluator feedback
         script_prompt = f"""
         # ROLE: professional YouTube Scriptwriter (Channel: Finance Explainer)
@@ -62,19 +89,28 @@ class ContentScripter:
         [EVALUATOR FEEDBACK]
         {plan_data.get('eval_result', 'No specific feedback')}
 
+        [VALIDATION FEEDBACK]
+        {feedback_text}
+
+        [AVAILABLE SOURCE IDS]
+        {source_list}
+
         --- WRITING RULES ---
         1. Language: Natural, conversational English.
         2. Tone: Kind but incisive.
         3. Reflection: Actively apply the 'Optimization Tips' from the evaluator (e.g., condensing the hook, brand integration).
         4. Structure: Include visual cues [Visual] and Narration text [Narration].
-        5. Pacing: Maintain the 'Pattern Interrupts' defined in the plan.
-        6. Output JSON only with this schema:
+        5. Pacing: Use the 3-Step Retention Structure (Negative Hook -> Mid-Reward -> Open Loop).
+        6. Runtime target: {target_runtime} (~{target_words} words).
+        7. Output JSON only with this schema:
            {{
              "script": "...",
              "citations": ["..."],
              "schema_version": "1.0"
            }}
-        7. Provide citations for any factual claims when possible.
+        8. Use the AVAILABLE SOURCE IDS list. Add inline citations like [src-001] for factual claims.
+        9. Ensure at least one cited sentence per section when possible.
+        10. Provide citations list that includes the same source_id tokens.
         """
 
         try:
@@ -85,8 +121,25 @@ class ContentScripter:
                     f"[{item.get('type', 'line').upper()}] {item.get('content', '').strip()}"
                     for item in script_payload["script"]
                 ).strip()
+            elif isinstance(script_payload.get("script"), dict):
+                script_payload["script"] = json.dumps(
+                    script_payload["script"],
+                    ensure_ascii=False,
+                )
+            if not isinstance(script_payload.get("script"), str):
+                script_payload["script"] = str(script_payload.get("script", ""))
+            if isinstance(script_payload.get("citations"), list):
+                script_payload["citations"] = [
+                    item if isinstance(item, str) else json.dumps(item, ensure_ascii=False)
+                    for item in script_payload["citations"]
+                ]
             ensure_schema_version(script_payload, "1.0")
             validate_payload("script_output", script_payload)
+            word_count = len(script_payload.get("script", "").split())
+            if mode == "long" and word_count < 650:
+                script_payload = self._extend_script(script_payload, target_words)
+                ensure_schema_version(script_payload, "1.0")
+                validate_payload("script_output", script_payload)
 
             # Consider storing script results in a dedicated table.
             emit_run_log(
@@ -105,6 +158,37 @@ class ContentScripter:
                 metrics=build_metrics(cache_hit=False),
             )
             return f"❌ Script generation failed: {str(e)}"
+
+    def _extend_script(self, script_payload: dict, target_words: str) -> dict:
+        prompt = f"""
+        Expand the following script to reach ~{target_words} words.
+        Preserve citations and add more evidence-backed detail where needed.
+        Return JSON only with schema:
+        {{
+          "script": "...",
+          "citations": ["..."],
+          "schema_version": "1.0"
+        }}
+
+        Script JSON:
+        {json.dumps(script_payload, ensure_ascii=False)}
+        """
+        expanded_payload = extract_json(self.router.generate_content(prompt))
+        if isinstance(expanded_payload.get("script"), list):
+            expanded_payload["script"] = "\n".join(
+                f"[{item.get('type', 'line').upper()}] {item.get('content', '').strip()}"
+                for item in expanded_payload["script"]
+            ).strip()
+        elif isinstance(expanded_payload.get("script"), dict):
+            expanded_payload["script"] = json.dumps(expanded_payload["script"], ensure_ascii=False)
+        if not isinstance(expanded_payload.get("script"), str):
+            expanded_payload["script"] = str(expanded_payload.get("script", ""))
+        if isinstance(expanded_payload.get("citations"), list):
+            expanded_payload["citations"] = [
+                item if isinstance(item, str) else json.dumps(item, ensure_ascii=False)
+                for item in expanded_payload["citations"]
+            ]
+        return expanded_payload
 
 if __name__ == "__main__":
     scripter = ContentScripter()
