@@ -28,7 +28,13 @@ python -m lib.validation_runner scene spec/samples/scene_output_sample.json
 python -m lib.validation_runner script spec/samples/script_output_sample.json
 python -m lib.validation_runner all --url <youtube_url_or_id>
 
-8. QA gate decision (qa_gate.py)
+8. Analytics collection (analytics_collector.py)
+python -m lib.analytics_collector <video_id> [start_date] [end_date]
+
+9. End-to-end runner (pipeline_runner.py)
+python -m lib.pipeline_runner --url <youtube_url_or_id> --validate
+
+10. QA gate decision (qa_gate.py)
 python -m lib.qa_gate spec/samples/metrics_sample.json
 
 Environment:

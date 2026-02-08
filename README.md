@@ -62,6 +62,8 @@ python -m lib.scene_builder
 python -m lib.scripter
 python -m lib.metadata_generator data/planner_<video_id>.json data/script_<video_id>.json
 python -m lib.validation_runner all --url <youtube_url_or_id>
+python -m lib.analytics_collector <video_id> [start_date] [end_date]
+python -m lib.pipeline_runner --url <youtube_url_or_id> --validate
 ```
 
 ### Environment Setup
