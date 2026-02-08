@@ -38,7 +38,13 @@ class ContentScripter:
             .execute()
         return res.data[0] if res.data else None
 
-    def write_full_script(self, topic):
+    def write_full_script(self, topic, source_ids: list[str] | None = None):
+        return self._write_script(topic, feedback=None, source_ids=source_ids)
+
+    def write_full_script_with_feedback(self, topic, feedback: str, source_ids: list[str] | None = None):
+        return self._write_script(topic, feedback=feedback, source_ids=source_ids)
+
+    def _write_script(self, topic, feedback: str | None, source_ids: list[str] | None):
         plan_data = self.fetch_approved_plan(topic)
         
         if not plan_data:
@@ -51,6 +57,8 @@ class ContentScripter:
             )
             return "❌ Approved plan not found. Run the evaluator stage first."
 
+        feedback_text = feedback or "No additional feedback."
+        source_list = ", ".join(source_ids or [])
         # Prompt composition: plan + evaluator feedback
         script_prompt = f"""
         # ROLE: professional YouTube Scriptwriter (Channel: Finance Explainer)
@@ -61,6 +69,12 @@ class ContentScripter:
 
         [EVALUATOR FEEDBACK]
         {plan_data.get('eval_result', 'No specific feedback')}
+
+        [VALIDATION FEEDBACK]
+        {feedback_text}
+
+        [AVAILABLE SOURCE IDS]
+        {source_list}
 
         --- WRITING RULES ---
         1. Language: Natural, conversational English.
@@ -74,7 +88,9 @@ class ContentScripter:
              "citations": ["..."],
              "schema_version": "1.0"
            }}
-        7. Provide citations for any factual claims when possible.
+        7. Use the AVAILABLE SOURCE IDS list. Add inline citations like [src-001] for factual claims.
+        8. Ensure at least one cited sentence per section when possible.
+        9. Provide citations list that includes the same source_id tokens.
         """
 
         try:
@@ -85,6 +101,18 @@ class ContentScripter:
                     f"[{item.get('type', 'line').upper()}] {item.get('content', '').strip()}"
                     for item in script_payload["script"]
                 ).strip()
+            elif isinstance(script_payload.get("script"), dict):
+                script_payload["script"] = json.dumps(
+                    script_payload["script"],
+                    ensure_ascii=False,
+                )
+            if not isinstance(script_payload.get("script"), str):
+                script_payload["script"] = str(script_payload.get("script", ""))
+            if isinstance(script_payload.get("citations"), list):
+                script_payload["citations"] = [
+                    item if isinstance(item, str) else json.dumps(item, ensure_ascii=False)
+                    for item in script_payload["citations"]
+                ]
             ensure_schema_version(script_payload, "1.0")
             validate_payload("script_output", script_payload)
 
