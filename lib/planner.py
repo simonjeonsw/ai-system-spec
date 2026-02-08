@@ -86,7 +86,7 @@ class ContentPlanner:
         try:
             # 3. Generate planner output
             response_text = self.router.generate_content(prompt_text)
-            plan_payload = extract_json(response_text)
+            plan_payload = self._parse_with_retry(prompt_text, response_text)
             ensure_schema_version(plan_payload, "1.0")
             validate_payload("planner_output", plan_payload)
 
@@ -118,6 +118,19 @@ class ContentPlanner:
                 metrics=build_metrics(cache_hit=False),
             )
             return f"❌ Planner stage failed: {str(e)}"
+
+    def _parse_with_retry(self, prompt_text: str, response_text: str, max_attempts: int = 2) -> dict:
+        try:
+            return extract_json(response_text)
+        except Exception:
+            if max_attempts <= 1:
+                raise
+            repair_prompt = (
+                "Return ONLY valid JSON. Ensure all commas and quotes are correct. "
+                "Do not include commentary. Output must match the schema exactly.\n"
+            )
+            retry_text = self.router.generate_content(repair_prompt + prompt_text)
+            return extract_json(retry_text)
 
 
 

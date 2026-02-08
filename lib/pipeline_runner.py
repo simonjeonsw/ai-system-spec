@@ -40,6 +40,10 @@ def _is_transient_error(exc: Exception) -> bool:
     message = str(exc).lower()
     return any(token in message for token in ("429", "5xx", "timeout", "resource_exhausted"))
 
+def _log_run_id(root_run_id: str, stage: str, attempt: int) -> str:
+    return f"{root_run_id}:{stage}:{attempt}"
+
+
 def _run_stage(
     *,
     stage: str,
@@ -58,7 +62,7 @@ def _run_stage(
             emit_run_log(
                 stage=stage,
                 status="success",
-                input_refs=input_refs,
+                input_refs={**input_refs, "root_run_id": run_id},
                 output_refs={"status": "completed"},
                 metrics=build_metrics(
                     latency_ms=latency_ms,
@@ -66,7 +70,7 @@ def _run_stage(
                     retry_count=attempt - 1,
                 ),
                 attempts=attempt,
-                run_id=run_id,
+                run_id=_log_run_id(run_id, stage, attempt),
             )
             return result, attempt
         except Exception as exc:
@@ -75,7 +79,7 @@ def _run_stage(
             emit_run_log(
                 stage=stage,
                 status="failure",
-                input_refs=input_refs,
+                input_refs={**input_refs, "root_run_id": run_id},
                 error_summary=str(exc),
                 metrics=build_metrics(
                     latency_ms=latency_ms,
@@ -83,7 +87,7 @@ def _run_stage(
                     retry_count=attempt - 1,
                 ),
                 attempts=attempt,
-                run_id=run_id,
+                run_id=_log_run_id(run_id, stage, attempt),
             )
             if not _is_transient_error(exc) or attempt >= max_retries:
                 break
@@ -166,10 +170,10 @@ def run_pipeline(video_input: str, refresh: bool = False) -> Dict[str, Any]:
             emit_run_log(
                 stage="validator",
                 status="success" if verification_result.status == "pass" else "failure",
-                input_refs={"video_id": video_id},
+                input_refs={"video_id": video_id, "root_run_id": run_id},
                 output_refs={"verification_report": verification_report},
                 metrics=build_metrics(cache_hit=False),
-                run_id=run_id,
+                run_id=_log_run_id(run_id, "validator", 1),
             )
 
             if verification_result.status != "pass":
@@ -199,10 +203,14 @@ def run_pipeline(video_input: str, refresh: bool = False) -> Dict[str, Any]:
                 emit_run_log(
                     stage="validator",
                     status="success" if verification_result.status == "pass" else "failure",
-                    input_refs={"video_id": video_id, "retry": "validator_feedback"},
+                    input_refs={
+                        "video_id": video_id,
+                        "retry": "validator_feedback",
+                        "root_run_id": run_id,
+                    },
                     output_refs={"verification_report": verification_report},
                     metrics=build_metrics(cache_hit=False),
-                    run_id=run_id,
+                    run_id=_log_run_id(run_id, "validator", 2),
                 )
                 if verification_result.status != "pass":
                     raise ValueError("Script validation failed after auto-repair attempt.")
