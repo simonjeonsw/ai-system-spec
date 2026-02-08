@@ -27,6 +27,40 @@ class VideoResearcher:
         self.main_model = "gemini-2.0-flash"
         self.heavy_model = "gemini-2.5-flash"
 
+    def _validate_source_governance(self, payload: dict) -> None:
+        sources = {item.get("source_id"): item for item in payload.get("sources", [])}
+        key_fact_sources = payload.get("key_fact_sources", [])
+        missing_sources = []
+        uncorroborated_claims = []
+        non_tier12_claims = []
+
+        for entry in key_fact_sources:
+            claim = entry.get("claim", "")
+            source_ids = entry.get("source_ids", [])
+            if not source_ids:
+                missing_sources.append(claim)
+                continue
+            unique_ids = list(dict.fromkeys(source_ids))
+            if len(unique_ids) < 2:
+                uncorroborated_claims.append(claim)
+            tiers = [
+                sources.get(source_id, {}).get("source_tier")
+                for source_id in unique_ids
+                if sources.get(source_id)
+            ]
+            if not any(tier in {"tier_1", "tier_2"} for tier in tiers):
+                non_tier12_claims.append(claim)
+
+        if missing_sources or uncorroborated_claims or non_tier12_claims:
+            details = []
+            if missing_sources:
+                details.append(f"missing_sources={missing_sources}")
+            if uncorroborated_claims:
+                details.append(f"uncorroborated_claims={uncorroborated_claims}")
+            if non_tier12_claims:
+                details.append(f"non_tier12_claims={non_tier12_claims}")
+            raise ValueError(f"Source governance validation failed: {', '.join(details)}")
+
     def get_video_transcript(self, video_id):
         """Fetch metadata and comments for analysis."""
         ydl_opts = {
@@ -34,8 +68,11 @@ class VideoResearcher:
             'quiet': True,
             'get_comments': True, 
             'max_comments': 30,  # Limit for efficiency
-            'extract_flat': False
+            'extract_flat': False,
         }
+        js_runtime = os.getenv("YTDLP_JS_RUNTIME")
+        if js_runtime:
+            ydl_opts["js_runtimes"] = [js_runtime]
         try:
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 url = f"https://www.youtube.com/watch?v={video_id}" if len(video_id) == 11 else video_id
@@ -147,6 +184,7 @@ class VideoResearcher:
                 research_payload = extract_json(analysis_result)
                 ensure_schema_version(research_payload, "1.0")
                 validate_payload("research_output", research_payload)
+                self._validate_source_governance(research_payload)
                 supabase.table("research_cache").upsert({
                     "topic": normalized_topic,
                     "content": json.dumps(research_payload, ensure_ascii=False),
