@@ -4,8 +4,9 @@ from __future__ import annotations
 
 import argparse
 import json
+import time
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Callable, Dict, Optional, Tuple
 
 from .json_utils import extract_json
 from .metadata_generator import generate_metadata
@@ -13,6 +14,7 @@ from .planner import ContentPlanner
 from .researcher import VideoResearcher
 from .scene_builder import SceneBuilder
 from .scripter import ContentScripter
+from .run_logger import build_metrics, emit_run_log
 from .storage_utils import normalize_video_id, save_json
 from .supabase_client import supabase
 from .validation_runner import validate_all
@@ -25,22 +27,95 @@ def _parse_payload(text: str) -> Dict[str, Any]:
         return extract_json(text)
 
 
+def _run_stage(
+    *,
+    stage: str,
+    run_id: str,
+    input_refs: Dict[str, Any],
+    action: Callable[[], Any],
+    max_retries: int = 3,
+    base_delay_s: float = 1.0,
+) -> Tuple[Any, int]:
+    last_error: Optional[Exception] = None
+    for attempt in range(1, max_retries + 1):
+        start_time = time.monotonic()
+        try:
+            result = action()
+            latency_ms = int((time.monotonic() - start_time) * 1000)
+            emit_run_log(
+                stage=stage,
+                status="success",
+                input_refs=input_refs,
+                output_refs={"status": "completed"},
+                metrics=build_metrics(
+                    latency_ms=latency_ms,
+                    cache_hit=False,
+                    retry_count=attempt - 1,
+                ),
+                attempts=attempt,
+                run_id=run_id,
+            )
+            return result, attempt
+        except Exception as exc:
+            last_error = exc
+            latency_ms = int((time.monotonic() - start_time) * 1000)
+            emit_run_log(
+                stage=stage,
+                status="failure",
+                input_refs=input_refs,
+                error_summary=str(exc),
+                metrics=build_metrics(
+                    latency_ms=latency_ms,
+                    cache_hit=False,
+                    retry_count=attempt - 1,
+                ),
+                attempts=attempt,
+                run_id=run_id,
+            )
+            if attempt >= max_retries:
+                break
+            time.sleep(base_delay_s * (2 ** (attempt - 1)))
+    raise RuntimeError(f"{stage} failed after {max_retries} attempts") from last_error
+
+
 def run_pipeline(video_input: str, refresh: bool = False) -> Dict[str, Any]:
     video_id = normalize_video_id(video_input)
     researcher = VideoResearcher()
     planner = ContentPlanner()
     scripter = ContentScripter()
     scene_builder = SceneBuilder()
+    run_id = emit_run_log(
+        stage="orchestrator",
+        status="success",
+        input_refs={"video_id": video_id},
+        output_refs={"status": "started"},
+        metrics=build_metrics(cache_hit=False),
+    )
 
-    research_text = researcher.analyze_viral_strategy(video_id, force_update=refresh)
+    research_text, _ = _run_stage(
+        stage="research",
+        run_id=run_id,
+        input_refs={"video_id": video_id, "refresh": refresh},
+        action=lambda: researcher.analyze_viral_strategy(video_id, force_update=refresh),
+    )
     research_payload = _parse_payload(research_text)
 
-    plan_text = planner.create_project_plan(video_id)
+    plan_text, _ = _run_stage(
+        stage="planner",
+        run_id=run_id,
+        input_refs={"video_id": video_id},
+        action=lambda: planner.create_project_plan(video_id),
+    )
     if plan_text.startswith("❌"):
         raise ValueError(plan_text)
     plan_payload = _parse_payload(plan_text)
 
-    scene_output = scene_builder.build_scenes(research_payload)
+    scene_output, _ = _run_stage(
+        stage="scene_builder",
+        run_id=run_id,
+        input_refs={"video_id": video_id},
+        action=lambda: scene_builder.build_scenes(research_payload),
+    )
     save_json("scene_builder", video_id, scene_output)
     supabase.table("video_scenes").upsert(
         {
@@ -50,7 +125,12 @@ def run_pipeline(video_input: str, refresh: bool = False) -> Dict[str, Any]:
         on_conflict="video_id",
     ).execute()
 
-    script_text = scripter.write_full_script(video_id)
+    script_text, _ = _run_stage(
+        stage="script",
+        run_id=run_id,
+        input_refs={"video_id": video_id},
+        action=lambda: scripter.write_full_script(video_id),
+    )
     if script_text.startswith("❌"):
         raise ValueError(script_text)
     script_payload = _parse_payload(script_text)
@@ -60,9 +140,14 @@ def run_pipeline(video_input: str, refresh: bool = False) -> Dict[str, Any]:
     ).execute()
     save_json("script", video_id, script_payload)
 
-    metadata_payload = generate_metadata(
-        plan_payload=plan_payload,
-        script_payload=script_payload,
+    metadata_payload, _ = _run_stage(
+        stage="metadata",
+        run_id=run_id,
+        input_refs={"video_id": video_id},
+        action=lambda: generate_metadata(
+            plan_payload=plan_payload,
+            script_payload=script_payload,
+        ),
     )
     save_json("metadata", video_id, metadata_payload)
     supabase.table("video_metadata").upsert(
@@ -79,6 +164,7 @@ def run_pipeline(video_input: str, refresh: bool = False) -> Dict[str, Any]:
     ).execute()
 
     return {
+        "run_id": run_id,
         "video_id": video_id,
         "research": research_payload,
         "plan": plan_payload,
