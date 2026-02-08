@@ -76,6 +76,8 @@ def _validate_metadata_payload(payload: Dict[str, Any]) -> List[str]:
         "tags",
         "chapters",
         "pinned_comment",
+        "thumbnail_variants",
+        "community_post",
         "schema_version",
     ]
     for key in required:
@@ -133,6 +135,8 @@ def main() -> int:
                 "tags": metadata_payload.get("tags"),
                 "chapters": metadata_payload.get("chapters"),
                 "pinned_comment": metadata_payload.get("pinned_comment"),
+                "thumbnail_variants": metadata_payload.get("thumbnail_variants"),
+                "community_post": metadata_payload.get("community_post"),
                 "schema_version": metadata_payload.get("schema_version"),
             },
             on_conflict="video_id",

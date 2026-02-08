@@ -75,8 +75,8 @@ class ContentScripter:
             return "❌ Approved plan not found. Run the evaluator stage first."
 
         feedback_text = feedback or "No additional feedback."
-        target_words = "750-900" if mode == "long" else "120-160"
-        target_runtime = "5-6 minutes" if mode == "long" else "60 seconds"
+        target_words = "1300" if mode == "long" else "160"
+        target_runtime = "5.5 minutes" if mode == "long" else "55 seconds"
         source_list = ", ".join(source_ids or [])
         # Prompt composition: plan + evaluator feedback
         script_prompt = f"""
@@ -136,6 +136,13 @@ class ContentScripter:
             ensure_schema_version(script_payload, "1.0")
             validate_payload("script_output", script_payload)
             word_count = len(script_payload.get("script", "").split())
+            if mode == "long" and word_count < 1100:
+                script_payload = self._extend_script(script_payload, target_words)
+            if mode == "shorts" and word_count > 180:
+                script_payload = self._shrink_script(script_payload, target_words)
+            ensure_schema_version(script_payload, "1.0")
+            validate_payload("script_output", script_payload)
+            word_count = len(script_payload.get("script", "").split())
             if mode == "long" and word_count < 650:
                 script_payload = self._extend_script(script_payload, target_words)
                 ensure_schema_version(script_payload, "1.0")
@@ -189,6 +196,37 @@ class ContentScripter:
                 for item in expanded_payload["citations"]
             ]
         return expanded_payload
+
+    def _shrink_script(self, script_payload: dict, target_words: str) -> dict:
+        prompt = f"""
+        Shorten the following script to ~{target_words} words (hard cap 180 words).
+        Preserve citations and keep the strongest hook.
+        Return JSON only with schema:
+        {{
+          "script": "...",
+          "citations": ["..."],
+          "schema_version": "1.0"
+        }}
+
+        Script JSON:
+        {json.dumps(script_payload, ensure_ascii=False)}
+        """
+        shortened_payload = extract_json(self.router.generate_content(prompt))
+        if isinstance(shortened_payload.get("script"), list):
+            shortened_payload["script"] = "\n".join(
+                f"[{item.get('type', 'line').upper()}] {item.get('content', '').strip()}"
+                for item in shortened_payload["script"]
+            ).strip()
+        elif isinstance(shortened_payload.get("script"), dict):
+            shortened_payload["script"] = json.dumps(shortened_payload["script"], ensure_ascii=False)
+        if not isinstance(shortened_payload.get("script"), str):
+            shortened_payload["script"] = str(shortened_payload.get("script", ""))
+        if isinstance(shortened_payload.get("citations"), list):
+            shortened_payload["citations"] = [
+                item if isinstance(item, str) else json.dumps(item, ensure_ascii=False)
+                for item in shortened_payload["citations"]
+            ]
+        return shortened_payload
 
 if __name__ == "__main__":
     scripter = ContentScripter()

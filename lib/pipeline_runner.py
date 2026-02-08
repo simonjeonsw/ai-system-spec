@@ -175,6 +175,14 @@ def run_pipeline(video_input: str, refresh: bool = False) -> Dict[str, Any]:
             {"content": json.dumps(shorts_payload, ensure_ascii=False)}
         ).execute()
         save_json("script_shorts", video_id, shorts_payload)
+        supabase.table("video_scripts").upsert(
+            {
+                "video_id": video_id,
+                "long_script": json.dumps(script_payload, ensure_ascii=False),
+                "shorts_script": json.dumps(shorts_payload, ensure_ascii=False),
+            },
+            on_conflict="video_id",
+        ).execute()
 
         validator = ScriptValidator(research_payload, script_payload)
         verification_result = validator.validate()
@@ -262,6 +270,8 @@ def run_pipeline(video_input: str, refresh: bool = False) -> Dict[str, Any]:
                 "tags": metadata_payload.get("tags"),
                 "chapters": metadata_payload.get("chapters"),
                 "pinned_comment": metadata_payload.get("pinned_comment"),
+                "thumbnail_variants": metadata_payload.get("thumbnail_variants"),
+                "community_post": metadata_payload.get("community_post"),
                 "schema_version": metadata_payload.get("schema_version"),
             },
             on_conflict="video_id",

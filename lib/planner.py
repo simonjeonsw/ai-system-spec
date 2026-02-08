@@ -13,6 +13,7 @@ from .run_logger import build_metrics, emit_run_log
 from .schema_validator import validate_payload
 from .storage_utils import normalize_video_id, save_json
 from .model_router import ModelRouter
+from .benchmarking import build_planner_context
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -55,11 +56,12 @@ class ContentPlanner:
         if not research_payload:
             return "❌ Research data not found. Run the research stage first."
 
+        benchmark_context = build_planner_context()
         # 2. Planner prompt (English JSON output only)
         prompt_text = f"""
         You are the Planner agent. Return JSON only that matches this schema:
         {{
-          "topic_candidates": [{{"topic": "...", "scores": {{"audience_fit": 0, "novelty": 0, "monetization_potential": 0, "evidence_availability": 0, "production_feasibility": 0}}, "total_score": 0, "notes": "..."}}],
+          "topic_candidates": [{{"topic": "...", "scores": {{"audience_fit": 0, "novelty": 0, "monetization_potential": 0, "evidence_availability": 0, "production_feasibility": 0, "viral_potential": 0}}, "total_score": 0, "notes": "..."}}],
           "topic": "...",
           "target_audience": "...",
           "business_goal": "...",
@@ -67,15 +69,20 @@ class ContentPlanner:
           "retention_hypothesis": "...",
           "content_constraints": ["..."],
           "research_requirements": ["..."],
+          "benchmark_insights": {{}},
           "selection_rationale": "...",
           "schema_version": "1.0"
         }}
 
         Constraints:
         - Output English only.
-        - Provide 3-5 topic_candidates with scores from 1-5 and total_score.
+        - Provide 3-5 topic_candidates with scores from 1-5 and total_score (include viral_potential).
         - Select the highest scoring topic and justify selection_rationale.
+        - Use benchmark_insights to explain viral_potential scoring.
         - Use target persona: {target_persona}.
+
+        Benchmarking Context:
+        {json.dumps(benchmark_context, ensure_ascii=False)}
 
         Research JSON:
         {json.dumps(research_payload, ensure_ascii=False)}
