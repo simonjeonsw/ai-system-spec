@@ -12,6 +12,7 @@ from .supabase_client import supabase
 from .json_utils import ensure_schema_version, extract_json
 from .run_logger import build_metrics, emit_run_log
 from .schema_validator import validate_payload
+from .storage_utils import normalize_video_id, save_json
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -25,7 +26,8 @@ class ContentPlanner:
     def fetch_research_data(self, topic):
             """Fetch cached research by full topic or URL fragment."""
             # Full-topic match
-            res = supabase.table("research_cache").select("*").eq("topic", topic).execute()
+            normalized_topic = normalize_video_id(topic)
+            res = supabase.table("research_cache").select("*").eq("topic", normalized_topic).execute()
             
             # If no full match, try by video ID.
             if not res.data and len(topic) > 11:
@@ -49,9 +51,9 @@ class ContentPlanner:
 
     def create_project_plan(self, topic, target_persona="insightful finance explainer"):
         """Create a planner output that matches the planner_output schema."""
-        
+        normalized_topic = normalize_video_id(topic)
         # 1. Load research payload
-        research_payload = self.load_research_payload(topic)
+        research_payload = self.load_research_payload(normalized_topic)
         if not research_payload:
             return "❌ Research data not found. Run the research stage first."
 
@@ -81,7 +83,7 @@ class ContentPlanner:
         {json.dumps(research_payload, ensure_ascii=False)}
         """
 
-        print(f"🚀 Planning stage running... (topic: {topic})")
+        print(f"🚀 Planning stage running... (topic: {normalized_topic})")
         
         try:
             # 3. Generate planner output
@@ -95,14 +97,15 @@ class ContentPlanner:
 
             # 4. Store planner output
             supabase.table("planning_cache").insert({
-                "topic": topic,
+                "topic": normalized_topic,
                 "plan_content": json.dumps(plan_payload, ensure_ascii=False)
             }).execute()
+            save_json("planner", normalized_topic, plan_payload)
 
             emit_run_log(
                 stage="planner",
                 status="success",
-                input_refs={"topic": topic},
+                input_refs={"topic": normalized_topic},
                 output_refs={"planning_cache": "inserted"},
                 metrics=build_metrics(cache_hit=False),
             )
@@ -112,7 +115,7 @@ class ContentPlanner:
             emit_run_log(
                 stage="planner",
                 status="failure",
-                input_refs={"topic": topic},
+                input_refs={"topic": normalized_topic},
                 error_summary=str(e),
                 metrics=build_metrics(cache_hit=False),
             )
@@ -129,8 +132,22 @@ if __name__ == "__main__":
     target_url = input("👉 Enter a YouTube URL (research must be completed): ").strip()
     
     if target_url:
-        # Run planner
-        result = planner.create_project_plan(target_url)
+        normalized_topic = normalize_video_id(target_url)
+        cached = supabase.table("planning_cache").select("*").eq("topic", normalized_topic).execute()
+        force_refresh = False
+        if cached.data:
+            choice = input("Existing data found. Use cached data or force a refresh? (y/n): ").strip().lower()
+            force_refresh = choice == "n"
+
+        if cached.data and cached.data[0].get("plan_content") and not force_refresh:
+            try:
+                cached_payload = json.loads(cached.data[0]["plan_content"])
+                save_json("planner", normalized_topic, cached_payload)
+                result = json.dumps(cached_payload, ensure_ascii=False, indent=2)
+            except json.JSONDecodeError:
+                result = cached.data[0]["plan_content"]
+        else:
+            result = planner.create_project_plan(normalized_topic)
         print("\n" + "="*50)
         print("📝 Generated plan:\n")
         print(result)

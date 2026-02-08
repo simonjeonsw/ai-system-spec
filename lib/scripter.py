@@ -12,6 +12,7 @@ from .supabase_client import supabase
 from .json_utils import ensure_schema_version, extract_json
 from .run_logger import build_metrics, emit_run_log
 from .schema_validator import validate_payload
+from .storage_utils import normalize_video_id, save_json
 from dotenv import load_dotenv
 import re
 
@@ -29,7 +30,7 @@ class ContentScripter:
 
     def fetch_approved_plan(self, topic):
         """Fetch the latest approved plan and evaluator feedback."""
-        video_id = self.extract_video_id(topic)
+        video_id = normalize_video_id(topic)
         res = supabase.table("planning_cache") \
             .select("*") \
             .ilike("topic", f"%{video_id}%") \
@@ -118,7 +119,38 @@ if __name__ == "__main__":
     target_input = input("👉 Enter a video URL or ID for script drafting: ").strip()
     
     if target_input:
-        script = scripter.write_full_script(target_input)
+        video_id = normalize_video_id(target_input)
+        cached = (
+            supabase.table("scripts")
+            .select("*")
+            .ilike("content", f"%{video_id}%")
+            .order("created_at", desc=True)
+            .limit(1)
+            .execute()
+        )
+        force_refresh = False
+        if cached.data:
+            choice = input("Existing data found. Use cached data or force a refresh? (y/n): ").strip().lower()
+            force_refresh = choice == "n"
+
+        if cached.data and cached.data[0].get("content") and not force_refresh:
+            cached_content = cached.data[0]["content"]
+            try:
+                cached_payload = json.loads(cached_content)
+                save_json("script", video_id, cached_payload)
+                script = json.dumps(cached_payload, ensure_ascii=False, indent=2)
+            except json.JSONDecodeError:
+                script = cached_content
+        else:
+            script = scripter.write_full_script(video_id)
+            try:
+                payload = json.loads(script)
+                payload["video_id"] = video_id
+                supabase.table("scripts").insert({"content": json.dumps(payload, ensure_ascii=False)}).execute()
+                save_json("script", video_id, payload)
+            except json.JSONDecodeError:
+                pass
+
         print("\n" + "="*50)
         print("📜 Final script:\n")
         print(script)

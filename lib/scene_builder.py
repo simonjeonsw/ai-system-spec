@@ -12,6 +12,8 @@ from google.genai import Client
 from .json_utils import ensure_schema_version, extract_json
 from .run_logger import build_metrics, emit_run_log
 from .schema_validator import validate_payload
+from .storage_utils import normalize_video_id, save_json
+from .supabase_client import supabase
 
 
 class SceneBuilder:
@@ -50,20 +52,41 @@ class SceneBuilder:
 
 
 def main() -> int:
-    if len(sys.argv) < 2:
-        print("Usage: python -m lib.scene_builder <research_json_path>", file=sys.stderr)
+    if len(sys.argv) >= 2:
+        topic_input = sys.argv[1]
+    else:
+        topic_input = input("👉 Enter a YouTube URL or ID for scene building: ").strip()
+
+    if not topic_input:
+        print("Missing YouTube URL or ID.", file=sys.stderr)
         return 1
 
-    research_path = Path(sys.argv[1])
-    research_payload = json.loads(research_path.read_text(encoding="utf-8"))
+    topic = normalize_video_id(topic_input)
+    cached_path = Path(__file__).resolve().parent.parent / "data" / f"scene_builder_{topic}.json"
+    force_refresh = False
+    if cached_path.exists():
+        choice = input("Existing data found. Use cached data or force a refresh? (y/n): ").strip().lower()
+        force_refresh = choice == "n"
+
+    cached = supabase.table("research_cache").select("*").eq("topic", topic).execute()
+    if not cached.data or not cached.data[0].get("content"):
+        print("Research data not found in Supabase. Run the research stage first.", file=sys.stderr)
+        return 1
+
+    if cached_path.exists() and not force_refresh:
+        print(cached_path.read_text(encoding="utf-8"))
+        return 0
+
+    research_payload = json.loads(cached.data[0]["content"])
     builder = SceneBuilder()
 
     try:
         scene_output = builder.build_scenes(research_payload)
+        save_json("scene_builder", topic, scene_output)
         emit_run_log(
             stage="scene_builder",
             status="success",
-            input_refs={"research_path": str(research_path)},
+            input_refs={"topic": topic},
             metrics=build_metrics(cache_hit=False),
         )
         print(json.dumps(scene_output, ensure_ascii=False, indent=2))
@@ -72,7 +95,7 @@ def main() -> int:
         emit_run_log(
             stage="scene_builder",
             status="failure",
-            input_refs={"research_path": str(research_path)},
+            input_refs={"topic": topic},
             error_summary=str(exc),
             metrics=build_metrics(cache_hit=False),
         )

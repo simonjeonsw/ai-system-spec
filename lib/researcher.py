@@ -10,6 +10,7 @@ sys.path.append(str(venv_path))
 from google.genai import Client
 from .supabase_client import supabase
 from .trend_scout import TrendScout
+from .storage_utils import normalize_video_id, save_json
 from .json_utils import ensure_schema_version, extract_json
 from .run_logger import build_metrics, emit_run_log
 from .schema_validator import validate_payload
@@ -61,8 +62,10 @@ class VideoResearcher:
         """
 
         # 1. Cache check
+        normalized_topic = normalize_video_id(topic)
+
         if not force_update:
-            cached = supabase.table("research_cache").select("*").eq("topic", topic).execute()
+            cached = supabase.table("research_cache").select("*").eq("topic", normalized_topic).execute()
             if cached.data:
                 cached_content = cached.data[0].get("content")
                 if cached_content:
@@ -74,11 +77,16 @@ class VideoResearcher:
                         output_refs={"cache": "hit"},
                         metrics=build_metrics(cache_hit=True),
                     )
+                    try:
+                        cached_payload = json.loads(cached_content)
+                        save_json("research", normalized_topic, cached_payload)
+                    except json.JSONDecodeError:
+                        pass
                     return cached_content
 
         # 2. Collect data and analyze
-        print(f"🚀 [NEW/REFRESH] Starting research analysis: {topic}")
-        transcript_text = self.get_video_transcript(topic)
+        print(f"🚀 [NEW/REFRESH] Starting research analysis: {normalized_topic}")
+        transcript_text = self.get_video_transcript(normalized_topic)
         
         # Select model based on content length
         selected_model = self.main_model
@@ -105,7 +113,7 @@ class VideoResearcher:
             "- Output English only.\n"
             "- Use real, verifiable sources. If only the video is available, include it as a Tier 3 source and add at least one corroborating Tier 1 or Tier 2 source.\n"
             "\n"
-            f"Topic: {topic}\n\n"
+            f"Topic: {normalized_topic}\n\n"
             f"Video transcript and comments:\n{transcript_text}\n"
         )
 
@@ -126,7 +134,7 @@ class VideoResearcher:
                 emit_run_log(
                     stage="research",
                     status="failure",
-                    input_refs={"topic": topic},
+                    input_refs={"topic": normalized_topic},
                     error_summary=str(e),
                     metrics=build_metrics(cache_hit=False),
                 )
@@ -140,19 +148,20 @@ class VideoResearcher:
                 ensure_schema_version(research_payload, "1.0")
                 validate_payload("research_output", research_payload)
                 supabase.table("research_cache").upsert({
-                    "topic": topic,
+                    "topic": normalized_topic,
                     "content": json.dumps(research_payload, ensure_ascii=False),
                     "raw_transcript": transcript_text,
                     "updated_at": "now()" # Track refresh timestamp
                 }, on_conflict='topic').execute()
                 print("✅ Research cache updated.")
+                save_json("research", normalized_topic, research_payload)
             except Exception as e:
                 print(f"⚠️ Failed to save research data: {e}")
 
         emit_run_log(
             stage="research",
             status="success",
-            input_refs={"topic": topic},
+            input_refs={"topic": normalized_topic},
             output_refs={"cache": "updated" if analysis_result else "skipped"},
             metrics=build_metrics(cache_hit=False),
         )
@@ -177,17 +186,19 @@ if __name__ == "__main__":
     user_input = input("👉 Input: ").strip()
 
     target_id = ""
-    if "v=" in user_input:
-        target_id = user_input.split("v=")[1].split("&")[0]
-    elif "youtu.be/" in user_input:
-        target_id = user_input.split("/")[-1]
-    elif user_input.isdigit() and 1 <= int(user_input) <= len(trends):
+    if user_input.isdigit() and 1 <= int(user_input) <= len(trends):
         selected_text = trends[int(user_input)-1]
         target_id = selected_text.split(" (Views:")[0]
     else:
-        target_id = user_input
+        target_id = normalize_video_id(user_input)
+
+    cached = supabase.table("research_cache").select("*").eq("topic", target_id).execute()
+    force_refresh = False
+    if cached.data and cached.data[0].get("content"):
+        choice = input("Existing data found. Use cached data or force a refresh? (y/n): ").strip().lower()
+        force_refresh = choice == "n"
 
     print(f"\n🚀 Running research: {target_id}...")
-    result = researcher.analyze_viral_strategy(target_id)
+    result = researcher.analyze_viral_strategy(target_id, force_update=force_refresh)
     print("\n" + "="*50)
     print(result)
