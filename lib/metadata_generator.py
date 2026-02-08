@@ -8,10 +8,10 @@ import sys
 from pathlib import Path
 from typing import Any, Dict, List
 
-from google.genai import Client
 from dotenv import load_dotenv
 
 from .json_utils import ensure_schema_version, extract_json
+from .model_router import ModelRouter
 from .run_logger import build_metrics, emit_run_log
 
 
@@ -49,13 +49,10 @@ def generate_metadata(
     *,
     plan_payload: Dict[str, Any],
     script_payload: Dict[str, Any],
-    api_key: str,
-    model_id: str = "gemini-2.5-flash",
 ) -> Dict[str, Any]:
-    client = Client(api_key=api_key)
     prompt = build_metadata_prompt(plan_payload, script_payload)
-    response = client.models.generate_content(model=model_id, contents=prompt)
-    metadata_payload = extract_json(response.text)
+    router = ModelRouter.from_env()
+    metadata_payload = extract_json(router.generate_content(prompt))
     ensure_schema_version(metadata_payload, DEFAULT_SCHEMA_VERSION)
     return metadata_payload
 
@@ -90,9 +87,9 @@ def main() -> int:
     plan_path = Path(sys.argv[1])
     script_path = Path(sys.argv[2])
     load_dotenv()
-    api_key = os.getenv("YOUTUBE_API_KEY")
+    api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
-        print("Missing YOUTUBE_API_KEY in environment.", file=sys.stderr)
+        print("Missing GEMINI_API_KEY in environment.", file=sys.stderr)
         return 1
 
     plan_payload = _load_json(plan_path)
@@ -102,7 +99,6 @@ def main() -> int:
         metadata_payload = generate_metadata(
             plan_payload=plan_payload,
             script_payload=script_payload,
-            api_key=api_key,
         )
         errors = _validate_metadata_payload(metadata_payload)
         if errors:
