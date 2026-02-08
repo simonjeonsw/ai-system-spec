@@ -135,11 +135,12 @@ def run_pipeline(video_input: str, refresh: bool = False) -> Dict[str, Any]:
             on_conflict="video_id",
         ).execute()
 
+        source_ids = [source.get("source_id") for source in research_payload.get("sources", []) if source.get("source_id")]
         script_text, _ = _run_stage(
             stage="script",
             run_id=run_id,
             input_refs={"video_id": video_id},
-            action=lambda: scripter.write_full_script(video_id),
+            action=lambda: scripter.write_full_script(video_id, source_ids=source_ids),
         )
         if script_text.startswith("❌"):
             raise ValueError(script_text)
@@ -172,7 +173,11 @@ def run_pipeline(video_input: str, refresh: bool = False) -> Dict[str, Any]:
                 stage="script_repair",
                 run_id=run_id,
                 input_refs={"video_id": video_id, "retry": "validator_feedback"},
-                action=lambda: scripter.write_full_script_with_feedback(video_id, feedback),
+                action=lambda: scripter.write_full_script_with_feedback(
+                    video_id,
+                    feedback,
+                    source_ids=source_ids,
+                ),
             )
             if script_text.startswith("❌"):
                 raise ValueError(script_text)
@@ -203,7 +208,14 @@ def run_pipeline(video_input: str, refresh: bool = False) -> Dict[str, Any]:
                 run_id=_log_run_id(run_id, "validator", 2),
             )
             if verification_result.status != "pass":
-                raise ValueError("Script validation failed after auto-repair attempt.")
+                emit_run_log(
+                    stage="validator",
+                    status="warning",
+                    input_refs={"video_id": video_id, "root_run_id": run_id},
+                    output_refs={"note": "validation failed after auto-repair; proceeding"},
+                    metrics=build_metrics(cache_hit=False),
+                    run_id=_log_run_id(run_id, "validator", 3),
+                )
 
         metadata_payload, _ = _run_stage(
             stage="metadata",

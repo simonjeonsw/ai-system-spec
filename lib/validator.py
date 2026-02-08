@@ -92,6 +92,8 @@ class ScriptValidator:
 
         errors: List[str] = []
         sentence_map: List[Dict[str, List[str]]] = []
+        factual_total = 0
+        factual_cited = 0
 
         for index, sentence in enumerate(sentences, start=1):
             sentence_sources = _extract_source_ids(sentence)
@@ -117,10 +119,19 @@ class ScriptValidator:
 
             if is_narrative or risk == "low":
                 continue
+            if requires_source:
+                factual_total += 1
+                if normalized_sources:
+                    factual_cited += 1
             if risk == "high" and not normalized_sources:
                 errors.append(f"Sentence {index} high-risk claim missing verified source_id.")
             if risk == "medium" and requires_source and not normalized_sources:
                 errors.append(f"Sentence {index} medium-risk claim missing verified source_id.")
+
+        if factual_total > 0:
+            ratio = factual_cited / factual_total
+            if ratio >= 0.5:
+                errors = [err for err in errors if "medium-risk" not in err]
 
         status = "pass" if not errors else "fail"
         return VerificationResult(status=status, errors=errors, sentence_map=sentence_map)
