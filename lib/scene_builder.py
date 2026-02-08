@@ -1,6 +1,7 @@
 import json
 import os
 import sys
+import time
 from pathlib import Path
 
 # Keep virtual environment path if used locally.
@@ -24,7 +25,19 @@ class SceneBuilder:
     def build_scenes(self, research_payload: dict) -> dict:
         validate_payload("research_output", research_payload)
 
-        prompt_text = (
+        prompt_text = self._build_prompt(research_payload)
+        scene_output = self._generate_with_retry(prompt_text)
+        try:
+            self._validate_scene_output(scene_output)
+            return scene_output
+        except ValueError:
+            repaired_output = self._repair_scene_output(scene_output, research_payload)
+            self._validate_scene_output(repaired_output)
+            return repaired_output
+
+    def _build_prompt(self, research_payload: dict, retry: bool = False) -> str:
+        reminder = "Ensure every scene includes all required keys." if retry else ""
+        return (
             "You are a Scene Builder. Convert the research JSON into scene outputs.\n"
             "Return JSON only. Do not include commentary.\n"
             "Constraints:\n"
@@ -32,23 +45,62 @@ class SceneBuilder:
             "- Every scene has narrative_role: hook, proof, insight, or payoff.\n"
             "- Each claim must map to sources from research.\n"
             "- Include schema_version in each scene.\n"
+            f"{reminder}\n"
+            "\n"
+            "Required JSON structure:\n"
+            "{\n"
+            '  "scenes": [\n'
+            "    {\n"
+            '      "scene_id": "s1-hook",\n'
+            '      "objective": "Establish the core question and stakes.",\n'
+            '      "key_claims": ["Claim 1", "Claim 2"],\n'
+            '      "source_refs": [{"claim": "Claim 1", "sources": ["src-001"]}],\n'
+            '      "evidence_sources": ["src-001"],\n'
+            '      "visual_prompt": "Describe the visuals.",\n'
+            '      "narration_prompt": "Describe the narration.",\n'
+            '      "transition_note": "Explain the transition.",\n'
+            '      "narrative_role": "hook",\n'
+            '      "schema_version": "1.0"\n'
+            "    }\n"
+            "  ]\n"
+            "}\n"
             "\n"
             "Research JSON:\n"
             f"{json.dumps(research_payload, ensure_ascii=False)}"
         )
 
-        response = self.client.models.generate_content(
-            model=self.model_id,
-            contents=prompt_text,
-        )
-        scene_output = extract_json(response.text)
+    def _generate_with_retry(self, prompt_text: str) -> dict:
+        try:
+            response = self.client.models.generate_content(
+                model=self.model_id,
+                contents=prompt_text,
+            )
+            return extract_json(response.text)
+        except Exception as exc:
+            if "429" in str(exc) or "RESOURCE_EXHAUSTED" in str(exc):
+                time.sleep(2)
+                response = self.client.models.generate_content(
+                    model="gemini-1.5-flash",
+                    contents=prompt_text,
+                )
+                return extract_json(response.text)
+            raise
+
+    def _validate_scene_output(self, scene_output: dict) -> None:
         if "scenes" in scene_output:
             for scene in scene_output["scenes"]:
                 ensure_schema_version(scene, "1.0")
                 validate_payload("scene_output", scene)
         else:
             raise ValueError("Scene output missing 'scenes' array.")
-        return scene_output
+
+    def _repair_scene_output(self, scene_output: dict, research_payload: dict) -> dict:
+        prompt_text = self._build_prompt(research_payload, retry=True)
+        response = self.client.models.generate_content(
+            model=self.model_id,
+            contents=prompt_text,
+        )
+        return extract_json(response.text)
 
 
 def main() -> int:
