@@ -10,7 +10,7 @@ Used to avoid re-researching topics within 7 days (see SYSTEM_ARCH.md).
 | Column     | Type         | Notes                          |
 |------------|--------------|--------------------------------|
 | id         | uuid         | PK, default gen_random_uuid()  |
-| topic      | text         | NOT NULL; use "system" for boot logs |
+| topic      | text         | NOT NULL; UNIQUE; use "system" for boot logs |
 | content    | text         | Research summary or log text   |
 | deep_analysis | text      | Optional: extended analysis payload |
 | raw_transcript | text     | Optional: raw transcript/log data |
@@ -36,7 +36,7 @@ Stores planner outputs and evaluator feedback for downstream stages.
 | Column      | Type        | Notes                         |
 |-------------|-------------|-------------------------------|
 | id          | uuid        | PK, default gen_random_uuid() |
-| topic       | text        | NOT NULL                      |
+| topic       | text        | NOT NULL; UNIQUE              |
 | plan_content| text        | Planner output                |
 | eval_result | text        | Evaluator feedback            |
 | created_at  | timestamptz | default now()                 |
@@ -75,6 +75,48 @@ Stores A/B testing results for titles and thumbnails.
 | avd               | numeric     | Average view duration                                  |
 | notes             | text        | Optional insights/decisions                            |
 | created_at        | timestamptz | default now()                                          |
+
+## video_scenes
+
+Stores scene builder outputs for each video.
+
+| Column     | Type        | Notes                                  |
+|------------|-------------|----------------------------------------|
+| video_id   | text        | PK; YouTube video ID or normalized ID  |
+| content    | jsonb       | Scene output payload                   |
+| created_at | timestamptz | default now()                          |
+| updated_at | timestamptz | default now()                          |
+
+## video_metadata
+
+Stores generated metadata for each video.
+
+| Column         | Type        | Notes                                  |
+|----------------|-------------|----------------------------------------|
+| video_id       | text        | PK; YouTube video ID or normalized ID  |
+| title          | text        | Generated title                         |
+| description    | text        | Generated description                   |
+| tags           | jsonb       | Tag list                                |
+| chapters       | jsonb       | Chapter list                            |
+| pinned_comment | text        | Generated pinned comment                |
+| schema_version | text        | Schema version                          |
+| created_at     | timestamptz | default now()                          |
+| updated_at     | timestamptz | default now()                          |
+
+## video_uploads
+
+Stores upload attempts and outcomes for each video.
+
+| Column           | Type        | Notes                                  |
+|------------------|-------------|----------------------------------------|
+| video_id         | text        | PK; YouTube video ID or normalized ID  |
+| status           | text        | Upload status (private/unlisted/public)|
+| notify_subscribers | boolean   | Notify subscribers on upload           |
+| published_at     | timestamptz | Upload timestamp                        |
+| metadata_path    | text        | Local metadata JSON path                |
+| video_path       | text        | Local video file path                   |
+| created_at       | timestamptz | default now()                          |
+| updated_at       | timestamptz | default now()                          |
 
 ## channel_configs
 

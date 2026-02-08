@@ -7,7 +7,7 @@ import sys
 from pathlib import Path
 from typing import Dict
 
-from .run_logger import emit_run_log
+from .run_logger import build_metrics, emit_run_log
 
 
 THRESHOLDS = {
@@ -81,6 +81,7 @@ def main() -> int:
             status="success",
             input_refs={"metrics_path": str(metrics_path)},
             output_refs=result,
+            metrics=build_metrics(cache_hit=False),
         )
         print(json.dumps(result, ensure_ascii=False, indent=2))
         return 0
@@ -90,6 +91,7 @@ def main() -> int:
             status="failure",
             input_refs={"metrics_path": str(metrics_path)},
             error_summary=str(exc),
+            metrics=build_metrics(cache_hit=False),
         )
         print(f"QA gate failed: {exc}", file=sys.stderr)
         return 1

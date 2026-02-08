@@ -13,17 +13,33 @@ python -m lib.researcher
 python -m lib.planner
 
 4. Scene builder (scene_builder.py)
-python -m lib.scene_builder path/to/research.json
+python -m lib.scene_builder
 
-5. Schema validation (validation_runner.py)
+5. Script drafting (scripter.py)
+python -m lib.scripter
+
+6. Metadata generation (metadata_generator.py)
+python -m lib.metadata_generator data/planner_<video_id>.json data/script_<video_id>.json
+
+7. Schema validation (validation_runner.py)
 python -m lib.validation_runner planner spec/samples/planner_output_sample.json
 python -m lib.validation_runner research spec/samples/research_output_sample.json
 python -m lib.validation_runner scene spec/samples/scene_output_sample.json
 python -m lib.validation_runner script spec/samples/script_output_sample.json
+python -m lib.validation_runner all --url <youtube_url_or_id>
 
-6. QA gate decision (qa_gate.py)
+8. Analytics collection (analytics_collector.py)
+python -m lib.analytics_collector <video_id> [start_date] [end_date]
+python -m lib.analytics_collector path/to/video_ids.txt [start_date] [end_date]
+
+9. End-to-end runner (pipeline_runner.py)
+python -m lib.pipeline_runner --url <youtube_url_or_id> --validate
+
+10. QA gate decision (qa_gate.py)
 python -m lib.qa_gate spec/samples/metrics_sample.json
 
 Environment:
 - Copy .env.example to .env and fill in API keys.
 - Do not commit .env to GitHub.
+- Each stage writes a local backup JSON to data/<stage>_<video_id>.json.
+- Outputs are upserted to Supabase for reuse and refreshes.
