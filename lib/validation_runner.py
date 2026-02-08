@@ -6,7 +6,7 @@ import sys
 from pathlib import Path
 from typing import Iterable
 
-from .run_logger import emit_run_log
+from .run_logger import build_metrics, emit_run_log
 from .schema_validator import validate_json_file
 
 
@@ -44,6 +44,7 @@ def main() -> int:
             stage="validation",
             status="success",
             input_refs={"stage": stage, "files": json_paths},
+            metrics=build_metrics(cache_hit=False),
         )
         print("Validation passed.")
         return 0
@@ -53,6 +54,7 @@ def main() -> int:
             status="failure",
             input_refs={"stage": stage, "files": json_paths},
             error_summary=str(exc),
+            metrics=build_metrics(cache_hit=False),
         )
         print(f"Validation failed: {exc}", file=sys.stderr)
         return 1
