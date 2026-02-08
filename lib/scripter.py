@@ -85,6 +85,11 @@ class ContentScripter:
             )
             
             script_payload = extract_json(response.text)
+            if isinstance(script_payload.get("script"), list):
+                script_payload["script"] = "\n".join(
+                    f"[{item.get('type', 'line').upper()}] {item.get('content', '').strip()}"
+                    for item in script_payload["script"]
+                ).strip()
             ensure_schema_version(script_payload, "1.0")
             validate_payload("script_output", script_payload)
 

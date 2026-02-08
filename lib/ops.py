@@ -36,18 +36,29 @@ def log_experiment(payload: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def publish_video(payload: Dict[str, Any]) -> Dict[str, Any]:
-    """Placeholder publish method that logs a publish attempt."""
+    """Publish a video via YouTube API when metadata/video paths are provided."""
     required_keys = {"video_id", "status"}
     missing = required_keys - set(payload.keys())
     if missing:
         raise ValueError(f"Missing required publish fields: {sorted(missing)}")
 
-    result = {
+    result: Dict[str, Any] = {
         "video_id": payload["video_id"],
         "status": payload["status"],
         "published_at": payload.get("published_at") or datetime.now(timezone.utc).isoformat(),
         "notes": payload.get("notes"),
     }
+
+    if payload.get("video_path") and payload.get("metadata_path"):
+        from .youtube_uploader import upload_video
+
+        upload_result = upload_video(
+            metadata=json.loads(Path(payload["metadata_path"]).read_text(encoding="utf-8")),
+            video_path=Path(payload["video_path"]),
+            privacy_status=payload.get("privacy_status", "private"),
+            notify_subscribers=payload.get("notify_subscribers", False),
+        )
+        result.update(upload_result)
 
     emit_run_log(
         stage="ops",

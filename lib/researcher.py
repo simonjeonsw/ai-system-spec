@@ -64,15 +64,17 @@ class VideoResearcher:
         if not force_update:
             cached = supabase.table("research_cache").select("*").eq("topic", topic).execute()
             if cached.data:
-                print(f"💡 Loaded cached research: {topic}")
-                emit_run_log(
-                    stage="research",
-                    status="success",
-                    input_refs={"topic": topic},
-                    output_refs={"cache": "hit"},
-                    metrics=build_metrics(cache_hit=True),
-                )
-                return cached.data[0].get("content", "")
+                cached_content = cached.data[0].get("content")
+                if cached_content:
+                    print(f"💡 Loaded cached research: {topic}")
+                    emit_run_log(
+                        stage="research",
+                        status="success",
+                        input_refs={"topic": topic},
+                        output_refs={"cache": "hit"},
+                        metrics=build_metrics(cache_hit=True),
+                    )
+                    return cached_content
 
         # 2. Collect data and analyze
         print(f"🚀 [NEW/REFRESH] Starting research analysis: {topic}")
