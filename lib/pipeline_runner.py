@@ -27,15 +27,6 @@ def _parse_payload(text: str) -> Dict[str, Any]:
     except json.JSONDecodeError:
         return extract_json(text)
 
-def _is_finance_topic(plan_payload: Dict[str, Any]) -> bool:
-    tokens = []
-    for key in ("topic", "target_audience", "monetization_angle", "business_goal"):
-        value = plan_payload.get(key)
-        if isinstance(value, str):
-            tokens.append(value.lower())
-    joined = " ".join(tokens)
-    return any(keyword in joined for keyword in ("finance", "economics", "macro", "inflation", "cpi", "gdp"))
-
 def _is_transient_error(exc: Exception) -> bool:
     message = str(exc).lower()
     return any(token in message for token in ("429", "5xx", "timeout", "resource_exhausted"))
@@ -159,7 +150,39 @@ def run_pipeline(video_input: str, refresh: bool = False) -> Dict[str, Any]:
         ).execute()
         save_json("script", video_id, script_payload)
 
-        if _is_finance_topic(plan_payload):
+        validator = ScriptValidator(research_payload, script_payload)
+        verification_result = validator.validate()
+        verification_report = {
+            "status": verification_result.status,
+            "errors": verification_result.errors,
+            "sentence_map": verification_result.sentence_map,
+        }
+        emit_run_log(
+            stage="validator",
+            status="success" if verification_result.status == "pass" else "failure",
+            input_refs={"video_id": video_id, "root_run_id": run_id},
+            output_refs={"verification_report": verification_report},
+            metrics=build_metrics(cache_hit=False),
+            run_id=_log_run_id(run_id, "validator", 1),
+        )
+
+        if verification_result.status != "pass":
+            feedback = "; ".join(verification_result.errors)
+            script_text, _ = _run_stage(
+                stage="script",
+                run_id=run_id,
+                input_refs={"video_id": video_id, "retry": "validator_feedback"},
+                action=lambda: scripter.write_full_script_with_feedback(video_id, feedback),
+            )
+            if script_text.startswith("❌"):
+                raise ValueError(script_text)
+            script_payload = _parse_payload(script_text)
+            script_payload["video_id"] = video_id
+            supabase.table("scripts").insert(
+                {"content": json.dumps(script_payload, ensure_ascii=False)}
+            ).execute()
+            save_json("script", video_id, script_payload)
+
             validator = ScriptValidator(research_payload, script_payload)
             verification_result = validator.validate()
             verification_report = {
@@ -170,52 +193,17 @@ def run_pipeline(video_input: str, refresh: bool = False) -> Dict[str, Any]:
             emit_run_log(
                 stage="validator",
                 status="success" if verification_result.status == "pass" else "failure",
-                input_refs={"video_id": video_id, "root_run_id": run_id},
+                input_refs={
+                    "video_id": video_id,
+                    "retry": "validator_feedback",
+                    "root_run_id": run_id,
+                },
                 output_refs={"verification_report": verification_report},
                 metrics=build_metrics(cache_hit=False),
-                run_id=_log_run_id(run_id, "validator", 1),
+                run_id=_log_run_id(run_id, "validator", 2),
             )
-
             if verification_result.status != "pass":
-                feedback = "; ".join(verification_result.errors)
-                script_text, _ = _run_stage(
-                    stage="script",
-                    run_id=run_id,
-                    input_refs={"video_id": video_id, "retry": "validator_feedback"},
-                    action=lambda: scripter.write_full_script_with_feedback(video_id, feedback),
-                )
-                if script_text.startswith("❌"):
-                    raise ValueError(script_text)
-                script_payload = _parse_payload(script_text)
-                script_payload["video_id"] = video_id
-                supabase.table("scripts").insert(
-                    {"content": json.dumps(script_payload, ensure_ascii=False)}
-                ).execute()
-                save_json("script", video_id, script_payload)
-
-                validator = ScriptValidator(research_payload, script_payload)
-                verification_result = validator.validate()
-                verification_report = {
-                    "status": verification_result.status,
-                    "errors": verification_result.errors,
-                    "sentence_map": verification_result.sentence_map,
-                }
-                emit_run_log(
-                    stage="validator",
-                    status="success" if verification_result.status == "pass" else "failure",
-                    input_refs={
-                        "video_id": video_id,
-                        "retry": "validator_feedback",
-                        "root_run_id": run_id,
-                    },
-                    output_refs={"verification_report": verification_report},
-                    metrics=build_metrics(cache_hit=False),
-                    run_id=_log_run_id(run_id, "validator", 2),
-                )
-                if verification_result.status != "pass":
-                    raise ValueError("Script validation failed after auto-repair attempt.")
-        else:
-            verification_report = {"status": "skipped", "errors": [], "sentence_map": []}
+                raise ValueError("Script validation failed after auto-repair attempt.")
 
         metadata_payload, _ = _run_stage(
             stage="metadata",
