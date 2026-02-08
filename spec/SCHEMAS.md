@@ -35,14 +35,16 @@ Schemas define the canonical inputs and outputs for each module.
               "novelty",
               "monetization_potential",
               "evidence_availability",
-              "production_feasibility"
+              "production_feasibility",
+              "viral_potential"
             ],
             "properties": {
               "audience_fit": { "type": "number" },
               "novelty": { "type": "number" },
               "monetization_potential": { "type": "number" },
               "evidence_availability": { "type": "number" },
-              "production_feasibility": { "type": "number" }
+              "production_feasibility": { "type": "number" },
+              "viral_potential": { "type": "number" }
             }
           },
           "total_score": { "type": "number" },
@@ -57,6 +59,7 @@ Schemas define the canonical inputs and outputs for each module.
     "retention_hypothesis": { "type": "string" },
     "content_constraints": { "type": "array", "items": { "type": "string" } },
     "research_requirements": { "type": "array", "items": { "type": "string" } },
+    "benchmark_insights": { "type": "object" },
     "selection_rationale": { "type": "string" },
     "schema_version": { "type": "string" }
   }
