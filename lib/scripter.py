@@ -54,7 +54,7 @@ class ContentScripter:
         # Prompt composition: plan + evaluator feedback
         script_prompt = f"""
         # ROLE: professional YouTube Scriptwriter (Channel: Finance Explainer)
-        # TASK: Produce a JSON-only script output based on the approved plan and evaluator feedback.
+        # TASK: Write a word-for-word narration script based on the approved plan and evaluator feedback.
 
         [APPROVED PLAN]
         {plan_data['plan_content']}
