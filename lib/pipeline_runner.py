@@ -18,6 +18,7 @@ from .run_logger import build_metrics, emit_run_log
 from .storage_utils import normalize_video_id, save_json
 from .supabase_client import supabase
 from .validation_runner import validate_all
+from .validator import ScriptValidator
 
 
 def _parse_payload(text: str) -> Dict[str, Any]:
@@ -25,6 +26,15 @@ def _parse_payload(text: str) -> Dict[str, Any]:
         return json.loads(text)
     except json.JSONDecodeError:
         return extract_json(text)
+
+def _is_finance_topic(plan_payload: Dict[str, Any]) -> bool:
+    tokens = []
+    for key in ("topic", "target_audience", "monetization_angle", "business_goal"):
+        value = plan_payload.get(key)
+        if isinstance(value, str):
+            tokens.append(value.lower())
+    joined = " ".join(tokens)
+    return any(keyword in joined for keyword in ("finance", "economics", "macro", "inflation", "cpi", "gdp"))
 
 def _is_transient_error(exc: Exception) -> bool:
     message = str(exc).lower()
@@ -81,57 +91,6 @@ def _run_stage(
     raise RuntimeError(f"{stage} failed after {max_retries} attempts") from last_error
 
 
-def _run_stage(
-    *,
-    stage: str,
-    run_id: str,
-    input_refs: Dict[str, Any],
-    action: Callable[[], Any],
-    max_retries: int = 3,
-    base_delay_s: float = 1.0,
-) -> Tuple[Any, int]:
-    last_error: Optional[Exception] = None
-    for attempt in range(1, max_retries + 1):
-        start_time = time.monotonic()
-        try:
-            result = action()
-            latency_ms = int((time.monotonic() - start_time) * 1000)
-            emit_run_log(
-                stage=stage,
-                status="success",
-                input_refs=input_refs,
-                output_refs={"status": "completed"},
-                metrics=build_metrics(
-                    latency_ms=latency_ms,
-                    cache_hit=False,
-                    retry_count=attempt - 1,
-                ),
-                attempts=attempt,
-                run_id=run_id,
-            )
-            return result, attempt
-        except Exception as exc:
-            last_error = exc
-            latency_ms = int((time.monotonic() - start_time) * 1000)
-            emit_run_log(
-                stage=stage,
-                status="failure",
-                input_refs=input_refs,
-                error_summary=str(exc),
-                metrics=build_metrics(
-                    latency_ms=latency_ms,
-                    cache_hit=False,
-                    retry_count=attempt - 1,
-                ),
-                attempts=attempt,
-                run_id=run_id,
-            )
-            if attempt >= max_retries:
-                break
-            time.sleep(base_delay_s * (2 ** (attempt - 1)))
-    raise RuntimeError(f"{stage} failed after {max_retries} attempts") from last_error
-
-
 def run_pipeline(video_input: str, refresh: bool = False) -> Dict[str, Any]:
     video_id = normalize_video_id(video_input)
     researcher = VideoResearcher()
@@ -146,6 +105,7 @@ def run_pipeline(video_input: str, refresh: bool = False) -> Dict[str, Any]:
         metrics=build_metrics(cache_hit=False),
     )
 
+    verification_report = None
     try:
         research_text, _ = _run_stage(
             stage="research",
@@ -195,6 +155,60 @@ def run_pipeline(video_input: str, refresh: bool = False) -> Dict[str, Any]:
         ).execute()
         save_json("script", video_id, script_payload)
 
+        if _is_finance_topic(plan_payload):
+            validator = ScriptValidator(research_payload, script_payload)
+            verification_result = validator.validate()
+            verification_report = {
+                "status": verification_result.status,
+                "errors": verification_result.errors,
+                "sentence_map": verification_result.sentence_map,
+            }
+            emit_run_log(
+                stage="validator",
+                status="success" if verification_result.status == "pass" else "failure",
+                input_refs={"video_id": video_id},
+                output_refs={"verification_report": verification_report},
+                metrics=build_metrics(cache_hit=False),
+                run_id=run_id,
+            )
+
+            if verification_result.status != "pass":
+                feedback = "; ".join(verification_result.errors)
+                script_text, _ = _run_stage(
+                    stage="script",
+                    run_id=run_id,
+                    input_refs={"video_id": video_id, "retry": "validator_feedback"},
+                    action=lambda: scripter.write_full_script_with_feedback(video_id, feedback),
+                )
+                if script_text.startswith("❌"):
+                    raise ValueError(script_text)
+                script_payload = _parse_payload(script_text)
+                script_payload["video_id"] = video_id
+                supabase.table("scripts").insert(
+                    {"content": json.dumps(script_payload, ensure_ascii=False)}
+                ).execute()
+                save_json("script", video_id, script_payload)
+
+                validator = ScriptValidator(research_payload, script_payload)
+                verification_result = validator.validate()
+                verification_report = {
+                    "status": verification_result.status,
+                    "errors": verification_result.errors,
+                    "sentence_map": verification_result.sentence_map,
+                }
+                emit_run_log(
+                    stage="validator",
+                    status="success" if verification_result.status == "pass" else "failure",
+                    input_refs={"video_id": video_id, "retry": "validator_feedback"},
+                    output_refs={"verification_report": verification_report},
+                    metrics=build_metrics(cache_hit=False),
+                    run_id=run_id,
+                )
+                if verification_result.status != "pass":
+                    raise ValueError("Script validation failed after auto-repair attempt.")
+        else:
+            verification_report = {"status": "skipped", "errors": [], "sentence_map": []}
+
         metadata_payload, _ = _run_stage(
             stage="metadata",
             run_id=run_id,
@@ -236,6 +250,7 @@ def run_pipeline(video_input: str, refresh: bool = False) -> Dict[str, Any]:
         "plan": plan_payload,
         "scenes": scene_output,
         "script": script_payload,
+        "verification_report": verification_report,
         "metadata": metadata_payload,
     }
 

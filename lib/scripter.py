@@ -39,6 +39,12 @@ class ContentScripter:
         return res.data[0] if res.data else None
 
     def write_full_script(self, topic):
+        return self._write_script(topic, feedback=None)
+
+    def write_full_script_with_feedback(self, topic, feedback: str):
+        return self._write_script(topic, feedback=feedback)
+
+    def _write_script(self, topic, feedback: str | None):
         plan_data = self.fetch_approved_plan(topic)
         
         if not plan_data:
@@ -51,6 +57,7 @@ class ContentScripter:
             )
             return "❌ Approved plan not found. Run the evaluator stage first."
 
+        feedback_text = feedback or "No additional feedback."
         # Prompt composition: plan + evaluator feedback
         script_prompt = f"""
         # ROLE: professional YouTube Scriptwriter (Channel: Finance Explainer)
@@ -61,6 +68,9 @@ class ContentScripter:
 
         [EVALUATOR FEEDBACK]
         {plan_data.get('eval_result', 'No specific feedback')}
+
+        [VALIDATION FEEDBACK]
+        {feedback_text}
 
         --- WRITING RULES ---
         1. Language: Natural, conversational English.
@@ -74,7 +84,8 @@ class ContentScripter:
              "citations": ["..."],
              "schema_version": "1.0"
            }}
-        7. Provide citations for any factual claims when possible.
+        7. Include inline citations using source_id tokens like [src-001] in every sentence that contains a factual claim or statistic.
+        8. Provide citations list that includes the same source_id tokens.
         """
 
         try:
