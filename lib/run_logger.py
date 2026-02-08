@@ -9,6 +9,23 @@ from typing import Any, Dict, Optional
 from .supabase_client import supabase
 
 
+def build_metrics(
+    *,
+    latency_ms: int = 0,
+    tokens: int = 0,
+    cost_usd: float = 0.0,
+    cache_hit: bool = False,
+    retry_count: int = 0,
+) -> Dict[str, Any]:
+    return {
+        "latency_ms": latency_ms,
+        "tokens": tokens,
+        "cost_usd": cost_usd,
+        "cache_hit": cache_hit,
+        "retry_count": retry_count,
+    }
+
+
 def emit_run_log(
     *,
     stage: str,
@@ -21,6 +38,11 @@ def emit_run_log(
     run_id: Optional[str] = None,
 ) -> str:
     """Insert a pipeline_runs record and return the run_id."""
+    metrics_payload = metrics or {}
+    required_keys = {"latency_ms", "tokens", "cost_usd", "cache_hit", "retry_count"}
+    if not required_keys.issubset(metrics_payload.keys()):
+        missing = required_keys - set(metrics_payload.keys())
+        raise ValueError(f"Missing required metrics keys: {sorted(missing)}")
     run_id = run_id or str(uuid.uuid4())
     payload = {
         "run_id": run_id,
@@ -30,7 +52,7 @@ def emit_run_log(
         "input_refs": input_refs or {},
         "output_refs": output_refs or {},
         "error_summary": error_summary,
-        "metrics": metrics or {},
+        "metrics": metrics_payload,
     }
     try:
         supabase.table("pipeline_runs").insert(payload).execute()
