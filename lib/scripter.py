@@ -142,6 +142,11 @@ class ContentScripter:
                 script_payload = self._shrink_script(script_payload, target_words)
             ensure_schema_version(script_payload, "1.0")
             validate_payload("script_output", script_payload)
+            word_count = len(script_payload.get("script", "").split())
+            if mode == "long" and word_count < 650:
+                script_payload = self._extend_script(script_payload, target_words)
+                ensure_schema_version(script_payload, "1.0")
+                validate_payload("script_output", script_payload)
 
             # Consider storing script results in a dedicated table.
             emit_run_log(
