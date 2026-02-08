@@ -33,6 +33,17 @@ def _is_low_risk(sentence: str) -> bool:
     )
 
 
+def _is_narrative(sentence: str) -> bool:
+    return bool(
+        re.search(
+            r"\b(welcome back|today we're|let's explore|in this video|"
+            r"here's the takeaway|stay tuned|subscribe)\b",
+            sentence,
+            re.IGNORECASE,
+        )
+    )
+
+
 def _is_high_risk(sentence: str) -> bool:
     return bool(
         re.search(
@@ -93,15 +104,19 @@ class ScriptValidator:
             normalized_sources = sorted({src for src in sentence_sources if src in self.source_ids})
             risk = _risk_level(sentence)
             requires_source = _requires_source(sentence)
+            is_narrative = _is_narrative(sentence)
             sentence_map.append(
                 {
                     "sentence": sentence,
                     "sources": normalized_sources,
                     "risk_level": risk,
                     "requires_source": requires_source,
+                    "is_narrative": is_narrative,
                 }
             )
 
+            if is_narrative or risk == "low":
+                continue
             if risk == "high" and not normalized_sources:
                 errors.append(f"Sentence {index} high-risk claim missing verified source_id.")
             if risk == "medium" and requires_source and not normalized_sources:

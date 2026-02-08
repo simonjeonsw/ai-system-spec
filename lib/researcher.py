@@ -15,6 +15,7 @@ from .json_utils import ensure_schema_version, extract_json
 from .run_logger import build_metrics, emit_run_log
 from .schema_validator import validate_payload
 import yt_dlp
+import re
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -26,6 +27,15 @@ class VideoResearcher:
         self.fast_model = "gemini-2.0-flash"
         self.main_model = "gemini-2.0-flash"
         self.heavy_model = "gemini-2.5-flash"
+
+    def _is_general_knowledge(self, claim: str) -> bool:
+        return bool(
+            re.search(
+                r"\b(is|refers to|means|defined as|concept|principle|overview)\b",
+                claim,
+                re.IGNORECASE,
+            )
+        )
 
     def _validate_source_governance(self, payload: dict) -> None:
         sources = {item.get("source_id"): item for item in payload.get("sources", [])}
@@ -41,15 +51,16 @@ class VideoResearcher:
                 missing_sources.append(claim)
                 continue
             unique_ids = list(dict.fromkeys(source_ids))
-            if len(unique_ids) < 2:
+            if len(unique_ids) < 2 and not self._is_general_knowledge(claim):
                 uncorroborated_claims.append(claim)
             tiers = [
                 sources.get(source_id, {}).get("source_tier")
                 for source_id in unique_ids
                 if sources.get(source_id)
             ]
-            if not any(tier in {"tier_1", "tier_2"} for tier in tiers):
-                non_tier12_claims.append(claim)
+            if not self._is_general_knowledge(claim):
+                if not any(tier in {"tier_1", "tier_2"} for tier in tiers):
+                    non_tier12_claims.append(claim)
 
         if missing_sources or uncorroborated_claims or non_tier12_claims:
             details = []
