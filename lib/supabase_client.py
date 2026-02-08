@@ -15,15 +15,14 @@ _ROOT = Path(__file__).resolve().parent.parent
 load_dotenv(_ROOT / ".env")
 
 _URL = os.getenv("SUPABASE_URL")
-_KEY = os.getenv("SUPABASE_KEY")  # .env 파일에 'SUPABASE_ANON_KEY'로 되어 있다면 이름을 맞추세요.
+_KEY = os.getenv("SUPABASE_KEY")  # Match the .env key name if needed.
 
 if not _URL or not _KEY:
     raise ValueError(
         "SUPABASE_URL and SUPABASE_KEY must be set in .env at project root."
     )
 
-# 2. Initialize the client (Outside the function!)
-# 이렇게 밖으로 꺼내야 'from .supabase_client import supabase'가 작동합니다.
+# 2. Initialize the client (outside the function).
 supabase: Client = create_client(_URL, _KEY)
 
 def get_client() -> Client:

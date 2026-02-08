@@ -53,6 +53,22 @@ Planner
  → QA / Evaluator
  → Ops (future)
 
+## CLI Usage (Current)
+```bash
+python -m lib.trend_scout
+python -m lib.researcher
+python -m lib.planner
+python -m lib.scene_builder
+python -m lib.scripter
+python -m lib.metadata_generator data/planner_<video_id>.json data/script_<video_id>.json
+python -m lib.validation_runner all --url <youtube_url_or_id>
+```
+
+### Environment Setup
+- Copy `.env.example` to `.env` and populate API keys.
+- Each stage writes local backups to `data/<stage>_<video_id>.json`.
+- Outputs are upserted to Supabase to avoid duplicate rows on refresh.
+
 ## Golden Rule
 Spec files override all agent instructions.
 All agents must load spec context before execution.
