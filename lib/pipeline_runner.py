@@ -140,16 +140,41 @@ def run_pipeline(video_input: str, refresh: bool = False) -> Dict[str, Any]:
             stage="script",
             run_id=run_id,
             input_refs={"video_id": video_id},
-            action=lambda: scripter.write_full_script(video_id, source_ids=source_ids),
+            action=lambda: scripter.write_full_script(
+                video_id,
+                source_ids=source_ids,
+                mode="long",
+            ),
         )
         if script_text.startswith("❌"):
             raise ValueError(script_text)
         script_payload = _parse_payload(script_text)
         script_payload["video_id"] = video_id
+        script_payload["mode"] = "long"
         supabase.table("scripts").insert(
             {"content": json.dumps(script_payload, ensure_ascii=False)}
         ).execute()
-        save_json("script", video_id, script_payload)
+        save_json("script_long", video_id, script_payload)
+
+        shorts_text, _ = _run_stage(
+            stage="script_shorts",
+            run_id=run_id,
+            input_refs={"video_id": video_id},
+            action=lambda: scripter.write_full_script(
+                video_id,
+                source_ids=source_ids,
+                mode="shorts",
+            ),
+        )
+        if shorts_text.startswith("❌"):
+            raise ValueError(shorts_text)
+        shorts_payload = _parse_payload(shorts_text)
+        shorts_payload["video_id"] = video_id
+        shorts_payload["mode"] = "shorts"
+        supabase.table("scripts").insert(
+            {"content": json.dumps(shorts_payload, ensure_ascii=False)}
+        ).execute()
+        save_json("script_shorts", video_id, shorts_payload)
 
         validator = ScriptValidator(research_payload, script_payload)
         verification_result = validator.validate()
@@ -177,16 +202,18 @@ def run_pipeline(video_input: str, refresh: bool = False) -> Dict[str, Any]:
                     video_id,
                     feedback,
                     source_ids=source_ids,
+                    mode="long",
                 ),
             )
             if script_text.startswith("❌"):
                 raise ValueError(script_text)
             script_payload = _parse_payload(script_text)
             script_payload["video_id"] = video_id
+            script_payload["mode"] = "long"
             supabase.table("scripts").insert(
                 {"content": json.dumps(script_payload, ensure_ascii=False)}
             ).execute()
-            save_json("script", video_id, script_payload)
+            save_json("script_long", video_id, script_payload)
 
             validator = ScriptValidator(research_payload, script_payload)
             verification_result = validator.validate()
@@ -269,7 +296,8 @@ def run_pipeline(video_input: str, refresh: bool = False) -> Dict[str, Any]:
         "research": research_payload,
         "plan": plan_payload,
         "scenes": scene_output,
-        "script": script_payload,
+        "script_long": script_payload,
+        "script_shorts": shorts_payload,
         "verification_report": verification_report,
         "metadata": metadata_payload,
     }
