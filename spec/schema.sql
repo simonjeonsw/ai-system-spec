@@ -55,3 +55,15 @@ CREATE TABLE IF NOT EXISTS video_metadata (
   created_at timestamptz DEFAULT now(),
   updated_at timestamptz DEFAULT now()
 );
+
+-- video_uploads: upload attempt logs per video
+CREATE TABLE IF NOT EXISTS video_uploads (
+  video_id text PRIMARY KEY,
+  status text,
+  notify_subscribers boolean,
+  published_at timestamptz,
+  metadata_path text,
+  video_path text,
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now()
+);

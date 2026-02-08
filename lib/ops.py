@@ -59,6 +59,17 @@ def publish_video(payload: Dict[str, Any]) -> Dict[str, Any]:
             notify_subscribers=payload.get("notify_subscribers", False),
         )
         result.update(upload_result)
+        supabase.table("video_uploads").upsert(
+            {
+                "video_id": upload_result.get("video_id") or payload["video_id"],
+                "status": upload_result.get("status"),
+                "notify_subscribers": upload_result.get("notify_subscribers"),
+                "published_at": result.get("published_at"),
+                "metadata_path": payload.get("metadata_path"),
+                "video_path": payload.get("video_path"),
+            },
+            on_conflict="video_id",
+        ).execute()
 
     emit_run_log(
         stage="ops",

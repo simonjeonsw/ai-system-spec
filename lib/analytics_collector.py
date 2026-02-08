@@ -6,7 +6,8 @@ import json
 import os
 import sys
 from datetime import date, timedelta
-from typing import Any, Dict, Optional
+from pathlib import Path
+from typing import Any, Dict, Iterable, Optional
 
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
@@ -102,6 +103,29 @@ def store_metrics_snapshot(
     return payload
 
 
+def collect_metrics_for_videos(
+    *,
+    video_ids: Iterable[str],
+    start_date: str,
+    end_date: str,
+) -> Dict[str, Any]:
+    results = []
+    for video_id in video_ids:
+        metrics = fetch_video_metrics(
+            video_id=video_id,
+            start_date=start_date,
+            end_date=end_date,
+        )
+        snapshot = store_metrics_snapshot(
+            video_id=video_id,
+            start_date=start_date,
+            end_date=end_date,
+            metrics=metrics,
+        )
+        results.append({"metrics": metrics, "snapshot": snapshot})
+    return {"start_date": start_date, "end_date": end_date, "results": results}
+
+
 def main() -> int:
     if len(sys.argv) < 2:
         print(
@@ -116,25 +140,39 @@ def main() -> int:
     end_date = sys.argv[3] if len(sys.argv) > 3 else today.isoformat()
 
     try:
-        metrics = fetch_video_metrics(
-            video_id=video_id,
-            start_date=start_date,
-            end_date=end_date,
-        )
-        snapshot = store_metrics_snapshot(
-            video_id=video_id,
-            start_date=start_date,
-            end_date=end_date,
-            metrics=metrics,
-        )
+        if video_id.endswith(".txt"):
+            path = Path(video_id)
+            video_ids = [line.strip() for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+            payload = collect_metrics_for_videos(
+                video_ids=video_ids,
+                start_date=start_date,
+                end_date=end_date,
+            )
+            output_path = Path(__file__).resolve().parent.parent / "data" / f"analytics_{end_date}.json"
+            output_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+            output_refs = {"metrics_batch": str(output_path)}
+        else:
+            metrics = fetch_video_metrics(
+                video_id=video_id,
+                start_date=start_date,
+                end_date=end_date,
+            )
+            snapshot = store_metrics_snapshot(
+                video_id=video_id,
+                start_date=start_date,
+                end_date=end_date,
+                metrics=metrics,
+            )
+            payload = {"metrics": metrics, "snapshot": snapshot}
+            output_refs = {"metrics": metrics}
         emit_run_log(
             stage="analytics",
             status="success",
             input_refs={"video_id": video_id, "start_date": start_date, "end_date": end_date},
-            output_refs={"metrics": metrics},
+            output_refs=output_refs,
             metrics=build_metrics(cache_hit=False),
         )
-        print(json.dumps({"metrics": metrics, "snapshot": snapshot}, ensure_ascii=False, indent=2))
+        print(json.dumps(payload, ensure_ascii=False, indent=2))
         return 0
     except Exception as exc:
         emit_run_log(

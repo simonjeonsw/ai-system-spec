@@ -5,11 +5,13 @@ from __future__ import annotations
 import json
 import os
 import sys
+import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
+from googleapiclient.errors import HttpError
 from googleapiclient.http import MediaFileUpload
 
 from .run_logger import build_metrics, emit_run_log
@@ -86,12 +88,25 @@ def upload_video(
         notifySubscribers=notify_subscribers,
     )
 
-    response = request.execute()
-    return {
-        "video_id": response.get("id"),
-        "status": privacy_status,
-        "notify_subscribers": notify_subscribers,
-    }
+    last_error: Exception | None = None
+    for attempt in range(2):
+        try:
+            response = request.execute()
+            return {
+                "video_id": response.get("id"),
+                "status": privacy_status,
+                "notify_subscribers": notify_subscribers,
+            }
+        except HttpError as exc:
+            last_error = exc
+            if exc.resp.status in {429, 500, 502, 503, 504} and attempt == 0:
+                time.sleep(2)
+                continue
+            raise
+        except Exception as exc:
+            last_error = exc
+            raise
+    raise RuntimeError(f"Upload failed after retries: {last_error}")
 
 
 def main() -> int:

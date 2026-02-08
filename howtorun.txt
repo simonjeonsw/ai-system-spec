@@ -30,6 +30,7 @@ python -m lib.validation_runner all --url <youtube_url_or_id>
 
 8. Analytics collection (analytics_collector.py)
 python -m lib.analytics_collector <video_id> [start_date] [end_date]
+python -m lib.analytics_collector path/to/video_ids.txt [start_date] [end_date]
 
 9. End-to-end runner (pipeline_runner.py)
 python -m lib.pipeline_runner --url <youtube_url_or_id> --validate

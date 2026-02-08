@@ -103,6 +103,21 @@ Stores generated metadata for each video.
 | created_at     | timestamptz | default now()                          |
 | updated_at     | timestamptz | default now()                          |
 
+## video_uploads
+
+Stores upload attempts and outcomes for each video.
+
+| Column           | Type        | Notes                                  |
+|------------------|-------------|----------------------------------------|
+| video_id         | text        | PK; YouTube video ID or normalized ID  |
+| status           | text        | Upload status (private/unlisted/public)|
+| notify_subscribers | boolean   | Notify subscribers on upload           |
+| published_at     | timestamptz | Upload timestamp                        |
+| metadata_path    | text        | Local metadata JSON path                |
+| video_path       | text        | Local video file path                   |
+| created_at       | timestamptz | default now()                          |
+| updated_at       | timestamptz | default now()                          |
+
 ## channel_configs
 
 Stores per-channel configuration profiles for multi-channel scaling.

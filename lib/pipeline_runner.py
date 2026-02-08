@@ -119,6 +119,18 @@ def main() -> int:
 
     result = run_pipeline(args.url, refresh=args.refresh)
     print(json.dumps(result, ensure_ascii=False, indent=2))
+    manifest_path = Path(__file__).resolve().parent.parent / "data" / f"pipeline_{result['video_id']}.json"
+    manifest = {
+        "video_id": result["video_id"],
+        "files": {
+            "research": f"data/research_{result['video_id']}.json",
+            "planner": f"data/planner_{result['video_id']}.json",
+            "scene_builder": f"data/scene_builder_{result['video_id']}.json",
+            "script": f"data/script_{result['video_id']}.json",
+            "metadata": f"data/metadata_{result['video_id']}.json",
+        },
+    }
+    manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
 
     if args.validate:
         validate_all(normalize_video_id(args.url))
