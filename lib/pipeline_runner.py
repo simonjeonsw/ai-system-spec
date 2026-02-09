@@ -211,7 +211,7 @@ def run_pipeline(video_input: str, refresh: bool = False) -> Dict[str, Any]:
                 stage="scene_builder",
                 run_id=run_id,
                 input_refs={"video_id": video_id},
-                action=lambda: scene_builder.build_scenes(research_payload),
+                action=lambda: scene_builder.build_scenes(research_payload, video_id=video_id),
             )
             save_json("scene_builder", video_id, scene_output)
         state["scene_builder"] = scene_output

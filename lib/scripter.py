@@ -8,11 +8,11 @@ venv_path = Path(__file__).resolve().parent.parent / ".venv" / "Lib" / "site-pac
 sys.path.append(str(venv_path))
 
 from .supabase_client import supabase
-from .json_utils import ensure_schema_version, extract_json
+from .json_utils import ensure_schema_version, extract_json_relaxed
 from .model_router import ModelRouter
 from .run_logger import build_metrics, emit_run_log
 from .schema_validator import validate_payload
-from .storage_utils import normalize_video_id, save_json
+from .storage_utils import normalize_video_id, save_json, save_raw
 from dotenv import load_dotenv
 import re
 
@@ -115,7 +115,11 @@ class ContentScripter:
 
         try:
             print(f"🎬 Writing script... (topic: {topic})")
-            script_payload = extract_json(self.router.generate_content(script_prompt))
+            response_text = self.router.generate_content(script_prompt)
+            video_id = normalize_video_id(topic)
+            raw_stage = "script_long_raw" if mode == "long" else "script_shorts_raw"
+            save_raw(raw_stage, video_id, response_text)
+            script_payload = extract_json_relaxed(response_text)
             if isinstance(script_payload.get("script"), list):
                 script_payload["script"] = "\n".join(
                     f"[{item.get('type', 'line').upper()}] {item.get('content', '').strip()}"
@@ -134,19 +138,32 @@ class ContentScripter:
                     for item in script_payload["citations"]
                 ]
             ensure_schema_version(script_payload, "1.0")
-            validate_payload("script_output", script_payload)
+            try:
+                validate_payload("script_output", script_payload)
+            except Exception as exc:
+                emit_run_log(
+                    stage="script",
+                    status="warning",
+                    input_refs={"topic": topic},
+                    error_summary=f"script schema warning: {exc}",
+                    metrics=build_metrics(cache_hit=False),
+                )
             word_count = len(script_payload.get("script", "").split())
             if mode == "long" and word_count < 1100:
                 script_payload = self._extend_script(script_payload, target_words)
             if mode == "shorts" and word_count > 180:
                 script_payload = self._enforce_shorts_length(script_payload, target_words)
             ensure_schema_version(script_payload, "1.0")
-            validate_payload("script_output", script_payload)
-            word_count = len(script_payload.get("script", "").split())
-            if mode == "long" and word_count < 650:
-                script_payload = self._extend_script(script_payload, target_words)
-                ensure_schema_version(script_payload, "1.0")
+            try:
                 validate_payload("script_output", script_payload)
+            except Exception as exc:
+                emit_run_log(
+                    stage="script",
+                    status="warning",
+                    input_refs={"topic": topic},
+                    error_summary=f"script schema warning: {exc}",
+                    metrics=build_metrics(cache_hit=False),
+                )
 
             # Consider storing script results in a dedicated table.
             emit_run_log(
@@ -180,7 +197,7 @@ class ContentScripter:
         Script JSON:
         {json.dumps(script_payload, ensure_ascii=False)}
         """
-        expanded_payload = extract_json(self.router.generate_content(prompt))
+        expanded_payload = extract_json_relaxed(self.router.generate_content(prompt))
         if isinstance(expanded_payload.get("script"), list):
             expanded_payload["script"] = "\n".join(
                 f"[{item.get('type', 'line').upper()}] {item.get('content', '').strip()}"
@@ -211,7 +228,7 @@ class ContentScripter:
         Script JSON:
         {json.dumps(script_payload, ensure_ascii=False)}
         """
-        shortened_payload = extract_json(self.router.generate_content(prompt))
+        shortened_payload = extract_json_relaxed(self.router.generate_content(prompt))
         if isinstance(shortened_payload.get("script"), list):
             shortened_payload["script"] = "\n".join(
                 f"[{item.get('type', 'line').upper()}] {item.get('content', '').strip()}"

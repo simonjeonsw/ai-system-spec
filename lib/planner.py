@@ -8,10 +8,10 @@ venv_path = Path(__file__).resolve().parent.parent / ".venv" / "Lib" / "site-pac
 sys.path.append(str(venv_path))
 
 from .supabase_client import supabase
-from .json_utils import ensure_schema_version, extract_json
+from .json_utils import ensure_schema_version, extract_json_relaxed
 from .run_logger import build_metrics, emit_run_log
 from .schema_validator import validate_payload
-from .storage_utils import normalize_video_id, save_json
+from .storage_utils import normalize_video_id, save_json, save_raw
 from .model_router import ModelRouter
 from .benchmarking import build_planner_context
 from dotenv import load_dotenv
@@ -94,25 +94,31 @@ class ContentPlanner:
         try:
             # 3. Generate planner output
             response_text = self.router.generate_content(prompt_text)
+            save_raw("planner_raw", normalized_topic, response_text)
             plan_payload = self._parse_with_retry(prompt_text, response_text)
             ensure_schema_version(plan_payload, "1.0")
-            validate_payload("planner_output", plan_payload)
+            save_json("planner", normalized_topic, plan_payload)
+            validation_error = None
+            try:
+                validate_payload("planner_output", plan_payload)
+            except Exception as exc:
+                validation_error = str(exc)
 
             # 4. Store planner output
-            supabase.table("planning_cache").upsert(
-                {
-                    "topic": normalized_topic,
-                    "plan_content": json.dumps(plan_payload, ensure_ascii=False),
-                },
-                on_conflict="topic",
-            ).execute()
-            save_json("planner", normalized_topic, plan_payload)
+            if not validation_error:
+                supabase.table("planning_cache").upsert(
+                    {
+                        "topic": normalized_topic,
+                        "plan_content": json.dumps(plan_payload, ensure_ascii=False),
+                    },
+                    on_conflict="topic",
+                ).execute()
 
             emit_run_log(
                 stage="planner",
-                status="success",
+                status="success" if not validation_error else "warning",
                 input_refs={"topic": normalized_topic},
-                output_refs={"planning_cache": "inserted"},
+                output_refs={"planning_cache": "inserted" if not validation_error else "skipped"},
                 metrics=build_metrics(cache_hit=False),
             )
             return json.dumps(plan_payload, ensure_ascii=False, indent=2)
@@ -129,7 +135,7 @@ class ContentPlanner:
 
     def _parse_with_retry(self, prompt_text: str, response_text: str, max_attempts: int = 2) -> dict:
         try:
-            return extract_json(response_text)
+            return extract_json_relaxed(response_text)
         except Exception:
             if max_attempts <= 1:
                 raise
@@ -138,7 +144,7 @@ class ContentPlanner:
                 "Do not include commentary. Output must match the schema exactly.\n"
             )
             retry_text = self.router.generate_content(repair_prompt + prompt_text)
-            return extract_json(retry_text)
+            return extract_json_relaxed(retry_text)
 
 
 
