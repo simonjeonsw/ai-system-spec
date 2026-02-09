@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 from typing import Any, Dict
 
 
@@ -13,6 +14,25 @@ def extract_json(text: str) -> Dict[str, Any]:
     if start == -1 or end == -1 or end <= start:
         raise ValueError("No JSON object detected in model output.")
     return json.loads(text[start : end + 1])
+
+
+def extract_json_relaxed(text: str) -> Dict[str, Any]:
+    """Attempt to recover JSON from partially corrupted model output."""
+    try:
+        return extract_json(text)
+    except Exception:
+        start = text.find("{")
+        if start == -1:
+            raise
+        candidate = text[start:]
+        if "}" in candidate:
+            candidate = candidate[: candidate.rfind("}") + 1]
+        open_braces = candidate.count("{")
+        close_braces = candidate.count("}")
+        if close_braces < open_braces:
+            candidate += "}" * (open_braces - close_braces)
+        candidate = re.sub(r",(\s*[}\]])", r"\1", candidate)
+        return json.loads(candidate)
 
 
 def ensure_schema_version(payload: Dict[str, Any], version: str) -> Dict[str, Any]:
