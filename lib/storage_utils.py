@@ -21,9 +21,14 @@ def normalize_video_id(value: str) -> str:
     return match.group(1) if match else value.strip()
 
 
+def _stage_path(stage: str, video_id: str) -> Path:
+    ensure_data_dir()
+    return DATA_DIR / f"{video_id}_{stage}.json"
+
+
 def save_json(stage: str, video_id: str, payload: Dict[str, Any]) -> Path:
     ensure_data_dir()
-    path = DATA_DIR / f"{stage}_{video_id}.json"
+    path = _stage_path(stage, video_id)
     tmp_path = path.with_suffix(".json.tmp")
     tmp_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
     tmp_path.replace(path)
@@ -32,10 +37,19 @@ def save_json(stage: str, video_id: str, payload: Dict[str, Any]) -> Path:
 
 def save_raw(stage: str, video_id: str, raw_text: str) -> Path:
     ensure_data_dir()
-    path = DATA_DIR / f"{stage}_{video_id}.json"
+    path = _stage_path(stage, video_id)
     tmp_path = path.with_suffix(".json.tmp")
     payload = {"raw_text": raw_text}
     tmp_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    tmp_path.replace(path)
+    return path
+
+
+def save_markdown(stage: str, video_id: str, content: str) -> Path:
+    ensure_data_dir()
+    path = DATA_DIR / f"{video_id}_{stage}.md"
+    tmp_path = path.with_suffix(".md.tmp")
+    tmp_path.write_text(content, encoding="utf-8")
     tmp_path.replace(path)
     return path
 
