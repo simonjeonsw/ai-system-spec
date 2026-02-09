@@ -13,24 +13,24 @@ from .storage_utils import normalize_video_id
 
 
 VALIDATION_TARGETS = {
-    "planner": "planner_output",
+    "plan": "planner_output",
     "research": "research_output",
-    "scene": "scene_output",
+    "scenes": "scene_output",
     "script": "script_output",
 }
 
 STAGE_FILENAMES = {
-    "research": "research_{video_id}.json",
-    "planner": "planner_{video_id}.json",
-    "scene": "scene_builder_{video_id}.json",
-    "script": "script_{video_id}.json",
+    "research": "{video_id}_research.json",
+    "plan": "{video_id}_plan.json",
+    "scenes": "{video_id}_scenes.json",
+    "script": "{video_id}_script.json",
 }
 
 
 def validate_files(stage: str, json_paths: Iterable[str]) -> None:
     schema_name = VALIDATION_TARGETS[stage]
     for path in json_paths:
-        if stage == "scene":
+        if stage == "scenes":
             payload = json.loads(Path(path).read_text(encoding="utf-8"))
             scenes = payload.get("scenes", [])
             if not scenes:
@@ -53,7 +53,7 @@ def validate_all(video_id: str) -> None:
 def main() -> int:
     if len(sys.argv) < 3:
         print(
-            "Usage: python -m lib.validation_runner <planner|research|scene|script|all> <json_path>...",
+            "Usage: python -m lib.validation_runner <plan|research|scenes|script|all> <json_path>...",
             file=sys.stderr,
         )
         return 1
