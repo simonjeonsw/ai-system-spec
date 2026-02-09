@@ -13,6 +13,7 @@ from .run_logger import build_metrics, emit_run_log
 from .schema_validator import validate_payload
 from .storage_utils import normalize_video_id, save_json
 from .model_router import ModelRouter
+from .benchmarking import build_planner_context
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -55,11 +56,12 @@ class ContentPlanner:
         if not research_payload:
             return "❌ Research data not found. Run the research stage first."
 
+        benchmark_context = build_planner_context()
         # 2. Planner prompt (English JSON output only)
         prompt_text = f"""
         You are the Planner agent. Return JSON only that matches this schema:
         {{
-          "topic_candidates": [{{"topic": "...", "scores": {{"audience_fit": 0, "novelty": 0, "monetization_potential": 0, "evidence_availability": 0, "production_feasibility": 0}}, "total_score": 0, "notes": "..."}}],
+          "topic_candidates": [{{"topic": "...", "scores": {{"audience_fit": 0, "novelty": 0, "monetization_potential": 0, "evidence_availability": 0, "production_feasibility": 0, "viral_potential": 0}}, "total_score": 0, "notes": "..."}}],
           "topic": "...",
           "target_audience": "...",
           "business_goal": "...",
@@ -67,15 +69,21 @@ class ContentPlanner:
           "retention_hypothesis": "...",
           "content_constraints": ["..."],
           "research_requirements": ["..."],
+          "benchmark_insights": {{}},
           "selection_rationale": "...",
           "schema_version": "1.0"
         }}
 
         Constraints:
         - Output English only.
-        - Provide 3-5 topic_candidates with scores from 1-5 and total_score.
+        - Provide 3-5 topic_candidates with scores from 1-5 and total_score (include viral_potential scored 1-10).
         - Select the highest scoring topic and justify selection_rationale.
+        - If the selected topic has viral_potential < 7, explicitly justify why it was chosen in selection_rationale.
+        - Use benchmark_insights to explain viral_potential scoring.
         - Use target persona: {target_persona}.
+
+        Benchmarking Context:
+        {json.dumps(benchmark_context, ensure_ascii=False)}
 
         Research JSON:
         {json.dumps(research_payload, ensure_ascii=False)}
@@ -86,7 +94,7 @@ class ContentPlanner:
         try:
             # 3. Generate planner output
             response_text = self.router.generate_content(prompt_text)
-            plan_payload = extract_json(response_text)
+            plan_payload = self._parse_with_retry(prompt_text, response_text)
             ensure_schema_version(plan_payload, "1.0")
             validate_payload("planner_output", plan_payload)
 
@@ -118,6 +126,19 @@ class ContentPlanner:
                 metrics=build_metrics(cache_hit=False),
             )
             return f"❌ Planner stage failed: {str(e)}"
+
+    def _parse_with_retry(self, prompt_text: str, response_text: str, max_attempts: int = 2) -> dict:
+        try:
+            return extract_json(response_text)
+        except Exception:
+            if max_attempts <= 1:
+                raise
+            repair_prompt = (
+                "Return ONLY valid JSON. Ensure all commas and quotes are correct. "
+                "Do not include commentary. Output must match the schema exactly.\n"
+            )
+            retry_text = self.router.generate_content(repair_prompt + prompt_text)
+            return extract_json(retry_text)
 
 
 

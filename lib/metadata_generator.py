@@ -29,6 +29,11 @@ You are a YouTube metadata generator. Return JSON only with this schema:
   "tags": ["..."],
   "chapters": [{{"timecode": "00:00", "title": "..."}}],
   "pinned_comment": "...",
+  "thumbnail_variants": [
+    {{"label": "A", "text": "...", "visual_brief": "..."}},
+    {{"label": "B", "text": "...", "visual_brief": "..."}}
+  ],
+  "community_post": "...",
   "schema_version": "{DEFAULT_SCHEMA_VERSION}"
 }}
 
@@ -65,7 +70,16 @@ def _load_json(path: Path) -> Dict[str, Any]:
 
 def _validate_metadata_payload(payload: Dict[str, Any]) -> List[str]:
     errors = []
-    required = ["title", "description", "tags", "chapters", "pinned_comment", "schema_version"]
+    required = [
+        "title",
+        "description",
+        "tags",
+        "chapters",
+        "pinned_comment",
+        "thumbnail_variants",
+        "community_post",
+        "schema_version",
+    ]
     for key in required:
         if key not in payload:
             errors.append(f"Missing required key: {key}")
@@ -75,6 +89,8 @@ def _validate_metadata_payload(payload: Dict[str, Any]) -> List[str]:
         errors.append("Description exceeds 4000 characters.")
     if "tags" in payload and not (5 <= len(payload["tags"]) <= 15):
         errors.append("Tags must contain 5-15 items.")
+    if "thumbnail_variants" in payload and len(payload["thumbnail_variants"]) < 2:
+        errors.append("Provide at least two thumbnail variants.")
     return errors
 
 
@@ -119,6 +135,8 @@ def main() -> int:
                 "tags": metadata_payload.get("tags"),
                 "chapters": metadata_payload.get("chapters"),
                 "pinned_comment": metadata_payload.get("pinned_comment"),
+                "thumbnail_variants": metadata_payload.get("thumbnail_variants"),
+                "community_post": metadata_payload.get("community_post"),
                 "schema_version": metadata_payload.get("schema_version"),
             },
             on_conflict="video_id",
