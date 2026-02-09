@@ -24,7 +24,9 @@ def normalize_video_id(value: str) -> str:
 def save_json(stage: str, video_id: str, payload: Dict[str, Any]) -> Path:
     ensure_data_dir()
     path = DATA_DIR / f"{stage}_{video_id}.json"
-    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    tmp_path = path.with_suffix(".json.tmp")
+    tmp_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    tmp_path.replace(path)
     return path
 
 
