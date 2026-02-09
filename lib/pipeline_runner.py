@@ -9,7 +9,7 @@ import time
 from pathlib import Path
 from typing import Any, Callable, Dict, Optional, Tuple
 
-from .json_utils import extract_json
+from .json_utils import extract_json_relaxed
 from .metadata_generator import generate_metadata
 from .planner import ContentPlanner
 from .researcher import VideoResearcher
@@ -24,10 +24,116 @@ from .validator import ScriptValidator
 
 
 def _parse_payload(text: str) -> Dict[str, Any]:
+    if not text:
+        raise ValueError("Empty payload from stage output.")
     try:
         return json.loads(text)
     except json.JSONDecodeError:
-        return extract_json(text)
+        return extract_json_relaxed(text)
+
+def _is_transient_error(exc: Exception) -> bool:
+    message = str(exc).lower()
+    return any(token in message for token in ("429", "5xx", "timeout", "resource_exhausted"))
+
+def _log_run_id(root_run_id: str, stage: str, attempt: int) -> str:
+    return f"{root_run_id}:{stage}:{attempt}"
+
+
+def _run_stage(
+    *,
+    stage: str,
+    run_id: str,
+    input_refs: Dict[str, Any],
+    action: Callable[[], Any],
+    max_retries: int = 3,
+    base_delay_s: float = 1.0,
+) -> Tuple[Any, int]:
+    last_error: Optional[Exception] = None
+    for attempt in range(1, max_retries + 1):
+        start_time = time.monotonic()
+        try:
+            result = action()
+            latency_ms = int((time.monotonic() - start_time) * 1000)
+            emit_run_log(
+                stage=stage,
+                status="success",
+                input_refs={**input_refs, "root_run_id": run_id},
+                output_refs={"status": "completed"},
+                metrics=build_metrics(
+                    latency_ms=latency_ms,
+                    cache_hit=False,
+                    retry_count=attempt - 1,
+                ),
+                attempts=attempt,
+                run_id=_log_run_id(run_id, stage, attempt),
+            )
+            return result, attempt
+        except Exception as exc:
+            last_error = exc
+            latency_ms = int((time.monotonic() - start_time) * 1000)
+            emit_run_log(
+                stage=stage,
+                status="failure",
+                input_refs={**input_refs, "root_run_id": run_id},
+                error_summary=str(exc),
+                metrics=build_metrics(
+                    latency_ms=latency_ms,
+                    cache_hit=False,
+                    retry_count=attempt - 1,
+                ),
+                attempts=attempt,
+                run_id=_log_run_id(run_id, stage, attempt),
+            )
+            if not _is_transient_error(exc) or attempt >= max_retries:
+                break
+            time.sleep(base_delay_s * (2 ** (attempt - 1)))
+    raise RuntimeError(f"{stage} failed after {max_retries} attempts") from last_error
+
+
+_STAGE_SCHEMA = {
+    "research": "research_output",
+    "planner": "planner_output",
+    "scene_builder": "scene_output",
+    "script": "script_output",
+    "script_long": "script_output",
+    "script_shorts": "script_output",
+}
+
+
+def _load_stage_payload(stage: str, video_id: str) -> Optional[Dict[str, Any]]:
+    data_dir = ensure_data_dir()
+    path = data_dir / f"{stage}_{video_id}.json"
+    if path.exists():
+        try:
+            payload = load_json(path)
+        except json.JSONDecodeError:
+            print(f"⚠️ Corrupted JSON detected for {stage}. Regenerating.")
+            path.unlink(missing_ok=True)
+            return None
+        schema_name = _STAGE_SCHEMA.get(stage)
+        if schema_name:
+            if stage == "scene_builder":
+                scenes = payload.get("scenes", [])
+                if not scenes:
+                    print(f"⚠️ Invalid scene payload for {stage}. Regenerating.")
+                    path.unlink(missing_ok=True)
+                    return None
+                try:
+                    for scene in scenes:
+                        validate_payload(schema_name, scene)
+                except Exception:
+                    print(f"⚠️ Schema validation failed for {stage}. Regenerating.")
+                    path.unlink(missing_ok=True)
+                    return None
+            else:
+                try:
+                    validate_payload(schema_name, payload)
+                except Exception:
+                    print(f"⚠️ Schema validation failed for {stage}. Regenerating.")
+                    path.unlink(missing_ok=True)
+                    return None
+        return payload
+    return None
 
 def _is_transient_error(exc: Exception) -> bool:
     message = str(exc).lower()
