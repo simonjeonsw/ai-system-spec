@@ -6,6 +6,7 @@ import argparse
 import json
 import signal
 import time
+import re
 from pathlib import Path
 from typing import Any, Callable, Dict, Optional, Tuple
 
@@ -13,7 +14,6 @@ from .json_utils import extract_json_relaxed, recover_script_payload
 from .metadata_generator import generate_metadata
 from .planner import ContentPlanner
 from .researcher import VideoResearcher
-from .scene_builder import SceneBuilder
 from .scripter import ContentScripter
 from .run_logger import build_metrics, emit_run_log
 from .storage_utils import normalize_video_id, save_json, load_json, ensure_data_dir, save_markdown
@@ -30,6 +30,170 @@ def _parse_payload(text: str) -> Dict[str, Any]:
         return json.loads(text)
     except json.JSONDecodeError:
         return extract_json_relaxed(text)
+
+
+def _normalize_script_text(script_payload: Dict[str, Any]) -> str:
+    script_text = script_payload.get("script", "")
+    if isinstance(script_text, list):
+        return "\n".join(str(item) for item in script_text).strip()
+    if isinstance(script_text, dict):
+        return json.dumps(script_text, ensure_ascii=False)
+    return str(script_text).strip()
+
+
+def _extract_visual_blocks(script_text: str) -> list[Dict[str, str]]:
+    blocks = []
+    current_visual = None
+    current_narration: list[str] = []
+    for raw_line in script_text.splitlines():
+        line = raw_line.strip()
+        if not line:
+            continue
+        visual_match = re.match(r"^\[(visual)\]\s*(.*)", line, re.IGNORECASE)
+        narration_match = re.match(r"^\[(narration)\]\s*(.*)", line, re.IGNORECASE)
+        if visual_match:
+            if current_visual or current_narration:
+                blocks.append(
+                    {
+                        "visual": current_visual or "",
+                        "narration": " ".join(current_narration).strip(),
+                    }
+                )
+            current_visual = visual_match.group(2).strip()
+            current_narration = []
+            continue
+        if narration_match:
+            current_narration.append(narration_match.group(2).strip())
+            continue
+        current_narration.append(line)
+    if current_visual or current_narration:
+        blocks.append(
+            {
+                "visual": current_visual or "",
+                "narration": " ".join(current_narration).strip(),
+            }
+        )
+    if not blocks:
+        blocks.append({"visual": "On-screen host narration.", "narration": script_text[:500].strip()})
+    return blocks
+
+
+def _build_image_prompt(visual_text: str) -> str:
+    base = visual_text.strip() or "On-screen host narration with supporting visuals."
+    return (
+        "High-detail cinematic frame, 16:9, photorealistic, professional lighting, "
+        "shallow depth of field, clean composition. "
+        f"Scene description: {base}"
+    )
+
+
+def _build_scene_output_from_script(script_payload: Dict[str, Any]) -> Dict[str, Any]:
+    script_text = _normalize_script_text(script_payload)
+    visual_blocks = _extract_visual_blocks(script_text)
+    scenes = []
+    for index, block in enumerate(visual_blocks, start=1):
+        scenes.append(
+            {
+                "scene_id": f"s{index:02d}",
+                "objective": "Derived from validated script visual cue.",
+                "visual_cue": block["visual"],
+                "key_claims": [],
+                "source_refs": [],
+                "evidence_sources": [],
+                "visual_prompt": _build_image_prompt(block["visual"]),
+                "narration_prompt": block["narration"] or "Narration derived from script.",
+                "transition_note": "Auto-generated from script sequence.",
+                "schema_version": "1.0",
+            }
+        )
+    return {"scenes": scenes}
+
+
+def _render_research_markdown(research_payload: Dict[str, Any]) -> str:
+    key_facts = research_payload.get("key_facts", [])
+    key_fact_sources = research_payload.get("key_fact_sources", [])
+    sources = research_payload.get("sources", [])
+    source_map = {source.get("source_id"): source for source in sources}
+    lines = ["# Research Summary", ""]
+    summary = research_payload.get("executive_summary", "")
+    if summary:
+        lines.extend(["## Executive Summary", summary, ""])
+    lines.append("## Key Findings")
+    lines.append("| # | Claim | Sources |")
+    lines.append("| --- | --- | --- |")
+    for idx, claim in enumerate(key_facts, start=1):
+        source_ids = []
+        for entry in key_fact_sources:
+            if entry.get("claim") == claim:
+                source_ids = entry.get("source_ids", [])
+                break
+        lines.append(f"| {idx} | {claim} | {', '.join(source_ids)} |")
+    lines.append("")
+    lines.append("## Sources")
+    lines.append("| Source ID | Title | Tier | As of | URL |")
+    lines.append("| --- | --- | --- | --- | --- |")
+    for source in sources:
+        lines.append(
+            f"| {source.get('source_id', '')} | {source.get('title', '')} | "
+            f"{source.get('source_tier', '')} | {source.get('as_of_date', '')} | "
+            f"{source.get('url', '')} |"
+        )
+    lines.append("")
+    lines.append("## Source Quality Notes")
+    lines.append("| Source ID | Freshness (days) | Notes |")
+    lines.append("| --- | --- | --- |")
+    for source_id, source in source_map.items():
+        lines.append(
+            f"| {source_id} | {source.get('freshness_window_days', '')} | "
+            f"{source.get('source_tier', '')} source |"
+        )
+    lines.append("")
+    return "\n".join(lines)
+
+
+def _render_plan_markdown(plan_payload: Dict[str, Any]) -> str:
+    lines = ["# Plan Summary", ""]
+    lines.append(f"**Topic:** {plan_payload.get('topic', '')}")
+    lines.append(f"**Target Audience:** {plan_payload.get('target_audience', '')}")
+    lines.append(f"**Business Goal:** {plan_payload.get('business_goal', '')}")
+    lines.append(f"**Monetization Angle:** {plan_payload.get('monetization_angle', '')}")
+    lines.append("")
+    lines.append("## Retention Hypothesis")
+    lines.append(plan_payload.get("retention_hypothesis", ""))
+    lines.append("")
+    lines.append("## Selection Rationale")
+    lines.append(plan_payload.get("selection_rationale", ""))
+    lines.append("")
+    lines.append("## Topic Candidates")
+    lines.append("| Topic | Total Score | Viral Potential | Notes |")
+    lines.append("| --- | --- | --- | --- |")
+    for candidate in plan_payload.get("topic_candidates", []):
+        scores = candidate.get("scores", {})
+        lines.append(
+            f"| {candidate.get('topic', '')} | {candidate.get('total_score', '')} | "
+            f"{scores.get('viral_potential', '')} | {candidate.get('notes', '')} |"
+        )
+    lines.append("")
+    lines.append("## Content Constraints")
+    for item in plan_payload.get("content_constraints", []):
+        lines.append(f"- {item}")
+    lines.append("")
+    return "\n".join(lines)
+
+
+def _render_scenes_markdown(scene_output: Dict[str, Any]) -> str:
+    lines = ["# Scene Prompts", ""]
+    lines.append("| Scene ID | Visual Cue | Image Prompt | Narration |")
+    lines.append("| --- | --- | --- | --- |")
+    for scene in scene_output.get("scenes", []):
+        visual_cue = scene.get("visual_cue", "")
+        visual_prompt = scene.get("visual_prompt", "")
+        narration = scene.get("narration_prompt", "")
+        lines.append(
+            f"| {scene.get('scene_id', '')} | {visual_cue} | {visual_prompt} | {narration} |"
+        )
+    lines.append("")
+    return "\n".join(lines)
 
 def _is_transient_error(exc: Exception) -> bool:
     message = str(exc).lower()
@@ -142,7 +306,6 @@ def run_pipeline(video_input: str, refresh: bool = False) -> Dict[str, Any]:
     researcher = VideoResearcher()
     planner = ContentPlanner()
     scripter = ContentScripter()
-    scene_builder = SceneBuilder()
     run_id = emit_run_log(
         stage="orchestrator",
         status="success",
@@ -176,9 +339,11 @@ def run_pipeline(video_input: str, refresh: bool = False) -> Dict[str, Any]:
     signal.signal(signal.SIGINT, _handle_signal)
     signal.signal(signal.SIGTERM, _handle_signal)
     try:
+        script_updated = False
         cached_research = None if refresh else _load_stage_payload("research", video_id)
         if cached_research:
             research_payload = cached_research
+            save_markdown("research", video_id, _render_research_markdown(research_payload))
         else:
             research_text, _ = _run_stage(
                 stage="research",
@@ -188,11 +353,13 @@ def run_pipeline(video_input: str, refresh: bool = False) -> Dict[str, Any]:
             )
             research_payload = _parse_payload(research_text)
             save_json("research", video_id, research_payload)
+            save_markdown("research", video_id, _render_research_markdown(research_payload))
         state["research"] = research_payload
 
         cached_plan = None if refresh else _load_stage_payload("plan", video_id)
         if cached_plan:
             plan_payload = cached_plan
+            save_markdown("plan", video_id, _render_plan_markdown(plan_payload))
         else:
             plan_text, _ = _run_stage(
                 stage="planner",
@@ -204,27 +371,8 @@ def run_pipeline(video_input: str, refresh: bool = False) -> Dict[str, Any]:
                 raise ValueError(plan_text)
             plan_payload = _parse_payload(plan_text)
             save_json("plan", video_id, plan_payload)
+            save_markdown("plan", video_id, _render_plan_markdown(plan_payload))
         state["plan"] = plan_payload
-
-        cached_scene = None if refresh else _load_stage_payload("scenes", video_id)
-        if cached_scene:
-            scene_output = cached_scene
-        else:
-            scene_output, _ = _run_stage(
-                stage="scene_builder",
-                run_id=run_id,
-                input_refs={"video_id": video_id},
-                action=lambda: scene_builder.build_scenes(research_payload, video_id=video_id),
-            )
-            save_json("scenes", video_id, scene_output)
-        state["scenes"] = scene_output
-        supabase.table("video_scenes").upsert(
-            {
-                "video_id": video_id,
-                "content": json.dumps(scene_output, ensure_ascii=False),
-            },
-            on_conflict="video_id",
-        ).execute()
 
         source_ids = [source.get("source_id") for source in research_payload.get("sources", []) if source.get("source_id")]
         cached_script = None if refresh else _load_stage_payload("script_long", video_id)
@@ -259,6 +407,7 @@ def run_pipeline(video_input: str, refresh: bool = False) -> Dict[str, Any]:
             ).execute()
             save_json("script", video_id, script_payload)
             save_json("script_long", video_id, script_payload)
+            script_updated = True
         state["script_long"] = script_payload
 
         cached_shorts = None if refresh else _load_stage_payload("script_shorts", video_id)
@@ -292,6 +441,7 @@ def run_pipeline(video_input: str, refresh: bool = False) -> Dict[str, Any]:
                 {"content": json.dumps(shorts_payload, ensure_ascii=False)}
             ).execute()
             save_json("script_shorts", video_id, shorts_payload)
+            script_updated = True
         state["script_shorts"] = shorts_payload
         save_markdown(
             "script",
@@ -356,6 +506,7 @@ def run_pipeline(video_input: str, refresh: bool = False) -> Dict[str, Any]:
                 {"content": json.dumps(script_payload, ensure_ascii=False)}
             ).execute()
             save_json("script_long", video_id, script_payload)
+            script_updated = True
 
             validator = ScriptValidator(research_payload, script_payload)
             verification_result = validator.validate()
@@ -385,6 +536,23 @@ def run_pipeline(video_input: str, refresh: bool = False) -> Dict[str, Any]:
                     metrics=build_metrics(cache_hit=False),
                     run_id=_log_run_id(run_id, "validator", 3),
                 )
+
+        cached_scene = None if refresh or script_updated else _load_stage_payload("scenes", video_id)
+        if cached_scene and not script_updated:
+            scene_output = cached_scene
+            save_markdown("scenes", video_id, _render_scenes_markdown(scene_output))
+        else:
+            scene_output = _build_scene_output_from_script(script_payload)
+            save_json("scenes", video_id, scene_output)
+            save_markdown("scenes", video_id, _render_scenes_markdown(scene_output))
+        state["scenes"] = scene_output
+        supabase.table("video_scenes").upsert(
+            {
+                "video_id": video_id,
+                "content": json.dumps(scene_output, ensure_ascii=False),
+            },
+            on_conflict="video_id",
+        ).execute()
 
         cached_metadata = None if refresh else _load_stage_payload("metadata", video_id)
         if cached_metadata:
