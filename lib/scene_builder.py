@@ -20,16 +20,20 @@ class SceneBuilder:
     def __init__(self) -> None:
         self.router = ModelRouter.from_env()
 
-    def build_scenes(self, research_payload: dict) -> dict:
+    def build_scenes(self, research_payload: dict, video_id: str | None = None) -> dict:
         validate_payload("research_output", research_payload)
 
         prompt_text = self._build_prompt(research_payload)
         scene_output = self._generate_with_retry(prompt_text)
+        if video_id:
+            save_json("scene_builder_raw", video_id, scene_output)
         try:
             self._validate_scene_output(scene_output)
             return scene_output
         except ValueError:
             repaired_output = self._repair_scene_output(scene_output, research_payload)
+            if video_id:
+                save_json("scene_builder_raw", video_id, repaired_output)
             self._validate_scene_output(repaired_output)
             return repaired_output
 
@@ -119,7 +123,7 @@ def main() -> int:
     builder = SceneBuilder()
 
     try:
-        scene_output = builder.build_scenes(research_payload)
+        scene_output = builder.build_scenes(research_payload, video_id=topic)
         save_json("scene_builder", topic, scene_output)
         supabase.table("video_scenes").upsert(
             {

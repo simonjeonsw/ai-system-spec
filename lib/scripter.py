@@ -8,11 +8,11 @@ venv_path = Path(__file__).resolve().parent.parent / ".venv" / "Lib" / "site-pac
 sys.path.append(str(venv_path))
 
 from .supabase_client import supabase
-from .json_utils import ensure_schema_version, extract_json
+from .json_utils import ensure_schema_version, extract_json_relaxed
 from .model_router import ModelRouter
 from .run_logger import build_metrics, emit_run_log
 from .schema_validator import validate_payload
-from .storage_utils import normalize_video_id, save_json
+from .storage_utils import normalize_video_id, save_json, save_raw
 from dotenv import load_dotenv
 import re
 
@@ -38,7 +38,30 @@ class ContentScripter:
             .execute()
         return res.data[0] if res.data else None
 
-    def write_full_script(self, topic):
+    def write_full_script(
+        self,
+        topic,
+        source_ids: list[str] | None = None,
+        mode: str = "long",
+    ):
+        return self._write_script(topic, feedback=None, source_ids=source_ids, mode=mode)
+
+    def write_full_script_with_feedback(
+        self,
+        topic,
+        feedback: str,
+        source_ids: list[str] | None = None,
+        mode: str = "long",
+    ):
+        return self._write_script(topic, feedback=feedback, source_ids=source_ids, mode=mode)
+
+    def _write_script(
+        self,
+        topic,
+        feedback: str | None,
+        source_ids: list[str] | None,
+        mode: str,
+    ):
         plan_data = self.fetch_approved_plan(topic)
         
         if not plan_data:
@@ -51,6 +74,10 @@ class ContentScripter:
             )
             return "❌ Approved plan not found. Run the evaluator stage first."
 
+        feedback_text = feedback or "No additional feedback."
+        target_words = "1300" if mode == "long" else "160"
+        target_runtime = "5.5 minutes" if mode == "long" else "55 seconds"
+        source_list = ", ".join(source_ids or [])
         # Prompt composition: plan + evaluator feedback
         script_prompt = f"""
         # ROLE: professional YouTube Scriptwriter (Channel: Finance Explainer)
@@ -62,31 +89,81 @@ class ContentScripter:
         [EVALUATOR FEEDBACK]
         {plan_data.get('eval_result', 'No specific feedback')}
 
+        [VALIDATION FEEDBACK]
+        {feedback_text}
+
+        [AVAILABLE SOURCE IDS]
+        {source_list}
+
         --- WRITING RULES ---
         1. Language: Natural, conversational English.
         2. Tone: Kind but incisive.
         3. Reflection: Actively apply the 'Optimization Tips' from the evaluator (e.g., condensing the hook, brand integration).
         4. Structure: Include visual cues [Visual] and Narration text [Narration].
-        5. Pacing: Maintain the 'Pattern Interrupts' defined in the plan.
-        6. Output JSON only with this schema:
+        5. Pacing: Use the 3-Step Retention Structure (Negative Hook -> Mid-Reward -> Open Loop).
+        6. Runtime target: {target_runtime} (~{target_words} words).
+        7. Output JSON only with this schema:
            {{
              "script": "...",
              "citations": ["..."],
              "schema_version": "1.0"
            }}
-        7. Provide citations for any factual claims when possible.
+        8. Use the AVAILABLE SOURCE IDS list. Add inline citations like [src-001] for factual claims.
+        9. Ensure at least one cited sentence per section when possible.
+        10. Provide citations list that includes the same source_id tokens.
         """
 
         try:
             print(f"🎬 Writing script... (topic: {topic})")
-            script_payload = extract_json(self.router.generate_content(script_prompt))
+            response_text = self.router.generate_content(script_prompt)
+            video_id = normalize_video_id(topic)
+            raw_stage = "script_long_raw" if mode == "long" else "script_shorts_raw"
+            save_raw(raw_stage, video_id, response_text)
+            script_payload = extract_json_relaxed(response_text)
             if isinstance(script_payload.get("script"), list):
                 script_payload["script"] = "\n".join(
                     f"[{item.get('type', 'line').upper()}] {item.get('content', '').strip()}"
                     for item in script_payload["script"]
                 ).strip()
+            elif isinstance(script_payload.get("script"), dict):
+                script_payload["script"] = json.dumps(
+                    script_payload["script"],
+                    ensure_ascii=False,
+                )
+            if not isinstance(script_payload.get("script"), str):
+                script_payload["script"] = str(script_payload.get("script", ""))
+            if isinstance(script_payload.get("citations"), list):
+                script_payload["citations"] = [
+                    item if isinstance(item, str) else json.dumps(item, ensure_ascii=False)
+                    for item in script_payload["citations"]
+                ]
             ensure_schema_version(script_payload, "1.0")
-            validate_payload("script_output", script_payload)
+            try:
+                validate_payload("script_output", script_payload)
+            except Exception as exc:
+                emit_run_log(
+                    stage="script",
+                    status="warning",
+                    input_refs={"topic": topic},
+                    error_summary=f"script schema warning: {exc}",
+                    metrics=build_metrics(cache_hit=False),
+                )
+            word_count = len(script_payload.get("script", "").split())
+            if mode == "long" and word_count < 1100:
+                script_payload = self._extend_script(script_payload, target_words)
+            if mode == "shorts" and word_count > 180:
+                script_payload = self._enforce_shorts_length(script_payload, target_words)
+            ensure_schema_version(script_payload, "1.0")
+            try:
+                validate_payload("script_output", script_payload)
+            except Exception as exc:
+                emit_run_log(
+                    stage="script",
+                    status="warning",
+                    input_refs={"topic": topic},
+                    error_summary=f"script schema warning: {exc}",
+                    metrics=build_metrics(cache_hit=False),
+                )
 
             # Consider storing script results in a dedicated table.
             emit_run_log(
@@ -105,6 +182,77 @@ class ContentScripter:
                 metrics=build_metrics(cache_hit=False),
             )
             return f"❌ Script generation failed: {str(e)}"
+
+    def _extend_script(self, script_payload: dict, target_words: str) -> dict:
+        prompt = f"""
+        Expand the following script to reach ~{target_words} words.
+        Preserve citations and add more evidence-backed detail where needed.
+        Return JSON only with schema:
+        {{
+          "script": "...",
+          "citations": ["..."],
+          "schema_version": "1.0"
+        }}
+
+        Script JSON:
+        {json.dumps(script_payload, ensure_ascii=False)}
+        """
+        expanded_payload = extract_json_relaxed(self.router.generate_content(prompt))
+        if isinstance(expanded_payload.get("script"), list):
+            expanded_payload["script"] = "\n".join(
+                f"[{item.get('type', 'line').upper()}] {item.get('content', '').strip()}"
+                for item in expanded_payload["script"]
+            ).strip()
+        elif isinstance(expanded_payload.get("script"), dict):
+            expanded_payload["script"] = json.dumps(expanded_payload["script"], ensure_ascii=False)
+        if not isinstance(expanded_payload.get("script"), str):
+            expanded_payload["script"] = str(expanded_payload.get("script", ""))
+        if isinstance(expanded_payload.get("citations"), list):
+            expanded_payload["citations"] = [
+                item if isinstance(item, str) else json.dumps(item, ensure_ascii=False)
+                for item in expanded_payload["citations"]
+            ]
+        return expanded_payload
+
+    def _shrink_script(self, script_payload: dict, target_words: str) -> dict:
+        prompt = f"""
+        Shorten the following script to ~{target_words} words (hard cap 180 words).
+        Preserve citations and keep the strongest hook.
+        Return JSON only with schema:
+        {{
+          "script": "...",
+          "citations": ["..."],
+          "schema_version": "1.0"
+        }}
+
+        Script JSON:
+        {json.dumps(script_payload, ensure_ascii=False)}
+        """
+        shortened_payload = extract_json_relaxed(self.router.generate_content(prompt))
+        if isinstance(shortened_payload.get("script"), list):
+            shortened_payload["script"] = "\n".join(
+                f"[{item.get('type', 'line').upper()}] {item.get('content', '').strip()}"
+                for item in shortened_payload["script"]
+            ).strip()
+        elif isinstance(shortened_payload.get("script"), dict):
+            shortened_payload["script"] = json.dumps(shortened_payload["script"], ensure_ascii=False)
+        if not isinstance(shortened_payload.get("script"), str):
+            shortened_payload["script"] = str(shortened_payload.get("script", ""))
+        if isinstance(shortened_payload.get("citations"), list):
+            shortened_payload["citations"] = [
+                item if isinstance(item, str) else json.dumps(item, ensure_ascii=False)
+                for item in shortened_payload["citations"]
+            ]
+        return shortened_payload
+
+    def _enforce_shorts_length(self, script_payload: dict, target_words: str) -> dict:
+        updated_payload = script_payload
+        for _ in range(2):
+            word_count = len(updated_payload.get("script", "").split())
+            if word_count <= 180:
+                break
+            updated_payload = self._shrink_script(updated_payload, target_words)
+        return updated_payload
 
 if __name__ == "__main__":
     scripter = ContentScripter()
