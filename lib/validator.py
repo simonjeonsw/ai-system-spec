@@ -21,8 +21,17 @@ def _extract_source_ids(text: str) -> Set[str]:
     return {match.lower() for match in _SOURCE_ID_PATTERN.findall(text or "")}
 
 
-def _split_sentences(script_text: str) -> List[str]:
-    sentences = re.split(r"(?<=[.!?])\s+", script_text.strip())
+def _normalize_script_text(script_text: str | List[str]) -> str:
+    if isinstance(script_text, list):
+        return "\n".join(str(item) for item in script_text)
+    return str(script_text)
+
+
+def _split_sentences(script_text: str | List[str]) -> List[str]:
+    normalized = _normalize_script_text(script_text).strip()
+    if not normalized:
+        return []
+    sentences = re.split(r"(?<=[.!?])\s+", normalized)
     return [sentence.strip() for sentence in sentences if sentence.strip()]
 
 
