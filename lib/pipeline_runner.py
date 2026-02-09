@@ -18,6 +18,7 @@ from .scripter import ContentScripter
 from .run_logger import build_metrics, emit_run_log
 from .storage_utils import normalize_video_id, save_json, load_json, ensure_data_dir
 from .supabase_client import supabase
+from .schema_validator import validate_payload
 from .validation_runner import validate_all
 from .validator import ScriptValidator
 
@@ -87,11 +88,49 @@ def _run_stage(
     raise RuntimeError(f"{stage} failed after {max_retries} attempts") from last_error
 
 
+_STAGE_SCHEMA = {
+    "research": "research_output",
+    "planner": "planner_output",
+    "scene_builder": "scene_output",
+    "script": "script_output",
+    "script_long": "script_output",
+    "script_shorts": "script_output",
+}
+
+
 def _load_stage_payload(stage: str, video_id: str) -> Optional[Dict[str, Any]]:
     data_dir = ensure_data_dir()
     path = data_dir / f"{stage}_{video_id}.json"
     if path.exists():
-        return load_json(path)
+        try:
+            payload = load_json(path)
+        except json.JSONDecodeError:
+            print(f"⚠️ Corrupted JSON detected for {stage}. Regenerating.")
+            path.unlink(missing_ok=True)
+            return None
+        schema_name = _STAGE_SCHEMA.get(stage)
+        if schema_name:
+            if stage == "scene_builder":
+                scenes = payload.get("scenes", [])
+                if not scenes:
+                    print(f"⚠️ Invalid scene payload for {stage}. Regenerating.")
+                    path.unlink(missing_ok=True)
+                    return None
+                try:
+                    for scene in scenes:
+                        validate_payload(schema_name, scene)
+                except Exception:
+                    print(f"⚠️ Schema validation failed for {stage}. Regenerating.")
+                    path.unlink(missing_ok=True)
+                    return None
+            else:
+                try:
+                    validate_payload(schema_name, payload)
+                except Exception:
+                    print(f"⚠️ Schema validation failed for {stage}. Regenerating.")
+                    path.unlink(missing_ok=True)
+                    return None
+        return payload
     return None
 
 
