@@ -59,17 +59,33 @@ def publish_video(payload: Dict[str, Any]) -> Dict[str, Any]:
             notify_subscribers=payload.get("notify_subscribers", False),
         )
         result.update(upload_result)
-        supabase.table("video_uploads").upsert(
-            {
-                "video_id": upload_result.get("video_id") or payload["video_id"],
-                "status": upload_result.get("status"),
-                "notify_subscribers": upload_result.get("notify_subscribers"),
-                "published_at": result.get("published_at"),
-                "metadata_path": payload.get("metadata_path"),
-                "video_path": payload.get("video_path"),
-            },
-            on_conflict="video_id",
-        ).execute()
+        upload_payload = {
+            "video_id": upload_result.get("video_id") or payload["video_id"],
+            "status": upload_result.get("status"),
+            "notify_subscribers": upload_result.get("notify_subscribers"),
+            "published_at": result.get("published_at"),
+            "metadata_path": payload.get("metadata_path"),
+            "video_path": payload.get("video_path"),
+        }
+        try:
+            supabase.table("video_uploads").upsert(
+                upload_payload,
+                on_conflict="video_id",
+            ).execute()
+        except Exception as insert_exc:
+            if "metadata_path" in str(insert_exc):
+                supabase.table("video_uploads").upsert(
+                    {
+                        "video_id": upload_payload["video_id"],
+                        "status": upload_payload["status"],
+                        "notify_subscribers": upload_payload["notify_subscribers"],
+                        "published_at": upload_payload["published_at"],
+                        "video_path": upload_payload["video_path"],
+                    },
+                    on_conflict="video_id",
+                ).execute()
+            else:
+                raise
 
     emit_run_log(
         stage="ops",
