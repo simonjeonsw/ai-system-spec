@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import signal
 import time
 from pathlib import Path
 from typing import Any, Callable, Dict, Optional, Tuple
@@ -15,7 +16,7 @@ from .researcher import VideoResearcher
 from .scene_builder import SceneBuilder
 from .scripter import ContentScripter
 from .run_logger import build_metrics, emit_run_log
-from .storage_utils import normalize_video_id, save_json
+from .storage_utils import normalize_video_id, save_json, load_json, ensure_data_dir
 from .supabase_client import supabase
 from .validation_runner import validate_all
 from .validator import ScriptValidator
@@ -86,6 +87,14 @@ def _run_stage(
     raise RuntimeError(f"{stage} failed after {max_retries} attempts") from last_error
 
 
+def _load_stage_payload(stage: str, video_id: str) -> Optional[Dict[str, Any]]:
+    data_dir = ensure_data_dir()
+    path = data_dir / f"{stage}_{video_id}.json"
+    if path.exists():
+        return load_json(path)
+    return None
+
+
 def run_pipeline(video_input: str, refresh: bool = False) -> Dict[str, Any]:
     video_id = normalize_video_id(video_input)
     researcher = VideoResearcher()
@@ -101,32 +110,72 @@ def run_pipeline(video_input: str, refresh: bool = False) -> Dict[str, Any]:
     )
 
     verification_report = None
+    state: Dict[str, Any] = {}
+
+    def _checkpoint_state() -> None:
+        if state.get("research"):
+            save_json("research", video_id, state["research"])
+        if state.get("planner"):
+            save_json("planner", video_id, state["planner"])
+        if state.get("scene_builder"):
+            save_json("scene_builder", video_id, state["scene_builder"])
+        if state.get("script_long"):
+            save_json("script", video_id, state["script_long"])
+            save_json("script_long", video_id, state["script_long"])
+        if state.get("script_shorts"):
+            save_json("script_shorts", video_id, state["script_shorts"])
+        if state.get("metadata"):
+            save_json("metadata", video_id, state["metadata"])
+
+    def _handle_signal(_signum, _frame) -> None:
+        _checkpoint_state()
+        raise SystemExit("Graceful shutdown: checkpoints saved.")
+
+    signal.signal(signal.SIGINT, _handle_signal)
+    signal.signal(signal.SIGTERM, _handle_signal)
     try:
-        research_text, _ = _run_stage(
-            stage="research",
-            run_id=run_id,
-            input_refs={"video_id": video_id, "refresh": refresh},
-            action=lambda: researcher.analyze_viral_strategy(video_id, force_update=refresh),
-        )
-        research_payload = _parse_payload(research_text)
+        cached_research = None if refresh else _load_stage_payload("research", video_id)
+        if cached_research:
+            research_payload = cached_research
+        else:
+            research_text, _ = _run_stage(
+                stage="research",
+                run_id=run_id,
+                input_refs={"video_id": video_id, "refresh": refresh},
+                action=lambda: researcher.analyze_viral_strategy(video_id, force_update=refresh),
+            )
+            research_payload = _parse_payload(research_text)
+            save_json("research", video_id, research_payload)
+        state["research"] = research_payload
 
-        plan_text, _ = _run_stage(
-            stage="planner",
-            run_id=run_id,
-            input_refs={"video_id": video_id},
-            action=lambda: planner.create_project_plan(video_id),
-        )
-        if plan_text.startswith("❌"):
-            raise ValueError(plan_text)
-        plan_payload = _parse_payload(plan_text)
+        cached_plan = None if refresh else _load_stage_payload("planner", video_id)
+        if cached_plan:
+            plan_payload = cached_plan
+        else:
+            plan_text, _ = _run_stage(
+                stage="planner",
+                run_id=run_id,
+                input_refs={"video_id": video_id},
+                action=lambda: planner.create_project_plan(video_id),
+            )
+            if plan_text.startswith("❌"):
+                raise ValueError(plan_text)
+            plan_payload = _parse_payload(plan_text)
+            save_json("planner", video_id, plan_payload)
+        state["planner"] = plan_payload
 
-        scene_output, _ = _run_stage(
-            stage="scene_builder",
-            run_id=run_id,
-            input_refs={"video_id": video_id},
-            action=lambda: scene_builder.build_scenes(research_payload),
-        )
-        save_json("scene_builder", video_id, scene_output)
+        cached_scene = None if refresh else _load_stage_payload("scene_builder", video_id)
+        if cached_scene:
+            scene_output = cached_scene
+        else:
+            scene_output, _ = _run_stage(
+                stage="scene_builder",
+                run_id=run_id,
+                input_refs={"video_id": video_id},
+                action=lambda: scene_builder.build_scenes(research_payload),
+            )
+            save_json("scene_builder", video_id, scene_output)
+        state["scene_builder"] = scene_output
         supabase.table("video_scenes").upsert(
             {
                 "video_id": video_id,
@@ -136,45 +185,56 @@ def run_pipeline(video_input: str, refresh: bool = False) -> Dict[str, Any]:
         ).execute()
 
         source_ids = [source.get("source_id") for source in research_payload.get("sources", []) if source.get("source_id")]
-        script_text, _ = _run_stage(
-            stage="script",
-            run_id=run_id,
-            input_refs={"video_id": video_id},
-            action=lambda: scripter.write_full_script(
-                video_id,
-                source_ids=source_ids,
-                mode="long",
-            ),
-        )
-        if script_text.startswith("❌"):
-            raise ValueError(script_text)
-        script_payload = _parse_payload(script_text)
-        script_payload["video_id"] = video_id
-        script_payload["mode"] = "long"
-        supabase.table("scripts").insert(
-            {"content": json.dumps(script_payload, ensure_ascii=False)}
-        ).execute()
-        save_json("script_long", video_id, script_payload)
+        cached_script = None if refresh else _load_stage_payload("script_long", video_id)
+        if cached_script:
+            script_payload = cached_script
+        else:
+            script_text, _ = _run_stage(
+                stage="script",
+                run_id=run_id,
+                input_refs={"video_id": video_id},
+                action=lambda: scripter.write_full_script(
+                    video_id,
+                    source_ids=source_ids,
+                    mode="long",
+                ),
+            )
+            if script_text.startswith("❌"):
+                raise ValueError(script_text)
+            script_payload = _parse_payload(script_text)
+            script_payload["video_id"] = video_id
+            script_payload["mode"] = "long"
+            supabase.table("scripts").insert(
+                {"content": json.dumps(script_payload, ensure_ascii=False)}
+            ).execute()
+            save_json("script", video_id, script_payload)
+            save_json("script_long", video_id, script_payload)
+        state["script_long"] = script_payload
 
-        shorts_text, _ = _run_stage(
-            stage="script_shorts",
-            run_id=run_id,
-            input_refs={"video_id": video_id},
-            action=lambda: scripter.write_full_script(
-                video_id,
-                source_ids=source_ids,
-                mode="shorts",
-            ),
-        )
-        if shorts_text.startswith("❌"):
-            raise ValueError(shorts_text)
-        shorts_payload = _parse_payload(shorts_text)
-        shorts_payload["video_id"] = video_id
-        shorts_payload["mode"] = "shorts"
-        supabase.table("scripts").insert(
-            {"content": json.dumps(shorts_payload, ensure_ascii=False)}
-        ).execute()
-        save_json("script_shorts", video_id, shorts_payload)
+        cached_shorts = None if refresh else _load_stage_payload("script_shorts", video_id)
+        if cached_shorts:
+            shorts_payload = cached_shorts
+        else:
+            shorts_text, _ = _run_stage(
+                stage="script_shorts",
+                run_id=run_id,
+                input_refs={"video_id": video_id},
+                action=lambda: scripter.write_full_script(
+                    video_id,
+                    source_ids=source_ids,
+                    mode="shorts",
+                ),
+            )
+            if shorts_text.startswith("❌"):
+                raise ValueError(shorts_text)
+            shorts_payload = _parse_payload(shorts_text)
+            shorts_payload["video_id"] = video_id
+            shorts_payload["mode"] = "shorts"
+            supabase.table("scripts").insert(
+                {"content": json.dumps(shorts_payload, ensure_ascii=False)}
+            ).execute()
+            save_json("script_shorts", video_id, shorts_payload)
+        state["script_shorts"] = shorts_payload
         supabase.table("video_scripts").upsert(
             {
                 "video_id": video_id,
@@ -252,16 +312,21 @@ def run_pipeline(video_input: str, refresh: bool = False) -> Dict[str, Any]:
                     run_id=_log_run_id(run_id, "validator", 3),
                 )
 
-        metadata_payload, _ = _run_stage(
-            stage="metadata",
-            run_id=run_id,
-            input_refs={"video_id": video_id},
-            action=lambda: generate_metadata(
-                plan_payload=plan_payload,
-                script_payload=script_payload,
-            ),
-        )
-        save_json("metadata", video_id, metadata_payload)
+        cached_metadata = None if refresh else _load_stage_payload("metadata", video_id)
+        if cached_metadata:
+            metadata_payload = cached_metadata
+        else:
+            metadata_payload, _ = _run_stage(
+                stage="metadata",
+                run_id=run_id,
+                input_refs={"video_id": video_id},
+                action=lambda: generate_metadata(
+                    plan_payload=plan_payload,
+                    script_payload=script_payload,
+                ),
+            )
+            save_json("metadata", video_id, metadata_payload)
+        state["metadata"] = metadata_payload
         supabase.table("video_metadata").upsert(
             {
                 "video_id": video_id,
@@ -277,6 +342,7 @@ def run_pipeline(video_input: str, refresh: bool = False) -> Dict[str, Any]:
             on_conflict="video_id",
         ).execute()
     except Exception as exc:
+        _checkpoint_state()
         failure_payload = {
             "video_id": video_id,
             "status": "failed",

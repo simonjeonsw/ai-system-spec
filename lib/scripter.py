@@ -143,6 +143,13 @@ class ContentScripter:
             ensure_schema_version(script_payload, "1.0")
             validate_payload("script_output", script_payload)
             word_count = len(script_payload.get("script", "").split())
+            if mode == "long" and word_count < 1100:
+                script_payload = self._extend_script(script_payload, target_words)
+            if mode == "shorts" and word_count > 180:
+                script_payload = self._enforce_shorts_length(script_payload, target_words)
+            ensure_schema_version(script_payload, "1.0")
+            validate_payload("script_output", script_payload)
+            word_count = len(script_payload.get("script", "").split())
             if mode == "long" and word_count < 650:
                 script_payload = self._extend_script(script_payload, target_words)
                 ensure_schema_version(script_payload, "1.0")
