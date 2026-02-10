@@ -7,17 +7,17 @@ from pathlib import Path
 import yt_dlp
 from dotenv import load_dotenv
 
+from .supabase_client import supabase
+from .trend_scout import TrendScout
+from .storage_utils import normalize_video_id, save_json, save_raw
+from .model_router import ModelRouter
 from .json_utils import ensure_schema_version, extract_json
 from .model_router import ModelRouter
 from .run_logger import build_metrics, emit_run_log
 from .schema_validator import validate_payload
-from .storage_utils import normalize_video_id, save_json, save_raw
-from .supabase_client import supabase
-from .trend_scout import TrendScout
-
-# Keep virtual environment path if used locally.
-venv_path = Path(__file__).resolve().parent.parent / ".venv" / "Lib" / "site-packages"
-sys.path.append(str(venv_path))
+import yt_dlp
+import re
+from dotenv import load_dotenv
 
 load_dotenv()
 
@@ -98,14 +98,57 @@ class VideoResearcher:
             warnings.append(f"non_tier12_claims={non_tier12_claims}")
         return warnings
 
+    def _is_general_knowledge(self, claim: str) -> bool:
+        return bool(
+            re.search(
+                r"\b(is|refers to|means|defined as|concept|principle|overview)\b",
+                claim,
+                re.IGNORECASE,
+            )
+        )
+
+    def _validate_source_governance(self, payload: dict) -> list[str]:
+        sources = {item.get("source_id"): item for item in payload.get("sources", [])}
+        key_fact_sources = payload.get("key_fact_sources", [])
+        missing_sources = []
+        uncorroborated_claims = []
+        non_tier12_claims = []
+
+        for entry in key_fact_sources:
+            claim = entry.get("claim", "")
+            source_ids = entry.get("source_ids", [])
+            if not source_ids:
+                missing_sources.append(claim)
+                continue
+            unique_ids = list(dict.fromkeys(source_ids))
+            if len(unique_ids) < 2 and not self._is_general_knowledge(claim):
+                uncorroborated_claims.append(claim)
+            tiers = [
+                sources.get(source_id, {}).get("source_tier")
+                for source_id in unique_ids
+                if sources.get(source_id)
+            ]
+            if not self._is_general_knowledge(claim):
+                if not any(tier in {"tier_1", "tier_2"} for tier in tiers):
+                    non_tier12_claims.append(claim)
+
+        warnings = []
+        if missing_sources:
+            warnings.append(f"missing_sources={missing_sources}")
+        if uncorroborated_claims:
+            warnings.append(f"uncorroborated_claims={uncorroborated_claims}")
+        if non_tier12_claims:
+            warnings.append(f"non_tier12_claims={non_tier12_claims}")
+        return warnings
+
     def get_video_transcript(self, video_id):
         """Fetch metadata and comments for analysis."""
         ydl_opts = {
-            "skip_download": True,
-            "quiet": True,
-            "get_comments": True,
-            "max_comments": 30,
-            "extract_flat": False,
+            'skip_download': True, 
+            'quiet': True,
+            'get_comments': True, 
+            'max_comments': 30,  # Limit for efficiency
+            'extract_flat': False,
         }
         js_runtime = os.getenv("YTDLP_JS_RUNTIME")
         if js_runtime:
@@ -203,7 +246,7 @@ class VideoResearcher:
                 raise e
 
         research_payload = None
-        if analysis_result:
+        if 'analysis_result' in locals() and analysis_result:
             save_raw("research_raw", normalized_topic, analysis_result)
             try:
                 research_payload = extract_json(analysis_result)
@@ -218,17 +261,13 @@ class VideoResearcher:
                 governance_warnings = self._validate_source_governance(research_payload)
                 if governance_warnings:
                     print(f"⚠️ Source governance warning: {', '.join(governance_warnings)}")
-
                 if not validation_error:
-                    supabase.table("research_cache").upsert(
-                        {
-                            "topic": normalized_topic,
-                            "content": json.dumps(research_payload, ensure_ascii=False),
-                            "raw_transcript": transcript_text,
-                            "updated_at": "now()",
-                        },
-                        on_conflict="topic",
-                    ).execute()
+                    supabase.table("research_cache").upsert({
+                        "topic": normalized_topic,
+                        "content": json.dumps(research_payload, ensure_ascii=False),
+                        "raw_transcript": transcript_text,
+                        "updated_at": "now()" # Track refresh timestamp
+                    }, on_conflict='topic').execute()
                     print("✅ Research cache updated.")
             except Exception as e:
                 print(f"⚠️ Failed to parse research data: {e}")
