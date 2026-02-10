@@ -15,6 +15,7 @@ class VerificationResult:
     status: str
     errors: List[str]
     sentence_map: List[Dict[str, List[str]]]
+    coverage: Dict[str, float]
 
 
 def _extract_source_ids(text: str) -> Set[str]:
@@ -103,6 +104,8 @@ class ScriptValidator:
         sentence_map: List[Dict[str, List[str]]] = []
         factual_total = 0
         factual_cited = 0
+        section_total = {"high": 0, "medium": 0}
+        section_cited = {"high": 0, "medium": 0}
 
         for index, sentence in enumerate(sentences, start=1):
             sentence_sources = _extract_source_ids(sentence)
@@ -130,8 +133,12 @@ class ScriptValidator:
                 continue
             if requires_source:
                 factual_total += 1
+                if risk in section_total:
+                    section_total[risk] += 1
                 if normalized_sources:
                     factual_cited += 1
+                    if risk in section_cited:
+                        section_cited[risk] += 1
             if risk == "high" and not normalized_sources:
                 errors.append(f"Sentence {index} high-risk claim missing verified source_id.")
             if risk == "medium" and requires_source and not normalized_sources:
@@ -143,4 +150,9 @@ class ScriptValidator:
                 errors = [err for err in errors if "medium-risk" not in err]
 
         status = "pass" if not errors else "fail"
-        return VerificationResult(status=status, errors=errors, sentence_map=sentence_map)
+        coverage = {
+            "factual_coverage": round((factual_cited / factual_total), 4) if factual_total else 0.0,
+            "high_risk_coverage": round((section_cited["high"] / section_total["high"]), 4) if section_total["high"] else 0.0,
+            "medium_risk_coverage": round((section_cited["medium"] / section_total["medium"]), 4) if section_total["medium"] else 0.0,
+        }
+        return VerificationResult(status=status, errors=errors, sentence_map=sentence_map, coverage=coverage)

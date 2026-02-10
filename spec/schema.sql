@@ -51,8 +51,12 @@ CREATE TABLE IF NOT EXISTS video_metadata (
   tags jsonb NOT NULL,
   chapters jsonb NOT NULL,
   pinned_comment text NOT NULL,
+  pinned_comment_variants jsonb,
   thumbnail_variants jsonb,
   community_post text,
+  community_post_variants jsonb,
+  estimated_runtime_sec integer,
+  speech_rate_wpm integer,
   schema_version text NOT NULL,
   created_at timestamptz DEFAULT now(),
   updated_at timestamptz DEFAULT now()

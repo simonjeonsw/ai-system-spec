@@ -99,8 +99,12 @@ Stores generated metadata for each video.
 | tags           | jsonb       | Tag list                                |
 | chapters       | jsonb       | Chapter list                            |
 | pinned_comment | text        | Generated pinned comment                |
+| pinned_comment_variants | jsonb | A/B pinned comment variants         |
 | thumbnail_variants | jsonb   | A/B thumbnail concepts                  |
 | community_post | text        | Generated community post                |
+| community_post_variants | jsonb | A/B community post variants         |
+| estimated_runtime_sec | integer | Estimated runtime in seconds        |
+| speech_rate_wpm | integer    | Assumed narration speed                |
 | schema_version | text        | Schema version                          |
 | created_at     | timestamptz | default now()                          |
 | updated_at     | timestamptz | default now()                          |
