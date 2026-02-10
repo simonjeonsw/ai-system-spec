@@ -507,7 +507,7 @@ def run_pipeline(video_input: str, refresh: bool = False) -> Dict[str, Any]:
         metrics=build_metrics(cache_hit=False),
     )
 
-    verification_report = None
+    validation_report = None
     state: Dict[str, Any] = {}
 
     def _checkpoint_state() -> None:
@@ -660,17 +660,18 @@ def run_pipeline(video_input: str, refresh: bool = False) -> Dict[str, Any]:
 
         validator = ScriptValidator(research_payload, script_payload)
         verification_result = validator.validate()
-        verification_report = {
+        validation_report = {
             "status": verification_result.status,
             "errors": verification_result.errors,
             "sentence_map": verification_result.sentence_map,
             "coverage": verification_result.coverage,
+            "semantic": verification_result.semantic,
         }
         emit_run_log(
             stage="validator",
             status="success" if verification_result.status == "pass" else "failure",
             input_refs={"video_id": video_id, "root_run_id": run_id},
-            output_refs={"verification_report": verification_report},
+            output_refs={"validation_report": validation_report},
             metrics=build_metrics(cache_hit=False),
             run_id=_log_run_id(run_id, "validator", 1),
         )
@@ -713,11 +714,12 @@ def run_pipeline(video_input: str, refresh: bool = False) -> Dict[str, Any]:
 
             validator = ScriptValidator(research_payload, script_payload)
             verification_result = validator.validate()
-            verification_report = {
+            validation_report = {
                 "status": verification_result.status,
                 "errors": verification_result.errors,
                 "sentence_map": verification_result.sentence_map,
                 "coverage": verification_result.coverage,
+                "semantic": verification_result.semantic,
             }
             emit_run_log(
                 stage="validator",
@@ -727,7 +729,7 @@ def run_pipeline(video_input: str, refresh: bool = False) -> Dict[str, Any]:
                     "retry": "validator_feedback",
                     "root_run_id": run_id,
                 },
-                output_refs={"verification_report": verification_report},
+                output_refs={"validation_report": validation_report},
                 metrics=build_metrics(cache_hit=False),
                 run_id=_log_run_id(run_id, "validator", 2),
             )
@@ -776,6 +778,26 @@ def run_pipeline(video_input: str, refresh: bool = False) -> Dict[str, Any]:
             )
             save_json("metadata", video_id, metadata_payload)
         state["metadata"] = metadata_payload
+
+        semantic_result = validator.semantic_consistency_check(
+            metadata_payload=metadata_payload,
+            scene_output=scene_output,
+        )
+        if semantic_result["status"] != "pass":
+            emit_run_log(
+                stage="semantic_validator",
+                status="failure",
+                input_refs={"video_id": video_id, "root_run_id": run_id},
+                output_refs={"semantic_errors": semantic_result["errors"]},
+                metrics=build_metrics(cache_hit=False),
+                run_id=_log_run_id(run_id, "semantic_validator", 1),
+            )
+            raise ValueError("; ".join(semantic_result["errors"][:3]))
+
+        if validation_report is None:
+            validation_report = {"status": "pass", "errors": [], "sentence_map": [], "coverage": {}, "semantic": {}}
+        validation_report["semantic"] = semantic_result
+
         supabase.table("video_metadata").upsert(
             {
                 "video_id": video_id,
@@ -827,7 +849,8 @@ def run_pipeline(video_input: str, refresh: bool = False) -> Dict[str, Any]:
         "scenes": scene_output,
         "script_long": script_payload,
         "script_shorts": shorts_payload,
-        "verification_report": verification_report,
+        "validation_report": validation_report,
+        "verification_report": validation_report,
         "metadata": metadata_payload,
     }
 
@@ -872,7 +895,8 @@ def main() -> int:
     else:
         print(f"✅ Pipeline completed: {result['video_id']}")
         print("Artifacts: data/{video_id}_{research|plan|script|script_long|script_shorts|scenes|metadata}.{json|md}")
-    save_json("verification_report", result["video_id"], result.get("verification_report") or {"status": "n/a", "errors": [], "sentence_map": []})
+    save_json("validation_report", result["video_id"], result.get("validation_report") or {"status": "n/a", "errors": [], "sentence_map": []})
+    save_json("verification_report", result["video_id"], result.get("validation_report") or {"status": "n/a", "errors": [], "sentence_map": []})
     manifest_path = Path(__file__).resolve().parent.parent / "data" / f"{result['video_id']}_pipeline.json"
     manifest = {
         "video_id": result["video_id"],
@@ -882,6 +906,7 @@ def main() -> int:
             "scenes": f"data/{result['video_id']}_scenes.json",
             "script": f"data/{result['video_id']}_script.json",
             "metadata": f"data/{result['video_id']}_metadata.json",
+            "validation_report": f"data/{result['video_id']}_validation_report.json",
             "verification_report": f"data/{result['video_id']}_verification_report.json",
         },
     }
