@@ -1,0 +1,158 @@
+{
+  "scenes": [
+    {
+      "scene_id": "s1-hook",
+      "objective": "Introduce the counterintuitive idea that holding cash can make you poorer.",
+      "key_claims": [
+        "Holding physical cash for extended periods can lead to a significant loss of purchasing power, effectively making individuals poorer.",
+        "Inflation is the primary mechanism through which the value of cash erodes."
+      ],
+      "source_refs": [
+        {
+          "claim": "Holding physical cash for extended periods can lead to a significant loss of purchasing power, effectively making individuals poorer.",
+          "sources": [
+            "src-001"
+          ]
+        },
+        {
+          "claim": "Inflation is the primary mechanism through which the value of cash erodes.",
+          "sources": [
+            "src-002"
+          ]
+        }
+      ],
+      "evidence_sources": [
+        "src-001",
+        "src-002"
+      ],
+      "visual_prompt": "A visual of a wallet or piggy bank slowly deflating or crumbling, with the text 'Your Cash is Shrinking?' appearing on screen.",
+      "narration_prompt": "You might think keeping your money safe in a savings account or under your mattress is a smart move. But what if holding onto cash is actually making you poorer?",
+      "transition_note": "Transition from the hook to explaining the core reason: inflation.",
+      "narrative_role": "hook",
+      "schema_version": "1.0"
+    },
+    {
+      "scene_id": "s2-proof",
+      "objective": "Explain inflation as the primary driver of cash value erosion.",
+      "key_claims": [
+        "Inflation diminishes the purchasing power of cash over time.",
+        "The value of money erodes over time."
+      ],
+      "source_refs": [
+        {
+          "claim": "Inflation diminishes the purchasing power of cash over time.",
+          "sources": [
+            "src-002"
+          ]
+        },
+        {
+          "claim": "The value of money erodes over time.",
+          "sources": [
+            "src-001"
+          ]
+        }
+      ],
+      "evidence_sources": [
+        "src-001",
+        "src-002"
+      ],
+      "visual_prompt": "An animation showing a shopping cart with a decreasing number of items as a clock ticks forward, symbolizing inflation eroding purchasing power. Labels like 'Yesterday's $100' and 'Today's $100' could show different buying capacities.",
+      "narration_prompt": "The culprit is inflation. Think of it as a silent tax on your money. Over time, the prices of goods and services tend to rise, meaning your cash buys less and less. This erosion of purchasing power is why passively holding cash can be so detrimental.",
+      "transition_note": "Transition from inflation to another key factor: exchange rates.",
+      "narrative_role": "proof",
+      "schema_version": "1.0"
+    },
+    {
+      "scene_id": "s3-proof",
+      "objective": "Introduce the role of exchange rates in financial literacy and wealth preservation.",
+      "key_claims": [
+        "Understanding exchange rates is crucial for financial literacy.",
+        "Exchange rates impact the real value of money and international purchasing power."
+      ],
+      "source_refs": [
+        {
+          "claim": "Understanding exchange rates is crucial for financial literacy.",
+          "sources": [
+            "src-001",
+            "src-003"
+          ]
+        },
+        {
+          "claim": "Exchange rates impact the real value of money and international purchasing power.",
+          "sources": [
+            "src-003"
+          ]
+        }
+      ],
+      "evidence_sources": [
+        "src-001",
+        "src-003"
+      ],
+      "visual_prompt": "A split screen showing two different countries' currencies (e.g., USD and EUR) with fluctuating exchange rates visualized as rising and falling graphs. Arrows indicate money flowing between countries.",
+      "narration_prompt": "But inflation isn't the only factor. Exchange rates play a critical role too. They determine how much your currency is worth compared to others, affecting not only your ability to buy goods internationally but also the real value of your savings and potential investment returns.",
+      "transition_note": "Transition from explaining the economic factors to the importance of financial education.",
+      "narrative_role": "proof",
+      "schema_version": "1.0"
+    },
+    {
+      "scene_id": "s4-insight",
+      "objective": "Highlight the necessity of financial literacy to combat these economic forces.",
+      "key_claims": [
+        "Financial education is essential for preserving and growing personal wealth.",
+        "Lack of financial literacy leads to a decrease in real purchasing power."
+      ],
+      "source_refs": [
+        {
+          "claim": "Financial education is essential for preserving and growing personal wealth.",
+          "sources": [
+            "src-001"
+          ]
+        },
+        {
+          "claim": "Lack of financial literacy leads to a decrease in real purchasing power.",
+          "sources": [
+            "src-001"
+          ]
+        }
+      ],
+      "evidence_sources": [
+        "src-001"
+      ],
+      "visual_prompt": "A graphic showing a person struggling to navigate a maze labeled 'Economy' with signs for 'Inflation' and 'Exchange Rates'. A path labeled 'Financial Literacy' leads to a treasure chest.",
+      "narration_prompt": "This is why financial literacy, especially understanding concepts like inflation and exchange rates, is no longer a luxury, but a necessity. Without this knowledge, your wealth is vulnerable to forces you might not even understand, leading to a gradual, and often unnoticed, decline in your real purchasing power.",
+      "transition_note": "Transition from the problem to the solution and actionable advice.",
+      "narrative_role": "insight",
+      "schema_version": "1.0"
+    },
+    {
+      "scene_id": "s5-payoff",
+      "objective": "Provide actionable takeaways for viewers to protect and grow their wealth.",
+      "key_claims": [
+        "To protect and grow wealth, viewers should actively seek to understand economic concepts like inflation and exchange rates.",
+        "Simply holding cash without investing or managing it strategically can lead to a decline in real purchasing power."
+      ],
+      "source_refs": [
+        {
+          "claim": "To protect and grow wealth, viewers should actively seek to understand economic concepts like inflation and exchange rates.",
+          "sources": [
+            "src-001"
+          ]
+        },
+        {
+          "claim": "Simply holding cash without investing or managing it strategically can lead to a decline in real purchasing power.",
+          "sources": [
+            "src-001"
+          ]
+        }
+      ],
+      "evidence_sources": [
+        "src-001"
+      ],
+      "visual_prompt": "A montage of diverse investment options and educational resources: charts, global maps, books on finance, and people actively learning. A growing plant symbolizing wealth could be a central visual.",
+      "narration_prompt": "So, what can you do? Don't just hold cash. Actively learn about inflation and exchange rates. Consider diversifying your assets, exploring inflation-hedging investments, and continuously educating yourself. Informed financial decisions are your best defense against wealth erosion and your greatest tool for growth.",
+      "transition_note": "Concluding scene, summarizing the core message.",
+      "narrative_role": "payoff",
+      "schema_version": "1.0"
+    }
+  ]
+}
