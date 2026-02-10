@@ -1,0 +1,10 @@
+{
+  "video_id": "Y-lFcCk0uEQ",
+  "files": {
+    "research": "data/Y-lFcCk0uEQ_research.json",
+    "plan": "data/Y-lFcCk0uEQ_plan.json",
+    "scenes": "data/Y-lFcCk0uEQ_scenes.json",
+    "script": "data/Y-lFcCk0uEQ_script.json",
+    "metadata": "data/Y-lFcCk0uEQ_metadata.json"
+  }
+}

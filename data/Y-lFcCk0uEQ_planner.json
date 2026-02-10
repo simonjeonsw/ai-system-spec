@@ -1,0 +1,82 @@
+{
+  "topic_candidates": [
+    {
+      "topic": "Why Holding Cash Makes You Poorer: The Inflation and Exchange Rate Effect",
+      "scores": {
+        "audience_fit": 5,
+        "novelty": 4,
+        "monetization_potential": 4,
+        "evidence_availability": 5,
+        "production_feasibility": 5,
+        "viral_potential": 7
+      },
+      "total_score": 30,
+      "notes": "Directly addresses a core financial concept relevant to the audience, with strong evidence support and high production feasibility. Novelty comes from the specific framing around both inflation and exchange rates together."
+    },
+    {
+      "topic": "Inflation vs. Exchange Rates: Which Erodes Your Wealth Faster?",
+      "scores": {
+        "audience_fit": 4,
+        "novelty": 3,
+        "monetization_potential": 3,
+        "evidence_availability": 5,
+        "production_feasibility": 5,
+        "viral_potential": 6
+      },
+      "total_score": 26,
+      "notes": "A good topic but slightly more comparative than directly actionable. Evidence is strong. Novelty is moderate."
+    },
+    {
+      "topic": "The Hidden Costs of Cash: Understanding Inflation's Silent Tax",
+      "scores": {
+        "audience_fit": 5,
+        "novelty": 3,
+        "monetization_potential": 4,
+        "evidence_availability": 4,
+        "production_feasibility": 5,
+        "viral_potential": 6
+      },
+      "total_score": 27,
+      "notes": "Focuses solely on inflation, which is a strong hook. Exchange rates are a missed opportunity for deeper analysis and novelty. Evidence is good."
+    },
+    {
+      "topic": "Beyond Savings Accounts: Protecting Your Money from Inflation and Currency Shifts",
+      "scores": {
+        "audience_fit": 5,
+        "novelty": 4,
+        "monetization_potential": 4,
+        "evidence_availability": 4,
+        "production_feasibility": 5,
+        "viral_potential": 5
+      },
+      "total_score": 27,
+      "notes": "Broader focus on solutions. Might be less direct than the chosen topic, but offers actionable advice. Novelty in connecting solutions to both inflation and currency."
+    }
+  ],
+  "topic": "Why Holding Cash Makes You Poorer: The Inflation and Exchange Rate Effect",
+  "target_audience": "Insightful finance explainer",
+  "business_goal": "Educate viewers on how to preserve and grow wealth by understanding the erosion of cash value due to inflation and exchange rates.",
+  "monetization_angle": "Affiliate marketing for investment platforms, financial education courses, or books on personal finance and investing.",
+  "retention_hypothesis": "Viewers will remain engaged by the clear explanation of complex economic concepts and actionable insights into wealth preservation, leading them to seek more content on financial literacy.",
+  "content_constraints": [
+    "Must provide clear, simple explanations of inflation and exchange rates.",
+    "Must avoid overly technical jargon.",
+    "Must present practical takeaways for viewers.",
+    "Must incorporate the contrarian angle of when holding cash might be prudent.",
+    "Must cite sources clearly."
+  ],
+  "research_requirements": [
+    "Detailed explanation of how inflation erodes purchasing power with real-world examples.",
+    "Explanation of how exchange rates can impact the value of savings, especially for those with international exposure or goals.",
+    "Analysis of the interplay between inflation and exchange rates.",
+    "Examples of investment strategies or financial instruments that can hedge against inflation and currency fluctuations.",
+    "Evidence supporting the claim that passive cash holding leads to wealth diminishment.",
+    "Data points or historical trends illustrating inflation and exchange rate impacts."
+  ],
+  "benchmark_insights": {
+    "title_hooks": "Channels like Graham Stephan use direct, provocative questions and clear benefit statements (e.g., 'This is How I Made $1,000,000') to grab attention. Investopedia uses more descriptive, authoritative titles. SyukaWorld and 부읽남 often use strong visuals and direct calls to action in their thumbnails/titles.",
+    "retention_graphs": "High retention often comes from clear narrative structures, visual aids (charts, graphs, animations), relatable examples, and consistent value delivery. Breaking down complex topics into digestible segments and using 'hook-recap' cycles are common."
+  },
+  "selection_rationale": "This topic scored highest due to its strong audience fit, excellent evidence availability, and high production feasibility. While its viral potential (7/10) is not the absolute highest, it is sufficiently high and the topic's direct relevance to wealth preservation makes it a compelling choice. The framing that 'holding cash makes you poorer' is inherently attention-grabbing and aligns with the desire of an insightful finance explainer's audience to understand and combat wealth erosion. The inclusion of both inflation and exchange rates offers a more comprehensive and novel perspective compared to focusing on just one element. The contrarian angle will be crucial for balancing the message and providing a nuanced perspective.",
+  "schema_version": "1.0"
+}
