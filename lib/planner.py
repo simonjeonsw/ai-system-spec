@@ -8,11 +8,12 @@ venv_path = Path(__file__).resolve().parent.parent / ".venv" / "Lib" / "site-pac
 sys.path.append(str(venv_path))
 
 from .supabase_client import supabase
-from .json_utils import ensure_schema_version, extract_json
+from .json_utils import ensure_schema_version, extract_json_relaxed, parse_json_with_repair
 from .run_logger import build_metrics, emit_run_log
 from .schema_validator import validate_payload
-from .storage_utils import normalize_video_id, save_json
+from .storage_utils import normalize_video_id, save_json, save_raw
 from .model_router import ModelRouter
+from .benchmarking import build_planner_context
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -45,7 +46,7 @@ class ContentPlanner:
         try:
             return json.loads(content)
         except json.JSONDecodeError:
-            return extract_json(content)
+            return extract_json_relaxed(content)
 
     def create_project_plan(self, topic, target_persona="insightful finance explainer"):
         """Create a planner output that matches the planner_output schema."""
@@ -55,11 +56,12 @@ class ContentPlanner:
         if not research_payload:
             return "❌ Research data not found. Run the research stage first."
 
+        benchmark_context = build_planner_context()
         # 2. Planner prompt (English JSON output only)
         prompt_text = f"""
         You are the Planner agent. Return JSON only that matches this schema:
         {{
-          "topic_candidates": [{{"topic": "...", "scores": {{"audience_fit": 0, "novelty": 0, "monetization_potential": 0, "evidence_availability": 0, "production_feasibility": 0}}, "total_score": 0, "notes": "..."}}],
+          "topic_candidates": [{{"topic": "...", "scores": {{"audience_fit": 0, "novelty": 0, "monetization_potential": 0, "evidence_availability": 0, "production_feasibility": 0, "viral_potential": 0}}, "total_score": 0, "notes": "..."}}],
           "topic": "...",
           "target_audience": "...",
           "business_goal": "...",
@@ -67,15 +69,21 @@ class ContentPlanner:
           "retention_hypothesis": "...",
           "content_constraints": ["..."],
           "research_requirements": ["..."],
+          "benchmark_insights": {{}},
           "selection_rationale": "...",
           "schema_version": "1.0"
         }}
 
         Constraints:
         - Output English only.
-        - Provide 3-5 topic_candidates with scores from 1-5 and total_score.
+        - Provide 3-5 topic_candidates with scores from 1-5 and total_score (include viral_potential scored 1-10).
         - Select the highest scoring topic and justify selection_rationale.
+        - If the selected topic has viral_potential < 7, explicitly justify why it was chosen in selection_rationale.
+        - Use benchmark_insights to explain viral_potential scoring.
         - Use target persona: {target_persona}.
+
+        Benchmarking Context:
+        {json.dumps(benchmark_context, ensure_ascii=False)}
 
         Research JSON:
         {json.dumps(research_payload, ensure_ascii=False)}
@@ -86,28 +94,34 @@ class ContentPlanner:
         try:
             # 3. Generate planner output
             response_text = self.router.generate_content(prompt_text)
-            plan_payload = extract_json(response_text)
+            save_raw("planner_raw", normalized_topic, response_text)
+            plan_payload = self._parse_with_retry(prompt_text, response_text, normalized_topic)
             ensure_schema_version(plan_payload, "1.0")
-            validate_payload("planner_output", plan_payload)
+            save_json("planner", normalized_topic, plan_payload)
+            validation_error = None
+            try:
+                validate_payload("planner_output", plan_payload)
+            except Exception as exc:
+                validation_error = str(exc)
 
             # 4. Store planner output
-            supabase.table("planning_cache").upsert(
-                {
-                    "topic": normalized_topic,
-                    "plan_content": json.dumps(plan_payload, ensure_ascii=False),
-                },
-                on_conflict="topic",
-            ).execute()
-            save_json("planner", normalized_topic, plan_payload)
+            if not validation_error:
+                supabase.table("planning_cache").upsert(
+                    {
+                        "topic": normalized_topic,
+                        "plan_content": json.dumps(plan_payload, ensure_ascii=False),
+                    },
+                    on_conflict="topic",
+                ).execute()
 
             emit_run_log(
                 stage="planner",
-                status="success",
+                status="success" if not validation_error else "warning",
                 input_refs={"topic": normalized_topic},
-                output_refs={"planning_cache": "inserted"},
+                output_refs={"planning_cache": "inserted" if not validation_error else "skipped"},
                 metrics=build_metrics(cache_hit=False),
             )
-            return json.dumps(plan_payload, ensure_ascii=False, indent=2)
+            return plan_payload
 
         except Exception as e:
             emit_run_log(
@@ -118,6 +132,28 @@ class ContentPlanner:
                 metrics=build_metrics(cache_hit=False),
             )
             return f"❌ Planner stage failed: {str(e)}"
+
+    def _parse_with_retry(self, prompt_text: str, response_text: str, topic: str, max_attempts: int = 2) -> dict:
+        malformed_preview = (response_text or "")[:200]
+        try:
+            return parse_json_with_repair(response_text)
+        except Exception:
+            if max_attempts <= 1:
+                raise ValueError(
+                    "Planner JSON parse failed after retries. "
+                    f"Malformed output preview: {malformed_preview}"
+                )
+            cleanup_prompt = (
+                "You are a JSON formatter. Fix the malformed JSON below and return ONLY valid JSON. "
+                "Do not add explanations, markdown, or code fences.\n\n"
+                "MALFORMED OUTPUT:\n"
+                f"{response_text}\n\n"
+                "TARGET INSTRUCTIONS:\n"
+                f"{prompt_text}"
+            )
+            retry_text = self.router.generate_content(cleanup_prompt)
+            save_raw("planner_cleanup_raw", topic, retry_text)
+            return self._parse_with_retry(prompt_text, retry_text, topic, max_attempts=max_attempts - 1)
 
 
 
@@ -148,4 +184,7 @@ if __name__ == "__main__":
             result = planner.create_project_plan(normalized_topic)
         print("\n" + "="*50)
         print("📝 Generated plan:\n")
-        print(result)
+        if isinstance(result, dict):
+            print(json.dumps(result, ensure_ascii=False, indent=2))
+        else:
+            print(result)
