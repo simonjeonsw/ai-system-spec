@@ -1,0 +1,881 @@
+{
+  "scenes": [
+    {
+      "scene_id": "s01",
+      "objective": "Deliver beat 1-1 from section 'block-1'.",
+      "visual_cue": "",
+      "key_claims": [
+        "[Scene: Intro Music with Channel Branding] Hey everyone, and welcome back to Finance Explainer! Today, we’re diving into something that migh"
+      ],
+      "source_refs": [],
+      "evidence_sources": [],
+      "visual_prompt": "3D isometric view, premium Blender-style rendering, minimalist professional finance aesthetic, soft clay-like textures, soft studio lighting, clean background, high resolution, 8k. On-screen host narration with supporting visuals.. minimalist professional finance aesthetic. Camera angle: wide shot of a bank vault.",
+      "narration_prompt": "[Scene: Intro Music with Channel Branding] Hey everyone, and welcome back to Finance Explainer! Today, we’re diving into something that might sound a little… controversial. You work hard, right?",
+      "transition_note": "Advance to the next semantic beat while preserving narrative continuity.",
+      "camera_angle": "wide shot of a bank vault",
+      "overlay_text": "",
+      "style_profile": "isometric_3d",
+      "scene_engine_version": "2.0",
+      "source_script_hash": "0488d1fbc65f8088ad5802c1b4b12d759dc0e04116a3a61b10781ed403e4e2d5",
+      "schema_version": "1.0"
+    },
+    {
+      "scene_id": "s02",
+      "objective": "Deliver beat 1-2 from section 'block-1'.",
+      "visual_cue": "",
+      "key_claims": [
+        "You put in the hours, you give it your all. But what if I told you that for many of us, that relentless hard work might actually be keeping "
+      ],
+      "source_refs": [],
+      "evidence_sources": [],
+      "visual_prompt": "3D isometric view, premium Blender-style rendering, minimalist professional finance aesthetic, soft clay-like textures, soft studio lighting, clean background, high resolution, 8k. On-screen host narration with supporting visuals.. minimalist professional finance aesthetic. Camera angle: close-up of a coin.",
+      "narration_prompt": "You put in the hours, you give it your all. But what if I told you that for many of us, that relentless hard work might actually be keeping us poorer? Sounds crazy, doesn’t it?",
+      "transition_note": "Advance to the next semantic beat while preserving narrative continuity.",
+      "camera_angle": "close-up of a coin",
+      "overlay_text": "",
+      "style_profile": "isometric_3d",
+      "scene_engine_version": "2.0",
+      "source_script_hash": "0488d1fbc65f8088ad5802c1b4b12d759dc0e04116a3a61b10781ed403e4e2d5",
+      "schema_version": "1.0"
+    },
+    {
+      "scene_id": "s03",
+      "objective": "Deliver beat 1-3 from section 'block-1'.",
+      "visual_cue": "",
+      "key_claims": [
+        "Stick around, because we’re going to unpack this paradox."
+      ],
+      "source_refs": [],
+      "evidence_sources": [],
+      "visual_prompt": "3D isometric view, premium Blender-style rendering, minimalist professional finance aesthetic, soft clay-like textures, soft studio lighting, clean background, high resolution, 8k. On-screen host narration with supporting visuals.. minimalist professional finance aesthetic. Camera angle: isometric top-down financial dashboard view.",
+      "narration_prompt": "Stick around, because we’re going to unpack this paradox.",
+      "transition_note": "Advance to the next semantic beat while preserving narrative continuity.",
+      "camera_angle": "isometric top-down financial dashboard view",
+      "overlay_text": "",
+      "style_profile": "isometric_3d",
+      "scene_engine_version": "2.0",
+      "source_script_hash": "0488d1fbc65f8088ad5802c1b4b12d759dc0e04116a3a61b10781ed403e4e2d5",
+      "schema_version": "1.0"
+    },
+    {
+      "scene_id": "s04",
+      "objective": "Deliver beat 1-4 from section 'block-1'.",
+      "visual_cue": "",
+      "key_claims": [
+        "[Visual: Graphic showing a person working diligently, with arrows pointing to a shrinking wallet or piggy bank.] We’re taught from a young a"
+      ],
+      "source_refs": [],
+      "evidence_sources": [],
+      "visual_prompt": "3D isometric view, premium Blender-style rendering, minimalist professional finance aesthetic, soft clay-like textures, soft studio lighting, clean background, high resolution, 8k. On-screen host narration with supporting visuals.. minimalist professional finance aesthetic. Camera angle: over-the-shoulder view of a ledger.",
+      "narration_prompt": "[Visual: Graphic showing a person working diligently, with arrows pointing to a shrinking wallet or piggy bank.] We’re taught from a young age that success is a direct result of effort.",
+      "transition_note": "Advance to the next semantic beat while preserving narrative continuity.",
+      "camera_angle": "over-the-shoulder view of a ledger",
+      "overlay_text": "",
+      "style_profile": "isometric_3d",
+      "scene_engine_version": "2.0",
+      "source_script_hash": "0488d1fbc65f8088ad5802c1b4b12d759dc0e04116a3a61b10781ed403e4e2d5",
+      "schema_version": "1.0"
+    },
+    {
+      "scene_id": "s05",
+      "objective": "Deliver beat 1-5 from section 'block-1'.",
+      "visual_cue": "",
+      "key_claims": [
+        "'Hard work pays off.' 'No pain, no gain.' These are the mottos that fuel our drive."
+      ],
+      "source_refs": [],
+      "evidence_sources": [],
+      "visual_prompt": "3D isometric view, premium Blender-style rendering, minimalist professional finance aesthetic, soft clay-like textures, soft studio lighting, clean background, high resolution, 8k. On-screen host narration with supporting visuals.. minimalist professional finance aesthetic. Camera angle: medium shot of host with infographic wall.",
+      "narration_prompt": "'Hard work pays off.' 'No pain, no gain.' These are the mottos that fuel our drive.",
+      "transition_note": "Advance to the next semantic beat while preserving narrative continuity.",
+      "camera_angle": "medium shot of host with infographic wall",
+      "overlay_text": "",
+      "style_profile": "isometric_3d",
+      "scene_engine_version": "2.0",
+      "source_script_hash": "0488d1fbc65f8088ad5802c1b4b12d759dc0e04116a3a61b10781ed403e4e2d5",
+      "schema_version": "1.0"
+    },
+    {
+      "scene_id": "s06",
+      "objective": "Deliver beat 1-6 from section 'block-1'.",
+      "visual_cue": "",
+      "key_claims": [
+        "But what happens when the system itself is designed in a way that makes it incredibly difficult to escape the cycle of scarcity, no matter h"
+      ],
+      "source_refs": [],
+      "evidence_sources": [],
+      "visual_prompt": "3D isometric view, premium Blender-style rendering, minimalist professional finance aesthetic, soft clay-like textures, soft studio lighting, clean background, high resolution, 8k. On-screen host narration with supporting visuals.. minimalist professional finance aesthetic. Camera angle: macro shot of currency notes and calculator.",
+      "narration_prompt": "But what happens when the system itself is designed in a way that makes it incredibly difficult to escape the cycle of scarcity, no matter how much you hustle?",
+      "transition_note": "Advance to the next semantic beat while preserving narrative continuity.",
+      "camera_angle": "macro shot of currency notes and calculator",
+      "overlay_text": "",
+      "style_profile": "isometric_3d",
+      "scene_engine_version": "2.0",
+      "source_script_hash": "0488d1fbc65f8088ad5802c1b4b12d759dc0e04116a3a61b10781ed403e4e2d5",
+      "schema_version": "1.0"
+    },
+    {
+      "scene_id": "s07",
+      "objective": "Deliver beat 1-7 from section 'block-1'.",
+      "visual_cue": "",
+      "key_claims": [
+        "That’s the paradox we’re exploring today: The Paradox of Hard Work: Why You Might Be Getting Poorer. [Visual: Title card for the video."
+      ],
+      "source_refs": [],
+      "evidence_sources": [],
+      "visual_prompt": "3D isometric view, premium Blender-style rendering, minimalist professional finance aesthetic, soft clay-like textures, soft studio lighting, clean background, high resolution, 8k. On-screen host narration with supporting visuals.. minimalist professional finance aesthetic. Camera angle: wide shot of a bank vault.",
+      "narration_prompt": "That’s the paradox we’re exploring today: The Paradox of Hard Work: Why You Might Be Getting Poorer. [Visual: Title card for the video.",
+      "transition_note": "Advance to the next semantic beat while preserving narrative continuity.",
+      "camera_angle": "wide shot of a bank vault",
+      "overlay_text": "",
+      "style_profile": "isometric_3d",
+      "scene_engine_version": "2.0",
+      "source_script_hash": "0488d1fbc65f8088ad5802c1b4b12d759dc0e04116a3a61b10781ed403e4e2d5",
+      "schema_version": "1.0"
+    },
+    {
+      "scene_id": "s08",
+      "objective": "Deliver beat 1-8 from section 'block-1'.",
+      "visual_cue": "",
+      "key_claims": [
+        "--- PART 1: The Conventional Wisdom (and its Flaw) --- [Visual: Montage of people working in various professions - office worker, constructi"
+      ],
+      "source_refs": [],
+      "evidence_sources": [],
+      "visual_prompt": "3D isometric view, premium Blender-style rendering, minimalist professional finance aesthetic, soft clay-like textures, soft studio lighting, clean background, high resolution, 8k. On-screen host narration with supporting visuals.. minimalist professional finance aesthetic. Camera angle: close-up of a coin. Overlay text: '1'.",
+      "narration_prompt": "--- PART 1: The Conventional Wisdom (and its Flaw) --- [Visual: Montage of people working in various professions - office worker, construction, retail, etc. Fast-paced. Let’s start with the basics, the narrative we’ve all been sold.",
+      "transition_note": "Advance to the next semantic beat while preserving narrative continuity.",
+      "camera_angle": "close-up of a coin",
+      "overlay_text": "1",
+      "style_profile": "isometric_3d",
+      "scene_engine_version": "2.0",
+      "source_script_hash": "0488d1fbc65f8088ad5802c1b4b12d759dc0e04116a3a61b10781ed403e4e2d5",
+      "schema_version": "1.0"
+    },
+    {
+      "scene_id": "s09",
+      "objective": "Deliver beat 1-9 from section 'block-1'.",
+      "visual_cue": "",
+      "key_claims": [
+        "You get an education, you get a job, you work diligently, save a little, and eventually, you’ll build wealth. It’s a straightforward equatio"
+      ],
+      "source_refs": [],
+      "evidence_sources": [],
+      "visual_prompt": "3D isometric view, premium Blender-style rendering, minimalist professional finance aesthetic, soft clay-like textures, soft studio lighting, clean background, high resolution, 8k. On-screen host narration with supporting visuals.. minimalist professional finance aesthetic. Camera angle: isometric top-down financial dashboard view.",
+      "narration_prompt": "You get an education, you get a job, you work diligently, save a little, and eventually, you’ll build wealth. It’s a straightforward equation, and for some, it works. But for many, the reality is starkly different.",
+      "transition_note": "Advance to the next semantic beat while preserving narrative continuity.",
+      "camera_angle": "isometric top-down financial dashboard view",
+      "overlay_text": "",
+      "style_profile": "isometric_3d",
+      "scene_engine_version": "2.0",
+      "source_script_hash": "0488d1fbc65f8088ad5802c1b4b12d759dc0e04116a3a61b10781ed403e4e2d5",
+      "schema_version": "1.0"
+    },
+    {
+      "scene_id": "s10",
+      "objective": "Deliver beat 1-10 from section 'block-1'.",
+      "visual_cue": "",
+      "key_claims": [
+        "You’re working harder than ever, you’re more productive than previous generations, yet the gap between your income and the cost of living se"
+      ],
+      "source_refs": [],
+      "evidence_sources": [],
+      "visual_prompt": "3D isometric view, premium Blender-style rendering, minimalist professional finance aesthetic, soft clay-like textures, soft studio lighting, clean background, high resolution, 8k. On-screen host narration with supporting visuals.. minimalist professional finance aesthetic. Camera angle: over-the-shoulder view of a ledger.",
+      "narration_prompt": "You’re working harder than ever, you’re more productive than previous generations, yet the gap between your income and the cost of living seems to be widening. [Visual: Chart showing rising inflation vs.",
+      "transition_note": "Advance to the next semantic beat while preserving narrative continuity.",
+      "camera_angle": "over-the-shoulder view of a ledger",
+      "overlay_text": "",
+      "style_profile": "isometric_3d",
+      "scene_engine_version": "2.0",
+      "source_script_hash": "0488d1fbc65f8088ad5802c1b4b12d759dc0e04116a3a61b10781ed403e4e2d5",
+      "schema_version": "1.0"
+    },
+    {
+      "scene_id": "s11",
+      "objective": "Deliver beat 1-11 from section 'block-1'.",
+      "visual_cue": "",
+      "key_claims": [
+        "stagnant wage growth over decades.] This isn't just a feeling. Data shows that while productivity has soared, wage growth for the average wo"
+      ],
+      "source_refs": [],
+      "evidence_sources": [],
+      "visual_prompt": "3D isometric view, premium Blender-style rendering, minimalist professional finance aesthetic, soft clay-like textures, soft studio lighting, clean background, high resolution, 8k. On-screen host narration with supporting visuals.. minimalist professional finance aesthetic. Camera angle: medium shot of host with infographic wall.",
+      "narration_prompt": "stagnant wage growth over decades.] This isn't just a feeling. Data shows that while productivity has soared, wage growth for the average worker has largely stagnated for decades, especially when adjusted for inflation.",
+      "transition_note": "Advance to the next semantic beat while preserving narrative continuity.",
+      "camera_angle": "medium shot of host with infographic wall",
+      "overlay_text": "",
+      "style_profile": "isometric_3d",
+      "scene_engine_version": "2.0",
+      "source_script_hash": "0488d1fbc65f8088ad5802c1b4b12d759dc0e04116a3a61b10781ed403e4e2d5",
+      "schema_version": "1.0"
+    },
+    {
+      "scene_id": "s12",
+      "objective": "Deliver beat 1-12 from section 'block-1'.",
+      "visual_cue": "",
+      "key_claims": [
+        "The cost of essentials like housing, healthcare, and education has skyrocketed, far outpacing any gains in income for many individuals [src-"
+      ],
+      "source_refs": [],
+      "evidence_sources": [],
+      "visual_prompt": "3D isometric view, premium Blender-style rendering, minimalist professional finance aesthetic, soft clay-like textures, soft studio lighting, clean background, high resolution, 8k. On-screen host narration with supporting visuals.. minimalist professional finance aesthetic. Camera angle: macro shot of currency notes and calculator. Overlay text: '001'.",
+      "narration_prompt": "The cost of essentials like housing, healthcare, and education has skyrocketed, far outpacing any gains in income for many individuals [src-001]. So, if you’re doing everything “right,” why aren’t you getting ahead?",
+      "transition_note": "Advance to the next semantic beat while preserving narrative continuity.",
+      "camera_angle": "macro shot of currency notes and calculator",
+      "overlay_text": "001",
+      "style_profile": "isometric_3d",
+      "scene_engine_version": "2.0",
+      "source_script_hash": "0488d1fbc65f8088ad5802c1b4b12d759dc0e04116a3a61b10781ed403e4e2d5",
+      "schema_version": "1.0"
+    },
+    {
+      "scene_id": "s13",
+      "objective": "Deliver beat 1-13 from section 'block-1'.",
+      "visual_cue": "",
+      "key_claims": [
+        "[Visual: A question mark graphic superimposed over the chart.] This is where we need to look beyond individual effort and consider the broad"
+      ],
+      "source_refs": [],
+      "evidence_sources": [],
+      "visual_prompt": "3D isometric view, premium Blender-style rendering, minimalist professional finance aesthetic, soft clay-like textures, soft studio lighting, clean background, high resolution, 8k. On-screen host narration with supporting visuals.. minimalist professional finance aesthetic. Camera angle: wide shot of a bank vault.",
+      "narration_prompt": "[Visual: A question mark graphic superimposed over the chart.] This is where we need to look beyond individual effort and consider the broader economic landscape.",
+      "transition_note": "Advance to the next semantic beat while preserving narrative continuity.",
+      "camera_angle": "wide shot of a bank vault",
+      "overlay_text": "",
+      "style_profile": "isometric_3d",
+      "scene_engine_version": "2.0",
+      "source_script_hash": "0488d1fbc65f8088ad5802c1b4b12d759dc0e04116a3a61b10781ed403e4e2d5",
+      "schema_version": "1.0"
+    },
+    {
+      "scene_id": "s14",
+      "objective": "Deliver beat 1-14 from section 'block-1'.",
+      "visual_cue": "",
+      "key_claims": [
+        "The simple equation of hard work = wealth is becoming increasingly flawed because it ignores systemic factors."
+      ],
+      "source_refs": [],
+      "evidence_sources": [],
+      "visual_prompt": "3D isometric view, premium Blender-style rendering, minimalist professional finance aesthetic, soft clay-like textures, soft studio lighting, clean background, high resolution, 8k. On-screen host narration with supporting visuals.. minimalist professional finance aesthetic. Camera angle: close-up of a coin.",
+      "narration_prompt": "The simple equation of hard work = wealth is becoming increasingly flawed because it ignores systemic factors.",
+      "transition_note": "Advance to the next semantic beat while preserving narrative continuity.",
+      "camera_angle": "close-up of a coin",
+      "overlay_text": "",
+      "style_profile": "isometric_3d",
+      "scene_engine_version": "2.0",
+      "source_script_hash": "0488d1fbc65f8088ad5802c1b4b12d759dc0e04116a3a61b10781ed403e4e2d5",
+      "schema_version": "1.0"
+    },
+    {
+      "scene_id": "s15",
+      "objective": "Deliver beat 1-15 from section 'block-1'.",
+      "visual_cue": "",
+      "key_claims": [
+        "--- PART 2: The Systemic Design of Scarcity --- [Visual: Animated graphic showing gears of an economic system turning, with some gears repre"
+      ],
+      "source_refs": [],
+      "evidence_sources": [],
+      "visual_prompt": "3D isometric view, premium Blender-style rendering, minimalist professional finance aesthetic, soft clay-like textures, soft studio lighting, clean background, high resolution, 8k. On-screen host narration with supporting visuals.. minimalist professional finance aesthetic. Camera angle: isometric top-down financial dashboard view. Overlay text: '2'.",
+      "narration_prompt": "--- PART 2: The Systemic Design of Scarcity --- [Visual: Animated graphic showing gears of an economic system turning, with some gears representing 'low wages,' 'high costs,' 'limited access.' The truth is, economies are not always designed for maximum individual prosperity.",
+      "transition_note": "Advance to the next semantic beat while preserving narrative continuity.",
+      "camera_angle": "isometric top-down financial dashboard view",
+      "overlay_text": "2",
+      "style_profile": "isometric_3d",
+      "scene_engine_version": "2.0",
+      "source_script_hash": "0488d1fbc65f8088ad5802c1b4b12d759dc0e04116a3a61b10781ed403e4e2d5",
+      "schema_version": "1.0"
+    },
+    {
+      "scene_id": "s16",
+      "objective": "Deliver beat 1-16 from section 'block-1'.",
+      "visual_cue": "",
+      "key_claims": [
+        "They are complex systems with inherent biases and structures. One of the most significant reasons why hard work might not be translating int"
+      ],
+      "source_refs": [],
+      "evidence_sources": [],
+      "visual_prompt": "3D isometric view, premium Blender-style rendering, minimalist professional finance aesthetic, soft clay-like textures, soft studio lighting, clean background, high resolution, 8k. On-screen host narration with supporting visuals.. minimalist professional finance aesthetic. Camera angle: over-the-shoulder view of a ledger. Overlay text: '001'.",
+      "narration_prompt": "They are complex systems with inherent biases and structures. One of the most significant reasons why hard work might not be translating into wealth is the existence of what economists call 'poverty traps' or 'economic traps' [src-001].",
+      "transition_note": "Advance to the next semantic beat while preserving narrative continuity.",
+      "camera_angle": "over-the-shoulder view of a ledger",
+      "overlay_text": "001",
+      "style_profile": "isometric_3d",
+      "scene_engine_version": "2.0",
+      "source_script_hash": "0488d1fbc65f8088ad5802c1b4b12d759dc0e04116a3a61b10781ed403e4e2d5",
+      "schema_version": "1.0"
+    },
+    {
+      "scene_id": "s17",
+      "objective": "Deliver beat 1-17 from section 'block-1'.",
+      "visual_cue": "",
+      "key_claims": [
+        "[Visual: Graphic illustrating a 'poverty trap' – a cycle of low income, low savings, high debt, limited opportunities.] Imagine a trap. Once"
+      ],
+      "source_refs": [],
+      "evidence_sources": [],
+      "visual_prompt": "3D isometric view, premium Blender-style rendering, minimalist professional finance aesthetic, soft clay-like textures, soft studio lighting, clean background, high resolution, 8k. On-screen host narration with supporting visuals.. minimalist professional finance aesthetic. Camera angle: medium shot of host with infographic wall.",
+      "narration_prompt": "[Visual: Graphic illustrating a 'poverty trap' – a cycle of low income, low savings, high debt, limited opportunities.] Imagine a trap. Once you’re in it, it’s incredibly difficult to get out, no matter how much you struggle.",
+      "transition_note": "Advance to the next semantic beat while preserving narrative continuity.",
+      "camera_angle": "medium shot of host with infographic wall",
+      "overlay_text": "",
+      "style_profile": "isometric_3d",
+      "scene_engine_version": "2.0",
+      "source_script_hash": "0488d1fbc65f8088ad5802c1b4b12d759dc0e04116a3a61b10781ed403e4e2d5",
+      "schema_version": "1.0"
+    },
+    {
+      "scene_id": "s18",
+      "objective": "Deliver beat 1-18 from section 'block-1'.",
+      "visual_cue": "",
+      "key_claims": [
+        "These traps are often perpetuated by a combination of factors: * **Wage Stagnation and Inequality:** As we mentioned, wages for many haven't"
+      ],
+      "source_refs": [],
+      "evidence_sources": [],
+      "visual_prompt": "3D isometric view, premium Blender-style rendering, minimalist professional finance aesthetic, soft clay-like textures, soft studio lighting, clean background, high resolution, 8k. On-screen host narration with supporting visuals.. minimalist professional finance aesthetic. Camera angle: macro shot of currency notes and calculator.",
+      "narration_prompt": "These traps are often perpetuated by a combination of factors: * **Wage Stagnation and Inequality:** As we mentioned, wages for many haven't kept pace with productivity or the cost of living.",
+      "transition_note": "Advance to the next semantic beat while preserving narrative continuity.",
+      "camera_angle": "macro shot of currency notes and calculator",
+      "overlay_text": "",
+      "style_profile": "isometric_3d",
+      "scene_engine_version": "2.0",
+      "source_script_hash": "0488d1fbc65f8088ad5802c1b4b12d759dc0e04116a3a61b10781ed403e4e2d5",
+      "schema_version": "1.0"
+    },
+    {
+      "scene_id": "s19",
+      "objective": "Deliver beat 1-19 from section 'block-1'.",
+      "visual_cue": "",
+      "key_claims": [
+        "This means a larger portion of your income is consumed by necessities, leaving little room for savings or investment."
+      ],
+      "source_refs": [],
+      "evidence_sources": [],
+      "visual_prompt": "3D isometric view, premium Blender-style rendering, minimalist professional finance aesthetic, soft clay-like textures, soft studio lighting, clean background, high resolution, 8k. On-screen host narration with supporting visuals.. minimalist professional finance aesthetic. Camera angle: wide shot of a bank vault.",
+      "narration_prompt": "This means a larger portion of your income is consumed by necessities, leaving little room for savings or investment.",
+      "transition_note": "Advance to the next semantic beat while preserving narrative continuity.",
+      "camera_angle": "wide shot of a bank vault",
+      "overlay_text": "",
+      "style_profile": "isometric_3d",
+      "scene_engine_version": "2.0",
+      "source_script_hash": "0488d1fbc65f8088ad5802c1b4b12d759dc0e04116a3a61b10781ed403e4e2d5",
+      "schema_version": "1.0"
+    },
+    {
+      "scene_id": "s20",
+      "objective": "Deliver beat 1-20 from section 'block-1'.",
+      "visual_cue": "",
+      "key_claims": [
+        "* **Rising Cost of Essentials:** The cost of fundamental needs like housing, education, and healthcare has outpaced inflation for decades. T"
+      ],
+      "source_refs": [],
+      "evidence_sources": [],
+      "visual_prompt": "3D isometric view, premium Blender-style rendering, minimalist professional finance aesthetic, soft clay-like textures, soft studio lighting, clean background, high resolution, 8k. On-screen host narration with supporting visuals.. minimalist professional finance aesthetic. Camera angle: close-up of a coin.",
+      "narration_prompt": "* **Rising Cost of Essentials:** The cost of fundamental needs like housing, education, and healthcare has outpaced inflation for decades. This forces individuals to spend a disproportionate amount of their income on survival rather than on building assets.",
+      "transition_note": "Advance to the next semantic beat while preserving narrative continuity.",
+      "camera_angle": "close-up of a coin",
+      "overlay_text": "",
+      "style_profile": "isometric_3d",
+      "scene_engine_version": "2.0",
+      "source_script_hash": "0488d1fbc65f8088ad5802c1b4b12d759dc0e04116a3a61b10781ed403e4e2d5",
+      "schema_version": "1.0"
+    },
+    {
+      "scene_id": "s21",
+      "objective": "Deliver beat 1-21 from section 'block-1'.",
+      "visual_cue": "",
+      "key_claims": [
+        "* **Limited Access to Opportunities:** Barriers like lack of affordable childcare, inadequate public transportation, and limited access to q"
+      ],
+      "source_refs": [],
+      "evidence_sources": [],
+      "visual_prompt": "3D isometric view, premium Blender-style rendering, minimalist professional finance aesthetic, soft clay-like textures, soft studio lighting, clean background, high resolution, 8k. On-screen host narration with supporting visuals.. minimalist professional finance aesthetic. Camera angle: isometric top-down financial dashboard view.",
+      "narration_prompt": "* **Limited Access to Opportunities:** Barriers like lack of affordable childcare, inadequate public transportation, and limited access to quality education can prevent people from accessing higher-paying jobs or developing new skills.",
+      "transition_note": "Advance to the next semantic beat while preserving narrative continuity.",
+      "camera_angle": "isometric top-down financial dashboard view",
+      "overlay_text": "",
+      "style_profile": "isometric_3d",
+      "scene_engine_version": "2.0",
+      "source_script_hash": "0488d1fbc65f8088ad5802c1b4b12d759dc0e04116a3a61b10781ed403e4e2d5",
+      "schema_version": "1.0"
+    },
+    {
+      "scene_id": "s22",
+      "objective": "Deliver beat 1-22 from section 'block-1'.",
+      "visual_cue": "",
+      "key_claims": [
+        "* **Debt Cycles:** High interest rates on essential loans, predatory lending practices, and the sheer need to borrow to survive can trap ind"
+      ],
+      "source_refs": [],
+      "evidence_sources": [],
+      "visual_prompt": "3D isometric view, premium Blender-style rendering, minimalist professional finance aesthetic, soft clay-like textures, soft studio lighting, clean background, high resolution, 8k. On-screen host narration with supporting visuals.. minimalist professional finance aesthetic. Camera angle: over-the-shoulder view of a ledger.",
+      "narration_prompt": "* **Debt Cycles:** High interest rates on essential loans, predatory lending practices, and the sheer need to borrow to survive can trap individuals in a cycle of debt that’s nearly impossible to break.",
+      "transition_note": "Advance to the next semantic beat while preserving narrative continuity.",
+      "camera_angle": "over-the-shoulder view of a ledger",
+      "overlay_text": "",
+      "style_profile": "isometric_3d",
+      "scene_engine_version": "2.0",
+      "source_script_hash": "0488d1fbc65f8088ad5802c1b4b12d759dc0e04116a3a61b10781ed403e4e2d5",
+      "schema_version": "1.0"
+    },
+    {
+      "scene_id": "s23",
+      "objective": "Deliver beat 1-23 from section 'block-1'.",
+      "visual_cue": "",
+      "key_claims": [
+        "[Visual: Split screen showing a person with ample savings vs."
+      ],
+      "source_refs": [],
+      "evidence_sources": [],
+      "visual_prompt": "3D isometric view, premium Blender-style rendering, minimalist professional finance aesthetic, soft clay-like textures, soft studio lighting, clean background, high resolution, 8k. On-screen host narration with supporting visuals.. minimalist professional finance aesthetic. Camera angle: medium shot of host with infographic wall.",
+      "narration_prompt": "[Visual: Split screen showing a person with ample savings vs.",
+      "transition_note": "Advance to the next semantic beat while preserving narrative continuity.",
+      "camera_angle": "medium shot of host with infographic wall",
+      "overlay_text": "",
+      "style_profile": "isometric_3d",
+      "scene_engine_version": "2.0",
+      "source_script_hash": "0488d1fbc65f8088ad5802c1b4b12d759dc0e04116a3a61b10781ed403e4e2d5",
+      "schema_version": "1.0"
+    },
+    {
+      "scene_id": "s24",
+      "objective": "Deliver beat 1-24 from section 'block-1'.",
+      "visual_cue": "",
+      "key_claims": [
+        "a person struggling with bills and debt.] These aren't individual failings; they are features of an economic system that, in many ways, is d"
+      ],
+      "source_refs": [],
+      "evidence_sources": [],
+      "visual_prompt": "3D isometric view, premium Blender-style rendering, minimalist professional finance aesthetic, soft clay-like textures, soft studio lighting, clean background, high resolution, 8k. On-screen host narration with supporting visuals.. minimalist professional finance aesthetic. Camera angle: macro shot of currency notes and calculator.",
+      "narration_prompt": "a person struggling with bills and debt.] These aren't individual failings; they are features of an economic system that, in many ways, is designed to maintain a certain distribution of wealth.",
+      "transition_note": "Advance to the next semantic beat while preserving narrative continuity.",
+      "camera_angle": "macro shot of currency notes and calculator",
+      "overlay_text": "",
+      "style_profile": "isometric_3d",
+      "scene_engine_version": "2.0",
+      "source_script_hash": "0488d1fbc65f8088ad5802c1b4b12d759dc0e04116a3a61b10781ed403e4e2d5",
+      "schema_version": "1.0"
+    },
+    {
+      "scene_id": "s25",
+      "objective": "Deliver beat 1-25 from section 'block-1'.",
+      "visual_cue": "",
+      "key_claims": [
+        "Think about it: if everyone could easily get rich, who would do the essential, lower-paying jobs?"
+      ],
+      "source_refs": [],
+      "evidence_sources": [],
+      "visual_prompt": "3D isometric view, premium Blender-style rendering, minimalist professional finance aesthetic, soft clay-like textures, soft studio lighting, clean background, high resolution, 8k. On-screen host narration with supporting visuals.. minimalist professional finance aesthetic. Camera angle: wide shot of a bank vault.",
+      "narration_prompt": "Think about it: if everyone could easily get rich, who would do the essential, lower-paying jobs?",
+      "transition_note": "Advance to the next semantic beat while preserving narrative continuity.",
+      "camera_angle": "wide shot of a bank vault",
+      "overlay_text": "",
+      "style_profile": "isometric_3d",
+      "scene_engine_version": "2.0",
+      "source_script_hash": "0488d1fbc65f8088ad5802c1b4b12d759dc0e04116a3a61b10781ed403e4e2d5",
+      "schema_version": "1.0"
+    },
+    {
+      "scene_id": "s26",
+      "objective": "Deliver beat 1-26 from section 'block-1'.",
+      "visual_cue": "",
+      "key_claims": [
+        "The system often relies on a pool of labor that is readily available, and a key way to ensure that is to make upward mobility challenging."
+      ],
+      "source_refs": [],
+      "evidence_sources": [],
+      "visual_prompt": "3D isometric view, premium Blender-style rendering, minimalist professional finance aesthetic, soft clay-like textures, soft studio lighting, clean background, high resolution, 8k. On-screen host narration with supporting visuals.. minimalist professional finance aesthetic. Camera angle: close-up of a coin.",
+      "narration_prompt": "The system often relies on a pool of labor that is readily available, and a key way to ensure that is to make upward mobility challenging.",
+      "transition_note": "Advance to the next semantic beat while preserving narrative continuity.",
+      "camera_angle": "close-up of a coin",
+      "overlay_text": "",
+      "style_profile": "isometric_3d",
+      "scene_engine_version": "2.0",
+      "source_script_hash": "0488d1fbc65f8088ad5802c1b4b12d759dc0e04116a3a61b10781ed403e4e2d5",
+      "schema_version": "1.0"
+    },
+    {
+      "scene_id": "s27",
+      "objective": "Deliver beat 1-27 from section 'block-1'.",
+      "visual_cue": "",
+      "key_claims": [
+        "--- PART 3: The 'Designed Poverty' Angle --- [Visual: Graphic representing a maze with 'hard work' as a path, but the maze has dead ends and"
+      ],
+      "source_refs": [],
+      "evidence_sources": [],
+      "visual_prompt": "3D isometric view, premium Blender-style rendering, minimalist professional finance aesthetic, soft clay-like textures, soft studio lighting, clean background, high resolution, 8k. On-screen host narration with supporting visuals.. minimalist professional finance aesthetic. Camera angle: isometric top-down financial dashboard view. Overlay text: '3'.",
+      "narration_prompt": "--- PART 3: The 'Designed Poverty' Angle --- [Visual: Graphic representing a maze with 'hard work' as a path, but the maze has dead ends and traps.] This leads us to a more critical perspective – the idea that poverty, or at least the struggle for financial security, is, in some ways, ‘designed.’ This doesn’t necessarily mean a malicious, top-down conspiracy.",
+      "transition_note": "Advance to the next semantic beat while preserving narrative continuity.",
+      "camera_angle": "isometric top-down financial dashboard view",
+      "overlay_text": "3",
+      "style_profile": "isometric_3d",
+      "scene_engine_version": "2.0",
+      "source_script_hash": "0488d1fbc65f8088ad5802c1b4b12d759dc0e04116a3a61b10781ed403e4e2d5",
+      "schema_version": "1.0"
+    },
+    {
+      "scene_id": "s28",
+      "objective": "Deliver beat 1-28 from section 'block-1'.",
+      "visual_cue": "",
+      "key_claims": [
+        "Instead, it refers to how economic policies, market structures, and social safety nets are implemented, often unintentionally, to create an "
+      ],
+      "source_refs": [],
+      "evidence_sources": [],
+      "visual_prompt": "3D isometric view, premium Blender-style rendering, minimalist professional finance aesthetic, soft clay-like textures, soft studio lighting, clean background, high resolution, 8k. On-screen host narration with supporting visuals.. minimalist professional finance aesthetic. Camera angle: over-the-shoulder view of a ledger. Overlay text: '001'.",
+      "narration_prompt": "Instead, it refers to how economic policies, market structures, and social safety nets are implemented, often unintentionally, to create an environment where escaping poverty is exceptionally difficult for large segments of the population [src-001].",
+      "transition_note": "Advance to the next semantic beat while preserving narrative continuity.",
+      "camera_angle": "over-the-shoulder view of a ledger",
+      "overlay_text": "001",
+      "style_profile": "isometric_3d",
+      "scene_engine_version": "2.0",
+      "source_script_hash": "0488d1fbc65f8088ad5802c1b4b12d759dc0e04116a3a61b10781ed403e4e2d5",
+      "schema_version": "1.0"
+    },
+    {
+      "scene_id": "s29",
+      "objective": "Deliver beat 1-29 from section 'block-1'.",
+      "visual_cue": "",
+      "key_claims": [
+        "[Visual: Economist discussing the concept of structural inequality.] Consider policies that favor capital over labor, tax structures that be"
+      ],
+      "source_refs": [],
+      "evidence_sources": [],
+      "visual_prompt": "3D isometric view, premium Blender-style rendering, minimalist professional finance aesthetic, soft clay-like textures, soft studio lighting, clean background, high resolution, 8k. On-screen host narration with supporting visuals.. minimalist professional finance aesthetic. Camera angle: medium shot of host with infographic wall.",
+      "narration_prompt": "[Visual: Economist discussing the concept of structural inequality.] Consider policies that favor capital over labor, tax structures that benefit the wealthy more than the middle or lower classes, or a financial system that makes it easier to extract wealth than to build it for the majority.",
+      "transition_note": "Advance to the next semantic beat while preserving narrative continuity.",
+      "camera_angle": "medium shot of host with infographic wall",
+      "overlay_text": "",
+      "style_profile": "isometric_3d",
+      "scene_engine_version": "2.0",
+      "source_script_hash": "0488d1fbc65f8088ad5802c1b4b12d759dc0e04116a3a61b10781ed403e4e2d5",
+      "schema_version": "1.0"
+    },
+    {
+      "scene_id": "s30",
+      "objective": "Deliver beat 1-30 from section 'block-1'.",
+      "visual_cue": "",
+      "key_claims": [
+        "These elements, woven into the fabric of our economy, can create a powerful inertia that keeps people working hard but struggling to get ahe"
+      ],
+      "source_refs": [],
+      "evidence_sources": [],
+      "visual_prompt": "3D isometric view, premium Blender-style rendering, minimalist professional finance aesthetic, soft clay-like textures, soft studio lighting, clean background, high resolution, 8k. On-screen host narration with supporting visuals.. minimalist professional finance aesthetic. Camera angle: macro shot of currency notes and calculator.",
+      "narration_prompt": "These elements, woven into the fabric of our economy, can create a powerful inertia that keeps people working hard but struggling to get ahead.",
+      "transition_note": "Advance to the next semantic beat while preserving narrative continuity.",
+      "camera_angle": "macro shot of currency notes and calculator",
+      "overlay_text": "",
+      "style_profile": "isometric_3d",
+      "scene_engine_version": "2.0",
+      "source_script_hash": "0488d1fbc65f8088ad5802c1b4b12d759dc0e04116a3a61b10781ed403e4e2d5",
+      "schema_version": "1.0"
+    },
+    {
+      "scene_id": "s31",
+      "objective": "Deliver beat 1-31 from section 'block-1'.",
+      "visual_cue": "",
+      "key_claims": [
+        "[Visual: Infographic showing how different economic policies impact wealth distribution.] For example, the decline of unions, the rise of th"
+      ],
+      "source_refs": [],
+      "evidence_sources": [],
+      "visual_prompt": "3D isometric view, premium Blender-style rendering, minimalist professional finance aesthetic, soft clay-like textures, soft studio lighting, clean background, high resolution, 8k. On-screen host narration with supporting visuals.. minimalist professional finance aesthetic. Camera angle: wide shot of a bank vault.",
+      "narration_prompt": "[Visual: Infographic showing how different economic policies impact wealth distribution.] For example, the decline of unions, the rise of the gig economy with its lack of benefits, and the deregulation of financial markets have all contributed to a landscape where the bargaining power of individual workers has diminished, making it harder to secure fair wages and benefits.",
+      "transition_note": "Advance to the next semantic beat while preserving narrative continuity.",
+      "camera_angle": "wide shot of a bank vault",
+      "overlay_text": "",
+      "style_profile": "isometric_3d",
+      "scene_engine_version": "2.0",
+      "source_script_hash": "0488d1fbc65f8088ad5802c1b4b12d759dc0e04116a3a61b10781ed403e4e2d5",
+      "schema_version": "1.0"
+    },
+    {
+      "scene_id": "s32",
+      "objective": "Deliver beat 1-32 from section 'block-1'.",
+      "visual_cue": "",
+      "key_claims": [
+        "The system is designed to be efficient for businesses, which often translates to minimizing labor costs."
+      ],
+      "source_refs": [],
+      "evidence_sources": [],
+      "visual_prompt": "3D isometric view, premium Blender-style rendering, minimalist professional finance aesthetic, soft clay-like textures, soft studio lighting, clean background, high resolution, 8k. On-screen host narration with supporting visuals.. minimalist professional finance aesthetic. Camera angle: close-up of a coin.",
+      "narration_prompt": "The system is designed to be efficient for businesses, which often translates to minimizing labor costs.",
+      "transition_note": "Advance to the next semantic beat while preserving narrative continuity.",
+      "camera_angle": "close-up of a coin",
+      "overlay_text": "",
+      "style_profile": "isometric_3d",
+      "scene_engine_version": "2.0",
+      "source_script_hash": "0488d1fbc65f8088ad5802c1b4b12d759dc0e04116a3a61b10781ed403e4e2d5",
+      "schema_version": "1.0"
+    },
+    {
+      "scene_id": "s33",
+      "objective": "Deliver beat 1-33 from section 'block-1'.",
+      "visual_cue": "",
+      "key_claims": [
+        "--- PART 4: Reclaiming Your Power (Even Within the System) --- [Visual: Graphic of a person breaking out of a chain or maze.] So, if hard wo"
+      ],
+      "source_refs": [],
+      "evidence_sources": [],
+      "visual_prompt": "3D isometric view, premium Blender-style rendering, minimalist professional finance aesthetic, soft clay-like textures, soft studio lighting, clean background, high resolution, 8k. On-screen host narration with supporting visuals.. minimalist professional finance aesthetic. Camera angle: isometric top-down financial dashboard view. Overlay text: '4'.",
+      "narration_prompt": "--- PART 4: Reclaiming Your Power (Even Within the System) --- [Visual: Graphic of a person breaking out of a chain or maze.] So, if hard work alone isn’t the magic bullet, what can you do?",
+      "transition_note": "Advance to the next semantic beat while preserving narrative continuity.",
+      "camera_angle": "isometric top-down financial dashboard view",
+      "overlay_text": "4",
+      "style_profile": "isometric_3d",
+      "scene_engine_version": "2.0",
+      "source_script_hash": "0488d1fbc65f8088ad5802c1b4b12d759dc0e04116a3a61b10781ed403e4e2d5",
+      "schema_version": "1.0"
+    },
+    {
+      "scene_id": "s34",
+      "objective": "Deliver beat 1-34 from section 'block-1'.",
+      "visual_cue": "",
+      "key_claims": [
+        "Understanding this paradox is the first step. It shifts your focus from blaming yourself to understanding the external forces at play. This "
+      ],
+      "source_refs": [],
+      "evidence_sources": [],
+      "visual_prompt": "3D isometric view, premium Blender-style rendering, minimalist professional finance aesthetic, soft clay-like textures, soft studio lighting, clean background, high resolution, 8k. On-screen host narration with supporting visuals.. minimalist professional finance aesthetic. Camera angle: over-the-shoulder view of a ledger.",
+      "narration_prompt": "Understanding this paradox is the first step. It shifts your focus from blaming yourself to understanding the external forces at play. This awareness is crucial for making informed decisions.",
+      "transition_note": "Advance to the next semantic beat while preserving narrative continuity.",
+      "camera_angle": "over-the-shoulder view of a ledger",
+      "overlay_text": "",
+      "style_profile": "isometric_3d",
+      "scene_engine_version": "2.0",
+      "source_script_hash": "0488d1fbc65f8088ad5802c1b4b12d759dc0e04116a3a61b10781ed403e4e2d5",
+      "schema_version": "1.0"
+    },
+    {
+      "scene_id": "s35",
+      "objective": "Deliver beat 1-35 from section 'block-1'.",
+      "visual_cue": "",
+      "key_claims": [
+        "[Visual: Steps leading upwards, representing financial growth and knowledge.] Instead of just working harder, we need to work smarter, and m"
+      ],
+      "source_refs": [],
+      "evidence_sources": [],
+      "visual_prompt": "3D isometric view, premium Blender-style rendering, minimalist professional finance aesthetic, soft clay-like textures, soft studio lighting, clean background, high resolution, 8k. On-screen host narration with supporting visuals.. minimalist professional finance aesthetic. Camera angle: medium shot of host with infographic wall.",
+      "narration_prompt": "[Visual: Steps leading upwards, representing financial growth and knowledge.] Instead of just working harder, we need to work smarter, and more importantly, we need to understand how to leverage the system, or at least navigate its pitfalls.",
+      "transition_note": "Advance to the next semantic beat while preserving narrative continuity.",
+      "camera_angle": "medium shot of host with infographic wall",
+      "overlay_text": "",
+      "style_profile": "isometric_3d",
+      "scene_engine_version": "2.0",
+      "source_script_hash": "0488d1fbc65f8088ad5802c1b4b12d759dc0e04116a3a61b10781ed403e4e2d5",
+      "schema_version": "1.0"
+    },
+    {
+      "scene_id": "s36",
+      "objective": "Deliver beat 1-36 from section 'block-1'.",
+      "visual_cue": "",
+      "key_claims": [
+        "This means: 1. **Financial Literacy is Power:** Understanding how money *really* works, beyond just earning it. This includes investing, und"
+      ],
+      "source_refs": [],
+      "evidence_sources": [],
+      "visual_prompt": "3D isometric view, premium Blender-style rendering, minimalist professional finance aesthetic, soft clay-like textures, soft studio lighting, clean background, high resolution, 8k. On-screen host narration with supporting visuals.. minimalist professional finance aesthetic. Camera angle: macro shot of currency notes and calculator. Overlay text: '1'.",
+      "narration_prompt": "This means: 1. **Financial Literacy is Power:** Understanding how money *really* works, beyond just earning it. This includes investing, understanding debt, and recognizing opportunities. [src-001] 2.",
+      "transition_note": "Advance to the next semantic beat while preserving narrative continuity.",
+      "camera_angle": "macro shot of currency notes and calculator",
+      "overlay_text": "1",
+      "style_profile": "isometric_3d",
+      "scene_engine_version": "2.0",
+      "source_script_hash": "0488d1fbc65f8088ad5802c1b4b12d759dc0e04116a3a61b10781ed403e4e2d5",
+      "schema_version": "1.0"
+    },
+    {
+      "scene_id": "s37",
+      "objective": "Deliver beat 1-37 from section 'block-1'.",
+      "visual_cue": "",
+      "key_claims": [
+        "**Strategic Skill Development:** Focusing on skills that are in demand and that offer higher earning potential, rather than just general emp"
+      ],
+      "source_refs": [],
+      "evidence_sources": [],
+      "visual_prompt": "3D isometric view, premium Blender-style rendering, minimalist professional finance aesthetic, soft clay-like textures, soft studio lighting, clean background, high resolution, 8k. On-screen host narration with supporting visuals.. minimalist professional finance aesthetic. Camera angle: wide shot of a bank vault. Overlay text: '3'.",
+      "narration_prompt": "**Strategic Skill Development:** Focusing on skills that are in demand and that offer higher earning potential, rather than just general employment. 3.",
+      "transition_note": "Advance to the next semantic beat while preserving narrative continuity.",
+      "camera_angle": "wide shot of a bank vault",
+      "overlay_text": "3",
+      "style_profile": "isometric_3d",
+      "scene_engine_version": "2.0",
+      "source_script_hash": "0488d1fbc65f8088ad5802c1b4b12d759dc0e04116a3a61b10781ed403e4e2d5",
+      "schema_version": "1.0"
+    },
+    {
+      "scene_id": "s38",
+      "objective": "Deliver beat 1-38 from section 'block-1'.",
+      "visual_cue": "",
+      "key_claims": [
+        "**Building Assets, Not Just Earning Income:** Shifting focus from active income to passive income and asset accumulation. This could be thro"
+      ],
+      "source_refs": [],
+      "evidence_sources": [],
+      "visual_prompt": "3D isometric view, premium Blender-style rendering, minimalist professional finance aesthetic, soft clay-like textures, soft studio lighting, clean background, high resolution, 8k. On-screen host narration with supporting visuals.. minimalist professional finance aesthetic. Camera angle: close-up of a coin. Overlay text: '4'.",
+      "narration_prompt": "**Building Assets, Not Just Earning Income:** Shifting focus from active income to passive income and asset accumulation. This could be through investments, real estate, or building a business. 4.",
+      "transition_note": "Advance to the next semantic beat while preserving narrative continuity.",
+      "camera_angle": "close-up of a coin",
+      "overlay_text": "4",
+      "style_profile": "isometric_3d",
+      "scene_engine_version": "2.0",
+      "source_script_hash": "0488d1fbc65f8088ad5802c1b4b12d759dc0e04116a3a61b10781ed403e4e2d5",
+      "schema_version": "1.0"
+    },
+    {
+      "scene_id": "s39",
+      "objective": "Deliver beat 1-39 from section 'block-1'.",
+      "visual_cue": "",
+      "key_claims": [
+        "**Advocacy and Collective Action:** Understanding that systemic change often requires collective effort. Supporting policies that promote fa"
+      ],
+      "source_refs": [],
+      "evidence_sources": [],
+      "visual_prompt": "3D isometric view, premium Blender-style rendering, minimalist professional finance aesthetic, soft clay-like textures, soft studio lighting, clean background, high resolution, 8k. On-screen host narration with supporting visuals.. minimalist professional finance aesthetic. Camera angle: isometric top-down financial dashboard view.",
+      "narration_prompt": "**Advocacy and Collective Action:** Understanding that systemic change often requires collective effort. Supporting policies that promote fair wages, affordable living, and equitable opportunities.",
+      "transition_note": "Advance to the next semantic beat while preserving narrative continuity.",
+      "camera_angle": "isometric top-down financial dashboard view",
+      "overlay_text": "",
+      "style_profile": "isometric_3d",
+      "scene_engine_version": "2.0",
+      "source_script_hash": "0488d1fbc65f8088ad5802c1b4b12d759dc0e04116a3a61b10781ed403e4e2d5",
+      "schema_version": "1.0"
+    },
+    {
+      "scene_id": "s40",
+      "objective": "Deliver beat 1-40 from section 'block-1'.",
+      "visual_cue": "",
+      "key_claims": [
+        "[Visual: Person reading a finance book, another investing online, a group protesting for better wages.] It’s about being a critical particip"
+      ],
+      "source_refs": [],
+      "evidence_sources": [],
+      "visual_prompt": "3D isometric view, premium Blender-style rendering, minimalist professional finance aesthetic, soft clay-like textures, soft studio lighting, clean background, high resolution, 8k. On-screen host narration with supporting visuals.. minimalist professional finance aesthetic. Camera angle: over-the-shoulder view of a ledger.",
+      "narration_prompt": "[Visual: Person reading a finance book, another investing online, a group protesting for better wages.] It’s about being a critical participant in the economy, not just a cog in the machine.",
+      "transition_note": "Advance to the next semantic beat while preserving narrative continuity.",
+      "camera_angle": "over-the-shoulder view of a ledger",
+      "overlay_text": "",
+      "style_profile": "isometric_3d",
+      "scene_engine_version": "2.0",
+      "source_script_hash": "0488d1fbc65f8088ad5802c1b4b12d759dc0e04116a3a61b10781ed403e4e2d5",
+      "schema_version": "1.0"
+    },
+    {
+      "scene_id": "s41",
+      "objective": "Deliver beat 1-41 from section 'block-1'.",
+      "visual_cue": "",
+      "key_claims": [
+        "It's about understanding that while your effort is valuable, it's the *context* in which that effort is applied that truly determines your f"
+      ],
+      "source_refs": [],
+      "evidence_sources": [],
+      "visual_prompt": "3D isometric view, premium Blender-style rendering, minimalist professional finance aesthetic, soft clay-like textures, soft studio lighting, clean background, high resolution, 8k. On-screen host narration with supporting visuals.. minimalist professional finance aesthetic. Camera angle: medium shot of host with infographic wall.",
+      "narration_prompt": "It's about understanding that while your effort is valuable, it's the *context* in which that effort is applied that truly determines your financial trajectory. --- CONCLUSION --- [Visual: Channel logo and outro music starts softly.",
+      "transition_note": "Advance to the next semantic beat while preserving narrative continuity.",
+      "camera_angle": "medium shot of host with infographic wall",
+      "overlay_text": "",
+      "style_profile": "isometric_3d",
+      "scene_engine_version": "2.0",
+      "source_script_hash": "0488d1fbc65f8088ad5802c1b4b12d759dc0e04116a3a61b10781ed403e4e2d5",
+      "schema_version": "1.0"
+    },
+    {
+      "scene_id": "s42",
+      "objective": "Deliver beat 1-42 from section 'block-1'.",
+      "visual_cue": "",
+      "key_claims": [
+        "So, the next time you feel like you’re working incredibly hard but not getting anywhere, remember the paradox."
+      ],
+      "source_refs": [],
+      "evidence_sources": [],
+      "visual_prompt": "3D isometric view, premium Blender-style rendering, minimalist professional finance aesthetic, soft clay-like textures, soft studio lighting, clean background, high resolution, 8k. On-screen host narration with supporting visuals.. minimalist professional finance aesthetic. Camera angle: macro shot of currency notes and calculator.",
+      "narration_prompt": "So, the next time you feel like you’re working incredibly hard but not getting anywhere, remember the paradox.",
+      "transition_note": "Advance to the next semantic beat while preserving narrative continuity.",
+      "camera_angle": "macro shot of currency notes and calculator",
+      "overlay_text": "",
+      "style_profile": "isometric_3d",
+      "scene_engine_version": "2.0",
+      "source_script_hash": "0488d1fbc65f8088ad5802c1b4b12d759dc0e04116a3a61b10781ed403e4e2d5",
+      "schema_version": "1.0"
+    },
+    {
+      "scene_id": "s43",
+      "objective": "Deliver beat 1-43 from section 'block-1'.",
+      "visual_cue": "",
+      "key_claims": [
+        "It's not necessarily a reflection of your effort, but a symptom of a complex economic system that can, for many, unintentionally trap them i"
+      ],
+      "source_refs": [],
+      "evidence_sources": [],
+      "visual_prompt": "3D isometric view, premium Blender-style rendering, minimalist professional finance aesthetic, soft clay-like textures, soft studio lighting, clean background, high resolution, 8k. On-screen host narration with supporting visuals.. minimalist professional finance aesthetic. Camera angle: wide shot of a bank vault.",
+      "narration_prompt": "It's not necessarily a reflection of your effort, but a symptom of a complex economic system that can, for many, unintentionally trap them in scarcity.",
+      "transition_note": "Advance to the next semantic beat while preserving narrative continuity.",
+      "camera_angle": "wide shot of a bank vault",
+      "overlay_text": "",
+      "style_profile": "isometric_3d",
+      "scene_engine_version": "2.0",
+      "source_script_hash": "0488d1fbc65f8088ad5802c1b4b12d759dc0e04116a3a61b10781ed403e4e2d5",
+      "schema_version": "1.0"
+    },
+    {
+      "scene_id": "s44",
+      "objective": "Deliver beat 1-44 from section 'block-1'.",
+      "visual_cue": "",
+      "key_claims": [
+        "By understanding these systemic designs, we can begin to make more informed choices, advocate for change, and ultimately, chart a more prosp"
+      ],
+      "source_refs": [],
+      "evidence_sources": [],
+      "visual_prompt": "3D isometric view, premium Blender-style rendering, minimalist professional finance aesthetic, soft clay-like textures, soft studio lighting, clean background, high resolution, 8k. On-screen host narration with supporting visuals.. minimalist professional finance aesthetic. Camera angle: close-up of a coin.",
+      "narration_prompt": "By understanding these systemic designs, we can begin to make more informed choices, advocate for change, and ultimately, chart a more prosperous path for ourselves and our communities.",
+      "transition_note": "Advance to the next semantic beat while preserving narrative continuity.",
+      "camera_angle": "close-up of a coin",
+      "overlay_text": "",
+      "style_profile": "isometric_3d",
+      "scene_engine_version": "2.0",
+      "source_script_hash": "0488d1fbc65f8088ad5802c1b4b12d759dc0e04116a3a61b10781ed403e4e2d5",
+      "schema_version": "1.0"
+    },
+    {
+      "scene_id": "s45",
+      "objective": "Deliver beat 1-45 from section 'block-1'.",
+      "visual_cue": "",
+      "key_claims": [
+        "[Visual: End screen with subscribe button, links to other videos, and social media handles.] What are your thoughts on this? Do you feel lik"
+      ],
+      "source_refs": [],
+      "evidence_sources": [],
+      "visual_prompt": "3D isometric view, premium Blender-style rendering, minimalist professional finance aesthetic, soft clay-like textures, soft studio lighting, clean background, high resolution, 8k. On-screen host narration with supporting visuals.. minimalist professional finance aesthetic. Camera angle: isometric top-down financial dashboard view.",
+      "narration_prompt": "[Visual: End screen with subscribe button, links to other videos, and social media handles.] What are your thoughts on this? Do you feel like hard work isn’t paying off for you? Let me know in the comments below.",
+      "transition_note": "Advance to the next semantic beat while preserving narrative continuity.",
+      "camera_angle": "isometric top-down financial dashboard view",
+      "overlay_text": "",
+      "style_profile": "isometric_3d",
+      "scene_engine_version": "2.0",
+      "source_script_hash": "0488d1fbc65f8088ad5802c1b4b12d759dc0e04116a3a61b10781ed403e4e2d5",
+      "schema_version": "1.0"
+    },
+    {
+      "scene_id": "s46",
+      "objective": "Deliver beat 1-46 from section 'block-1'.",
+      "visual_cue": "",
+      "key_claims": [
+        "And if you found this insightful, please give this video a thumbs up and subscribe for more critical financial analysis. We’ll see you in th"
+      ],
+      "source_refs": [],
+      "evidence_sources": [],
+      "visual_prompt": "3D isometric view, premium Blender-style rendering, minimalist professional finance aesthetic, soft clay-like textures, soft studio lighting, clean background, high resolution, 8k. On-screen host narration with supporting visuals.. minimalist professional finance aesthetic. Camera angle: over-the-shoulder view of a ledger.",
+      "narration_prompt": "And if you found this insightful, please give this video a thumbs up and subscribe for more critical financial analysis. We’ll see you in the next one!",
+      "transition_note": "Advance to the next semantic beat while preserving narrative continuity.",
+      "camera_angle": "over-the-shoulder view of a ledger",
+      "overlay_text": "",
+      "style_profile": "isometric_3d",
+      "scene_engine_version": "2.0",
+      "source_script_hash": "0488d1fbc65f8088ad5802c1b4b12d759dc0e04116a3a61b10781ed403e4e2d5",
+      "schema_version": "1.0"
+    }
+  ],
+  "scene_engine_version": "2.0",
+  "style_profile": "isometric_3d",
+  "source_script_hash": "0488d1fbc65f8088ad5802c1b4b12d759dc0e04116a3a61b10781ed403e4e2d5"
+}
