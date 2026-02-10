@@ -10,7 +10,7 @@ from typing import Any, Dict, List
 
 from dotenv import load_dotenv
 
-from .json_utils import ensure_schema_version, extract_json
+from .json_utils import ensure_schema_version, parse_json_with_repair
 from .model_router import ModelRouter
 from .run_logger import build_metrics, emit_run_log
 from .storage_utils import save_json
@@ -29,6 +29,15 @@ You are a YouTube metadata generator. Return JSON only with this schema:
   "tags": ["..."],
   "chapters": [{{"timecode": "00:00", "title": "..."}}],
   "pinned_comment": "...",
+  "pinned_comment_variants": ["...", "..."],
+  "thumbnail_variants": [
+    {{"label": "A", "text": "...", "visual_brief": "..."}},
+    {{"label": "B", "text": "...", "visual_brief": "..."}}
+  ],
+  "community_post": "...",
+  "community_post_variants": ["...", "..."],
+  "estimated_runtime_sec": 0,
+  "speech_rate_wpm": 0,
   "schema_version": "{DEFAULT_SCHEMA_VERSION}"
 }}
 
@@ -54,9 +63,41 @@ def generate_metadata(
 ) -> Dict[str, Any]:
     prompt = build_metadata_prompt(plan_payload, script_payload)
     router = ModelRouter.from_env()
-    metadata_payload = extract_json(router.generate_content(prompt))
+    response_text = router.generate_content(prompt)
+    try:
+        metadata_payload = parse_json_with_repair(response_text)
+    except Exception:
+        cleanup_prompt = (
+            "You are a JSON formatter. Fix the malformed JSON below and return ONLY valid JSON. "
+            "Do not add explanations or markdown.\n\n"
+            f"{response_text}"
+        )
+        retry_text = router.generate_content(cleanup_prompt)
+        metadata_payload = parse_json_with_repair(retry_text)
+    _inject_runtime_estimates(script_payload, metadata_payload)
     ensure_schema_version(metadata_payload, DEFAULT_SCHEMA_VERSION)
     return metadata_payload
+
+
+def _inject_runtime_estimates(script_payload: Dict[str, Any], metadata_payload: Dict[str, Any]) -> None:
+    script_text = str(script_payload.get("script", ""))
+    words = len(script_text.split())
+    speech_rate_wpm = 230
+    if str(script_payload.get("mode")) == "shorts":
+        speech_rate_wpm = 175
+    estimated_runtime_sec = int((words / max(speech_rate_wpm, 1)) * 60)
+    metadata_payload["speech_rate_wpm"] = metadata_payload.get("speech_rate_wpm", speech_rate_wpm)
+    metadata_payload["estimated_runtime_sec"] = metadata_payload.get("estimated_runtime_sec", estimated_runtime_sec)
+    if "pinned_comment_variants" not in metadata_payload:
+        metadata_payload["pinned_comment_variants"] = [
+            metadata_payload.get("pinned_comment", ""),
+            f"{metadata_payload.get('pinned_comment', '')}\n\n👉 Watch next: [Next Video Link]",
+        ]
+    if "community_post_variants" not in metadata_payload:
+        metadata_payload["community_post_variants"] = [
+            metadata_payload.get("community_post", ""),
+            f"{metadata_payload.get('community_post', '')}\n\n✅ Save this post and share it with one friend.",
+        ]
 
 
 def _load_json(path: Path) -> Dict[str, Any]:
@@ -65,7 +106,20 @@ def _load_json(path: Path) -> Dict[str, Any]:
 
 def _validate_metadata_payload(payload: Dict[str, Any]) -> List[str]:
     errors = []
-    required = ["title", "description", "tags", "chapters", "pinned_comment", "schema_version"]
+    required = [
+        "title",
+        "description",
+        "tags",
+        "chapters",
+        "pinned_comment",
+        "thumbnail_variants",
+        "community_post",
+        "pinned_comment_variants",
+        "community_post_variants",
+        "estimated_runtime_sec",
+        "speech_rate_wpm",
+        "schema_version",
+    ]
     for key in required:
         if key not in payload:
             errors.append(f"Missing required key: {key}")
@@ -75,6 +129,12 @@ def _validate_metadata_payload(payload: Dict[str, Any]) -> List[str]:
         errors.append("Description exceeds 4000 characters.")
     if "tags" in payload and not (5 <= len(payload["tags"]) <= 15):
         errors.append("Tags must contain 5-15 items.")
+    if "thumbnail_variants" in payload and len(payload["thumbnail_variants"]) < 2:
+        errors.append("Provide at least two thumbnail variants.")
+    if "pinned_comment_variants" in payload and len(payload["pinned_comment_variants"]) < 2:
+        errors.append("Provide at least two pinned comment variants.")
+    if "community_post_variants" in payload and len(payload["community_post_variants"]) < 2:
+        errors.append("Provide at least two community post variants.")
     return errors
 
 
@@ -119,6 +179,12 @@ def main() -> int:
                 "tags": metadata_payload.get("tags"),
                 "chapters": metadata_payload.get("chapters"),
                 "pinned_comment": metadata_payload.get("pinned_comment"),
+                "thumbnail_variants": metadata_payload.get("thumbnail_variants"),
+                "community_post": metadata_payload.get("community_post"),
+                "pinned_comment_variants": metadata_payload.get("pinned_comment_variants"),
+                "community_post_variants": metadata_payload.get("community_post_variants"),
+                "estimated_runtime_sec": metadata_payload.get("estimated_runtime_sec"),
+                "speech_rate_wpm": metadata_payload.get("speech_rate_wpm"),
                 "schema_version": metadata_payload.get("schema_version"),
             },
             on_conflict="video_id",

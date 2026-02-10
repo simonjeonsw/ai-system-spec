@@ -1,0 +1,8 @@
+{
+  "active_style": "isometric_3d",
+  "styles": {
+    "isometric_3d": "3D isometric view, premium Blender-style rendering, minimalist professional finance aesthetic, soft clay-like textures, soft studio lighting, clean background, high resolution, 8k",
+    "cinematic": "high-detail cinematic frame, 16:9, photorealistic lighting, shallow depth of field, clean composition",
+    "infographic": "clean financial infographic style, vector-like iconography, clear labels, high contrast, presentation-ready"
+  }
+}
