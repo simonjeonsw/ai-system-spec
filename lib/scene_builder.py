@@ -20,16 +20,20 @@ class SceneBuilder:
     def __init__(self) -> None:
         self.router = ModelRouter.from_env()
 
-    def build_scenes(self, research_payload: dict) -> dict:
+    def build_scenes(self, research_payload: dict, video_id: str | None = None) -> dict:
         validate_payload("research_output", research_payload)
 
         prompt_text = self._build_prompt(research_payload)
         scene_output = self._generate_with_retry(prompt_text)
+        if video_id:
+            save_json("scenes_raw", video_id, scene_output)
         try:
             self._validate_scene_output(scene_output)
             return scene_output
         except ValueError:
             repaired_output = self._repair_scene_output(scene_output, research_payload)
+            if video_id:
+                save_json("scenes_raw", video_id, repaired_output)
             self._validate_scene_output(repaired_output)
             return repaired_output
 
@@ -100,7 +104,7 @@ def main() -> int:
         return 1
 
     topic = normalize_video_id(topic_input)
-    cached_path = Path(__file__).resolve().parent.parent / "data" / f"scene_builder_{topic}.json"
+    cached_path = Path(__file__).resolve().parent.parent / "data" / f"{topic}_scenes.json"
     force_refresh = False
     if cached_path.exists():
         choice = input("Existing data found. Use cached data or force a refresh? (y/n): ").strip().lower()
@@ -119,8 +123,8 @@ def main() -> int:
     builder = SceneBuilder()
 
     try:
-        scene_output = builder.build_scenes(research_payload)
-        save_json("scene_builder", topic, scene_output)
+        scene_output = builder.build_scenes(research_payload, video_id=topic)
+        save_json("scenes", topic, scene_output)
         supabase.table("video_scenes").upsert(
             {
                 "video_id": topic,
