@@ -556,15 +556,20 @@ def run_pipeline(video_input: str, refresh: bool = False) -> Dict[str, Any]:
             plan_payload = cached_plan
             save_markdown("plan", video_id, _render_plan_markdown(plan_payload))
         else:
-            plan_text, _ = _run_stage(
+            plan_result, _ = _run_stage(
                 stage="planner",
                 run_id=run_id,
                 input_refs={"video_id": video_id},
                 action=lambda: planner.create_project_plan(video_id),
             )
-            if plan_text.startswith("❌"):
-                raise ValueError(plan_text)
-            plan_payload = _parse_payload(plan_text)
+            if isinstance(plan_result, str) and plan_result.startswith("❌"):
+                raise ValueError(plan_result)
+            if not isinstance(plan_result, dict):
+                raise TypeError(
+                    "Planner stage must return a dictionary payload. "
+                    f"Got type={type(plan_result).__name__}"
+                )
+            plan_payload = plan_result
             save_json("plan", video_id, plan_payload)
             save_markdown("plan", video_id, _render_plan_markdown(plan_payload))
         state["plan"] = plan_payload

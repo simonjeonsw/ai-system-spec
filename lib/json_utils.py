@@ -35,6 +35,41 @@ def extract_json_relaxed(text: str) -> Dict[str, Any]:
         return json.loads(candidate)
 
 
+def repair_json(text: str) -> Dict[str, Any]:
+    """Best-effort JSON repair for malformed LLM output."""
+    cleaned = (text or "").strip()
+    cleaned = re.sub(r"^```(?:json)?\s*", "", cleaned, flags=re.IGNORECASE)
+    cleaned = re.sub(r"\s*```$", "", cleaned)
+    try:
+        return json.loads(cleaned)
+    except Exception:
+        start = cleaned.find("{")
+        if start == -1:
+            raise ValueError("No JSON object detected for repair.")
+        candidate = cleaned[start:]
+        if "}" in candidate:
+            candidate = candidate[: candidate.rfind("}") + 1]
+        open_braces = candidate.count("{")
+        close_braces = candidate.count("}")
+        if close_braces < open_braces:
+            candidate += "}" * (open_braces - close_braces)
+        candidate = re.sub(r",(\s*[}\]])", r"\1", candidate)
+        return json.loads(candidate)
+
+
+def parse_json_with_repair(text: str) -> Dict[str, Any]:
+    """Try strict parse, relaxed extraction, then full repair."""
+    if not text:
+        raise ValueError("Empty model output.")
+    try:
+        return json.loads(text)
+    except Exception:
+        try:
+            return extract_json_relaxed(text)
+        except Exception:
+            return repair_json(text)
+
+
 def recover_script_payload(text: str) -> Dict[str, Any]:
     """Fallback parser to recover script payload when JSON is malformed."""
     try:

@@ -8,7 +8,7 @@ venv_path = Path(__file__).resolve().parent.parent / ".venv" / "Lib" / "site-pac
 sys.path.append(str(venv_path))
 
 from .supabase_client import supabase
-from .json_utils import ensure_schema_version, extract_json_relaxed
+from .json_utils import ensure_schema_version, extract_json_relaxed, parse_json_with_repair
 from .run_logger import build_metrics, emit_run_log
 from .schema_validator import validate_payload
 from .storage_utils import normalize_video_id, save_json, save_raw
@@ -46,7 +46,7 @@ class ContentPlanner:
         try:
             return json.loads(content)
         except json.JSONDecodeError:
-            return extract_json(content)
+            return extract_json_relaxed(content)
 
     def create_project_plan(self, topic, target_persona="insightful finance explainer"):
         """Create a planner output that matches the planner_output schema."""
@@ -95,7 +95,7 @@ class ContentPlanner:
             # 3. Generate planner output
             response_text = self.router.generate_content(prompt_text)
             save_raw("planner_raw", normalized_topic, response_text)
-            plan_payload = self._parse_with_retry(prompt_text, response_text)
+            plan_payload = self._parse_with_retry(prompt_text, response_text, normalized_topic)
             ensure_schema_version(plan_payload, "1.0")
             save_json("planner", normalized_topic, plan_payload)
             validation_error = None
@@ -121,7 +121,7 @@ class ContentPlanner:
                 output_refs={"planning_cache": "inserted" if not validation_error else "skipped"},
                 metrics=build_metrics(cache_hit=False),
             )
-            return json.dumps(plan_payload, ensure_ascii=False, indent=2)
+            return plan_payload
 
         except Exception as e:
             emit_run_log(
@@ -133,18 +133,27 @@ class ContentPlanner:
             )
             return f"❌ Planner stage failed: {str(e)}"
 
-    def _parse_with_retry(self, prompt_text: str, response_text: str, max_attempts: int = 2) -> dict:
+    def _parse_with_retry(self, prompt_text: str, response_text: str, topic: str, max_attempts: int = 2) -> dict:
+        malformed_preview = (response_text or "")[:200]
         try:
-            return extract_json_relaxed(response_text)
+            return parse_json_with_repair(response_text)
         except Exception:
             if max_attempts <= 1:
-                raise
-            repair_prompt = (
-                "Return ONLY valid JSON. Ensure all commas and quotes are correct. "
-                "Do not include commentary. Output must match the schema exactly.\n"
+                raise ValueError(
+                    "Planner JSON parse failed after retries. "
+                    f"Malformed output preview: {malformed_preview}"
+                )
+            cleanup_prompt = (
+                "You are a JSON formatter. Fix the malformed JSON below and return ONLY valid JSON. "
+                "Do not add explanations, markdown, or code fences.\n\n"
+                "MALFORMED OUTPUT:\n"
+                f"{response_text}\n\n"
+                "TARGET INSTRUCTIONS:\n"
+                f"{prompt_text}"
             )
-            retry_text = self.router.generate_content(repair_prompt + prompt_text)
-            return extract_json_relaxed(retry_text)
+            retry_text = self.router.generate_content(cleanup_prompt)
+            save_raw("planner_cleanup_raw", topic, retry_text)
+            return self._parse_with_retry(prompt_text, retry_text, topic, max_attempts=max_attempts - 1)
 
 
 
@@ -175,4 +184,7 @@ if __name__ == "__main__":
             result = planner.create_project_plan(normalized_topic)
         print("\n" + "="*50)
         print("📝 Generated plan:\n")
-        print(result)
+        if isinstance(result, dict):
+            print(json.dumps(result, ensure_ascii=False, indent=2))
+        else:
+            print(result)

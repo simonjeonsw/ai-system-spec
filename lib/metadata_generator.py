@@ -10,7 +10,7 @@ from typing import Any, Dict, List
 
 from dotenv import load_dotenv
 
-from .json_utils import ensure_schema_version, extract_json
+from .json_utils import ensure_schema_version, parse_json_with_repair
 from .model_router import ModelRouter
 from .run_logger import build_metrics, emit_run_log
 from .storage_utils import save_json
@@ -63,7 +63,17 @@ def generate_metadata(
 ) -> Dict[str, Any]:
     prompt = build_metadata_prompt(plan_payload, script_payload)
     router = ModelRouter.from_env()
-    metadata_payload = extract_json(router.generate_content(prompt))
+    response_text = router.generate_content(prompt)
+    try:
+        metadata_payload = parse_json_with_repair(response_text)
+    except Exception:
+        cleanup_prompt = (
+            "You are a JSON formatter. Fix the malformed JSON below and return ONLY valid JSON. "
+            "Do not add explanations or markdown.\n\n"
+            f"{response_text}"
+        )
+        retry_text = router.generate_content(cleanup_prompt)
+        metadata_payload = parse_json_with_repair(retry_text)
     _inject_runtime_estimates(script_payload, metadata_payload)
     ensure_schema_version(metadata_payload, DEFAULT_SCHEMA_VERSION)
     return metadata_payload
