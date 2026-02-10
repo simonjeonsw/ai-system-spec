@@ -54,7 +54,8 @@ Scene structuring converts research output into ordered, self-contained scenes t
   - `risk_flags` (array): Potential factual or compliance risks to verify.
 
 **Scene rules**
-- Maximum 6 scenes per video unless explicitly approved by Planner.
+- Scene count must scale with runtime and semantic density (section/beat based), not fixed caps.
+- For long-form scripts over 5 minutes, target at least 10 scenes, with additional cuts for dense sections.
 - Every scene must map to one of: hook, proof, insight, payoff.
 - Claims must have at least one evidence source and a source_refs entry.
 - Every evidence_sources entry must appear in source_refs.sources.
