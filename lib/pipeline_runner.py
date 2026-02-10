@@ -79,17 +79,76 @@ def _extract_visual_blocks(script_text: str) -> list[Dict[str, str]]:
 
 
 def _build_image_prompt(visual_text: str) -> str:
+    return _build_image_prompt_with_context(visual_text, {})
+
+
+def _load_visual_style_config() -> Dict[str, Any]:
+    default = {
+        "active_style": "isometric_3d",
+        "styles": {
+            "isometric_3d": (
+                "3D isometric view, premium Blender-style rendering, minimalist professional "
+                "finance aesthetic, soft clay-like textures, soft studio lighting, clean background, "
+                "high resolution, 8k"
+            ),
+            "cinematic": (
+                "high-detail cinematic frame, 16:9, photorealistic lighting, shallow depth of field, "
+                "clean composition"
+            ),
+            "infographic": (
+                "clean financial infographic style, vector-like iconography, clear labels, high contrast, "
+                "presentation-ready"
+            ),
+        },
+    }
+    config_path = Path(__file__).resolve().parent.parent / "config" / "visual_style.json"
+    if not config_path.exists():
+        return default
+    try:
+        loaded = json.loads(config_path.read_text(encoding="utf-8"))
+    except Exception:
+        return default
+    active_style = loaded.get("active_style", default["active_style"])
+    styles = loaded.get("styles", {})
+    merged_styles = {**default["styles"], **styles}
+    return {"active_style": active_style, "styles": merged_styles}
+
+
+def _extract_numeric_overlays(research_payload: Dict[str, Any], limit: int = 3) -> list[str]:
+    overlays: list[str] = []
+    candidates = research_payload.get("key_facts", [])
+    for item in candidates:
+        text = str(item)
+        if not re.search(r"\d|%|\$|€|¥|₩", text):
+            continue
+        snippet = text.strip()
+        if len(snippet) > 80:
+            snippet = snippet[:77].rstrip() + "..."
+        overlays.append(snippet)
+        if len(overlays) >= limit:
+            break
+    return overlays
+
+
+def _build_image_prompt_with_context(visual_text: str, research_payload: Dict[str, Any]) -> str:
     base = visual_text.strip() or "On-screen host narration with supporting visuals."
-    return (
-        "High-detail cinematic frame, 16:9, photorealistic, professional lighting, "
-        "shallow depth of field, clean composition. "
-        f"Scene description: {base}"
-    )
+    style_config = _load_visual_style_config()
+    style_key = style_config.get("active_style", "isometric_3d")
+    style_prompt = style_config.get("styles", {}).get(style_key, "")
+    overlays = _extract_numeric_overlays(research_payload)
+    overlay_text = ""
+    if overlays:
+        overlay_text = " Text overlays: " + " | ".join(overlays) + "."
+    return f"{style_prompt}. Scene description: {base}.{overlay_text}".strip()
 
 
-def _build_scene_output_from_script(script_payload: Dict[str, Any]) -> Dict[str, Any]:
+def _build_scene_output_from_script(
+    script_payload: Dict[str, Any],
+    research_payload: Dict[str, Any] | None = None,
+) -> Dict[str, Any]:
     script_text = _normalize_script_text(script_payload)
     visual_blocks = _extract_visual_blocks(script_text)
+    research_payload = research_payload or {}
     scenes = []
     for index, block in enumerate(visual_blocks, start=1):
         scenes.append(
@@ -100,7 +159,7 @@ def _build_scene_output_from_script(script_payload: Dict[str, Any]) -> Dict[str,
                 "key_claims": [],
                 "source_refs": [],
                 "evidence_sources": [],
-                "visual_prompt": _build_image_prompt(block["visual"]),
+                "visual_prompt": _build_image_prompt_with_context(block["visual"], research_payload),
                 "narration_prompt": block["narration"] or "Narration derived from script.",
                 "transition_note": "Auto-generated from script sequence.",
                 "schema_version": "1.0",
@@ -408,6 +467,14 @@ def run_pipeline(video_input: str, refresh: bool = False) -> Dict[str, Any]:
             save_json("script", video_id, script_payload)
             save_json("script_long", video_id, script_payload)
             script_updated = True
+            save_markdown(
+                "script",
+                video_id,
+                "# Long-form Script\n\n"
+                f"{script_payload.get('script', '')}\n\n"
+                "# Shorts Script\n\n"
+                f"{shorts_payload.get('script', '')}\n",
+            )
         state["script_long"] = script_payload
 
         cached_shorts = None if refresh else _load_stage_payload("script_shorts", video_id)
@@ -505,8 +572,17 @@ def run_pipeline(video_input: str, refresh: bool = False) -> Dict[str, Any]:
             supabase.table("scripts").insert(
                 {"content": json.dumps(script_payload, ensure_ascii=False)}
             ).execute()
+            save_json("script", video_id, script_payload)
             save_json("script_long", video_id, script_payload)
             script_updated = True
+            save_markdown(
+                "script",
+                video_id,
+                "# Long-form Script\n\n"
+                f"{script_payload.get('script', '')}\n\n"
+                "# Shorts Script\n\n"
+                f"{shorts_payload.get('script', '')}\n",
+            )
 
             validator = ScriptValidator(research_payload, script_payload)
             verification_result = validator.validate()
@@ -542,7 +618,7 @@ def run_pipeline(video_input: str, refresh: bool = False) -> Dict[str, Any]:
             scene_output = cached_scene
             save_markdown("scenes", video_id, _render_scenes_markdown(scene_output))
         else:
-            scene_output = _build_scene_output_from_script(script_payload)
+            scene_output = _build_scene_output_from_script(script_payload, research_payload)
             save_json("scenes", video_id, scene_output)
             save_markdown("scenes", video_id, _render_scenes_markdown(scene_output))
         state["scenes"] = scene_output

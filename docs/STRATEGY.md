@@ -42,3 +42,7 @@ Every topic must surface a contrarian angle to improve CTR and differentiation.
 - Continuously capture viral titles and visual hooks from competitor channels.
 - Feed benchmark insights into planner scoring and packaging experiments.
 
+## Visual Prompt Standard (Scene Engine)
+- Default style preset: **Premium 3D Isometric / Blender Style**.
+- Scene prompts should include hard-number overlays from research (e.g., inflation %, FX levels, rates) when available.
+- Style presets must be configuration-driven via `config/visual_style.json` for future UI switching.

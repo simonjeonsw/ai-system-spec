@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import time
 from dataclasses import dataclass
 from typing import Iterable, List
 
@@ -41,13 +42,24 @@ class ModelRouter:
             model_sequence.extend([model for model in preferred_models if model])
         model_sequence.extend([model for model in self.models if model not in model_sequence])
         for model in model_sequence:
-            try:
-                response = client.models.generate_content(model=model, contents=prompt)
-                return response.text
-            except Exception as exc:
-                last_error = exc
-                continue
+            for wait_s in (0, 2, 4, 8):
+                if wait_s:
+                    print(f"⏳ Gemini is busy (503). Retrying in {wait_s} seconds...")
+                    time.sleep(wait_s)
+                try:
+                    response = client.models.generate_content(model=model, contents=prompt)
+                    return response.text
+                except Exception as exc:
+                    last_error = exc
+                    if _is_503_error(exc):
+                        continue
+                    break
         raise RuntimeError(f"All Gemini models failed. Last error: {last_error}")
+
+
+def _is_503_error(exc: Exception) -> bool:
+    message = str(exc).lower()
+    return "503" in message or "unavailable" in message
 
 
 def _load_models_from_env(env_key: str, fallback: Iterable[str]) -> List[str]:
