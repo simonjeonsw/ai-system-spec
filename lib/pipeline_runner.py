@@ -254,6 +254,18 @@ def _render_scenes_markdown(scene_output: Dict[str, Any]) -> str:
     lines.append("")
     return "\n".join(lines)
 
+
+def _render_script_markdown(script_payload: Dict[str, Any], shorts_payload: Dict[str, Any] | None) -> str:
+    shorts_script = ""
+    if shorts_payload:
+        shorts_script = shorts_payload.get("script", "")
+    return (
+        "# Long-form Script\n\n"
+        f"{script_payload.get('script', '')}\n\n"
+        "# Shorts Script\n\n"
+        f"{shorts_script}\n"
+    )
+
 def _is_transient_error(exc: Exception) -> bool:
     message = str(exc).lower()
     return any(token in message for token in ("429", "5xx", "timeout", "resource_exhausted"))
@@ -434,6 +446,7 @@ def run_pipeline(video_input: str, refresh: bool = False) -> Dict[str, Any]:
         state["plan"] = plan_payload
 
         source_ids = [source.get("source_id") for source in research_payload.get("sources", []) if source.get("source_id")]
+        shorts_payload: Dict[str, Any] | None = None
         cached_script = None if refresh else _load_stage_payload("script_long", video_id)
         if cached_script:
             script_payload = cached_script
@@ -467,14 +480,6 @@ def run_pipeline(video_input: str, refresh: bool = False) -> Dict[str, Any]:
             save_json("script", video_id, script_payload)
             save_json("script_long", video_id, script_payload)
             script_updated = True
-            save_markdown(
-                "script",
-                video_id,
-                "# Long-form Script\n\n"
-                f"{script_payload.get('script', '')}\n\n"
-                "# Shorts Script\n\n"
-                f"{shorts_payload.get('script', '')}\n",
-            )
         state["script_long"] = script_payload
 
         cached_shorts = None if refresh else _load_stage_payload("script_shorts", video_id)
@@ -510,14 +515,7 @@ def run_pipeline(video_input: str, refresh: bool = False) -> Dict[str, Any]:
             save_json("script_shorts", video_id, shorts_payload)
             script_updated = True
         state["script_shorts"] = shorts_payload
-        save_markdown(
-            "script",
-            video_id,
-            "# Long-form Script\n\n"
-            f"{script_payload.get('script', '')}\n\n"
-            "# Shorts Script\n\n"
-            f"{shorts_payload.get('script', '')}\n",
-        )
+        save_markdown("script", video_id, _render_script_markdown(script_payload, shorts_payload))
         supabase.table("video_scripts").upsert(
             {
                 "video_id": video_id,
@@ -575,14 +573,7 @@ def run_pipeline(video_input: str, refresh: bool = False) -> Dict[str, Any]:
             save_json("script", video_id, script_payload)
             save_json("script_long", video_id, script_payload)
             script_updated = True
-            save_markdown(
-                "script",
-                video_id,
-                "# Long-form Script\n\n"
-                f"{script_payload.get('script', '')}\n\n"
-                "# Shorts Script\n\n"
-                f"{shorts_payload.get('script', '')}\n",
-            )
+            save_markdown("script", video_id, _render_script_markdown(script_payload, shorts_payload))
 
             validator = ScriptValidator(research_payload, script_payload)
             verification_result = validator.validate()
