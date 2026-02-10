@@ -10,6 +10,9 @@ from typing import Any, Dict, List, Set
 
 _SOURCE_ID_PATTERN = re.compile(r"src-\d+", re.IGNORECASE)
 _WORD_PATTERN = re.compile(r"[A-Za-z][A-Za-z\-']+")
+_STAGE_TAG_PATTERN = re.compile(r"\[(?:visual|narration|scene)\s*:[^\]]*\]|\[(?:visual|narration|scene)\]", re.IGNORECASE)
+_PART_MARKER_PATTERN = re.compile(r"---\s*PART\s*\d+\s*:[^-]+---", re.IGNORECASE)
+_STRUCTURAL_ONLY_PATTERN = re.compile(r"^(?:\*+|\d+\.|\[src-\d+\]|[-–—\s]+)$", re.IGNORECASE)
 _STOPWORDS = {
     "the", "and", "for", "that", "with", "from", "this", "have", "your", "into", "their", "about", "will",
     "they", "were", "there", "what", "when", "where", "which", "while", "then", "than", "them", "been",
@@ -33,7 +36,7 @@ class VerificationResult:
     status: str
     errors: List[str]
     sentence_map: List[Dict[str, Any]]
-    coverage: Dict[str, float]
+    coverage: Dict[str, float | bool]
     semantic: Dict[str, Any]
 
 
@@ -47,12 +50,32 @@ def _normalize_script_text(script_text: str | List[str]) -> str:
     return str(script_text)
 
 
+def _clean_validation_text(text: str) -> str:
+    cleaned = _STAGE_TAG_PATTERN.sub(" ", text or "")
+    cleaned = _PART_MARKER_PATTERN.sub(" ", cleaned)
+    cleaned = re.sub(r"\[visual:[^\]]*", " ", cleaned, flags=re.IGNORECASE)
+    cleaned = re.sub(r"\s+", " ", cleaned).strip()
+    return cleaned
+
+
+def _is_structural_fragment(sentence: str) -> bool:
+    stripped = sentence.strip()
+    if not stripped:
+        return True
+    if _STRUCTURAL_ONLY_PATTERN.match(stripped):
+        return True
+    if len(stripped) <= 3 and re.match(r"^\d+\.?$", stripped):
+        return True
+    return False
+
+
 def _split_sentences(script_text: str | List[str]) -> List[str]:
     normalized = _normalize_script_text(script_text).strip()
     if not normalized:
         return []
-    sentences = re.split(r"(?<=[.!?])\s+", normalized)
-    return [sentence.strip() for sentence in sentences if sentence.strip()]
+    cleaned = _clean_validation_text(normalized)
+    raw_sentences = re.split(r"(?<=[.!?])\s+", cleaned)
+    return [sentence.strip() for sentence in raw_sentences if sentence.strip() and not _is_structural_fragment(sentence)]
 
 
 def _is_low_risk(sentence: str) -> bool:
@@ -78,7 +101,7 @@ def _is_high_risk(sentence: str) -> bool:
         re.search(
             r"\b(invest|investment|stock|bond|crypto|etf|portfolio|interest rate|"
             r"tax|regulation|legal|lawsuit|compliance|inflation|gdp|cpi|fed|"
-            r"central bank|recession|yield|earnings|balance sheet)\b",
+            r"central bank|recession|yield|earnings|balance sheet|wage|productivity|poverty)\b",
             sentence,
             re.IGNORECASE,
         )
@@ -217,6 +240,7 @@ class ScriptValidator:
         factual_cited = 0
         section_total = {"high": 0, "medium": 0}
         section_cited = {"high": 0, "medium": 0}
+        high_risk_source_ids: list[str] = []
 
         for index, sentence in enumerate(sentences, start=1):
             sentence_sources = _extract_source_ids(sentence)
@@ -250,8 +274,10 @@ class ScriptValidator:
                     factual_cited += 1
                     if risk in section_cited:
                         section_cited[risk] += 1
-            if risk == "high" and not normalized_sources:
-                errors.append(f"Sentence {index} high-risk claim missing verified source_id.")
+            if risk == "high":
+                high_risk_source_ids.extend(normalized_sources)
+                if not normalized_sources:
+                    errors.append(f"Sentence {index} high-risk claim missing verified source_id.")
             if risk == "medium" and requires_source and not normalized_sources:
                 errors.append(f"Sentence {index} medium-risk claim missing verified source_id.")
 
@@ -263,11 +289,18 @@ class ScriptValidator:
         semantic = self.semantic_consistency_check()
         errors.extend(semantic["errors"])
 
+        high_risk_total = section_total["high"]
+        unique_high_sources = set(high_risk_source_ids)
+        source_diversity_score = round((len(unique_high_sources) / high_risk_total), 4) if high_risk_total else 0.0
+        single_source_risk = bool(high_risk_total and len(unique_high_sources) <= 1)
+
         status = "pass" if not errors else "fail"
-        coverage = {
+        coverage: Dict[str, float | bool] = {
             "factual_coverage": round((factual_cited / factual_total), 4) if factual_total else 0.0,
             "high_risk_coverage": round((section_cited["high"] / section_total["high"]), 4) if section_total["high"] else 0.0,
             "medium_risk_coverage": round((section_cited["medium"] / section_total["medium"]), 4) if section_total["medium"] else 0.0,
+            "source_diversity_score": source_diversity_score,
+            "single_source_risk": single_source_risk,
         }
         return VerificationResult(
             status=status,
