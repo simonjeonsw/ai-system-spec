@@ -36,6 +36,7 @@ _CAMERA_ANGLES = [
 _STAGE_MARKER_PATTERN = re.compile(r"\[(?:scene|visual|narration)\s*:[^\]]*\]|\[(?:scene|visual|narration)\]", re.IGNORECASE)
 _PART_MARKER_PATTERN = re.compile(r"---\s*PART\s*\d+\s*:[^-]+---", re.IGNORECASE)
 _SECTION_HEADER_PATTERN = re.compile(r"---\s*CONCLUSION\s*---", re.IGNORECASE)
+_DIRECTIVE_PREFIX_PATTERN = re.compile(r"^(opening shot|title card|graph|animation|overlay|host appears|secondary graph|chart|infographic)\s*:", re.IGNORECASE)
 
 
 
@@ -265,21 +266,80 @@ def _extract_scene_source_ids(text: str, source_ids: set[str]) -> list[str]:
     return sorted(src for src in found if src in source_ids)
 
 
-def _sentence_claims_from_text(text: str, max_claims: int = 2) -> list[str]:
+def _is_high_risk_scene_claim(text: str) -> bool:
+    return bool(
+        re.search(
+            r"\b(inflation|wage|productivity|tax|debt|interest|central bank|policy|regulation|inequality|gdp|cpi|recession)\b",
+            text,
+            re.IGNORECASE,
+        )
+        or re.search(r"\d", text)
+    )
+
+
+def _infer_scene_sources(
+    narration_text: str,
+    research_payload: Dict[str, Any],
+    fallback_citations: list[str],
+    allowed_source_ids: set[str],
+) -> list[str]:
+    inferred: list[str] = []
+    lowered = narration_text.lower()
+
+    for entry in research_payload.get("key_fact_sources", []):
+        claim = str(entry.get("claim", "")).lower()
+        if not claim:
+            continue
+        claim_tokens = [token for token in re.findall(r"[a-zA-Z]{4,}", claim) if token not in {"that", "with", "this", "from"}]
+        overlap = sum(1 for token in claim_tokens[:8] if token in lowered)
+        if overlap >= 2:
+            for source_id in entry.get("source_ids", []):
+                source_id = str(source_id).lower()
+                if source_id in allowed_source_ids and source_id not in inferred:
+                    inferred.append(source_id)
+
+    for point in research_payload.get("data_points", []):
+        metric = str(point.get("metric", "")).lower()
+        source_id = str(point.get("source_id", "")).lower()
+        if source_id in allowed_source_ids and metric and any(tok in lowered for tok in metric.split()[:3]):
+            if source_id not in inferred:
+                inferred.append(source_id)
+
+    for source_id in fallback_citations:
+        sid = str(source_id).lower()
+        if sid in allowed_source_ids and sid not in inferred:
+            inferred.append(sid)
+    return inferred
+
+
+def _normalize_claim_text(text: str) -> str:
     cleaned = _strip_stage_artifacts(text)
+    cleaned = cleaned.replace('\\"', '"').strip()
+    cleaned = re.sub(r'^["“”\']+|["“”\']+$', '', cleaned)
+    cleaned = re.sub(r"\s+([,.!?;:])", r"\1", cleaned)
+    cleaned = re.sub(r"([.!?]){2,}", r"\1", cleaned)
+    cleaned = re.sub(r'"\.$', '.', cleaned)
+    cleaned = re.sub(r'\.$"', '.', cleaned)
+    return cleaned.strip()
+
+
+def _sentence_claims_from_text(text: str, max_claims: int = 2) -> list[str]:
+    cleaned = _normalize_claim_text(text)
     if not cleaned:
         return []
     sentences = [item.strip() for item in re.split(r"(?<=[.!?])\s+", cleaned) if item.strip()]
     claims: list[str] = []
     for sentence in sentences:
-        if len(sentence) < 20:
+        if len(sentence) < 20 or _DIRECTIVE_PREFIX_PATTERN.match(sentence):
             continue
-        if sentence[-1] not in ".?!":
+        sentence = _normalize_claim_text(sentence)
+        if sentence and sentence[-1] not in ".?!":
             sentence = sentence.rstrip() + "."
-        claims.append(sentence)
+        if sentence:
+            claims.append(sentence)
         if len(claims) >= max_claims:
             break
-    if not claims and cleaned:
+    if not claims and cleaned and not _DIRECTIVE_PREFIX_PATTERN.match(cleaned):
         fallback = cleaned if cleaned.endswith((".", "?", "!")) else f"{cleaned}."
         claims.append(fallback)
     return claims
@@ -408,12 +468,17 @@ def _ensure_scene_granularity(
         for source in research_payload.get("sources", [])
         if source.get("source_id")
     }
+    fallback_citations = [str(item).lower() for item in script_payload.get("citations", []) if str(item).lower().startswith("src-")]
     for scene in expanded:
-        narration_text = str(scene.get("narration_prompt", ""))
+        narration_text = _normalize_claim_text(str(scene.get("narration_prompt", "")))
+        scene["narration_prompt"] = narration_text
         mapped_sources = _extract_scene_source_ids(narration_text, source_ids)
-        scene["evidence_sources"] = mapped_sources
         claims = scene.get("key_claims") or _sentence_claims_from_text(narration_text, max_claims=1)
+        claims = [_normalize_claim_text(claim) for claim in claims if _normalize_claim_text(claim)]
         scene["key_claims"] = claims
+        if not mapped_sources and any(_is_high_risk_scene_claim(claim) for claim in claims):
+            mapped_sources = _infer_scene_sources(narration_text, research_payload, fallback_citations, source_ids)
+        scene["evidence_sources"] = mapped_sources
         scene["source_refs"] = [{"claim": claim, "sources": mapped_sources} for claim in claims if mapped_sources]
         if scene.get("scene_id") == "s22":
             override = (
@@ -450,11 +515,15 @@ def _ensure_scene_granularity(
         )
 
     for scene in expanded:
-        narration_text = str(scene.get("narration_prompt", ""))
+        narration_text = _normalize_claim_text(str(scene.get("narration_prompt", "")))
+        scene["narration_prompt"] = narration_text
         mapped_sources = _extract_scene_source_ids(narration_text, source_ids)
-        scene["evidence_sources"] = mapped_sources
         claims = scene.get("key_claims") or _sentence_claims_from_text(narration_text, max_claims=1)
+        claims = [_normalize_claim_text(claim) for claim in claims if _normalize_claim_text(claim)]
         scene["key_claims"] = claims
+        if not mapped_sources and any(_is_high_risk_scene_claim(claim) for claim in claims):
+            mapped_sources = _infer_scene_sources(narration_text, research_payload, fallback_citations, source_ids)
+        scene["evidence_sources"] = mapped_sources
         scene["source_refs"] = [{"claim": claim, "sources": mapped_sources} for claim in claims if mapped_sources]
 
     scene_output["scenes"] = expanded

@@ -13,6 +13,7 @@ _WORD_PATTERN = re.compile(r"[A-Za-z][A-Za-z\-']+")
 _STAGE_TAG_PATTERN = re.compile(r"\[(?:visual|narration|scene)\s*:[^\]]*\]|\[(?:visual|narration|scene)\]", re.IGNORECASE)
 _PART_MARKER_PATTERN = re.compile(r"---\s*PART\s*\d+\s*:[^-]+---", re.IGNORECASE)
 _STRUCTURAL_ONLY_PATTERN = re.compile(r"^(?:\*+|\d+\.|\[src-\d+\]|[-–—\s]+)$", re.IGNORECASE)
+_DIRECTIVE_PREFIX_PATTERN = re.compile(r"^(opening shot|title card|graph|animation|overlay|host appears|secondary graph|chart|infographic)\s*:", re.IGNORECASE)
 _STOPWORDS = {
     "the", "and", "for", "that", "with", "from", "this", "have", "your", "into", "their", "about", "will",
     "they", "were", "there", "what", "when", "where", "which", "while", "then", "than", "them", "been",
@@ -54,6 +55,7 @@ def _clean_validation_text(text: str) -> str:
     cleaned = _STAGE_TAG_PATTERN.sub(" ", text or "")
     cleaned = _PART_MARKER_PATTERN.sub(" ", cleaned)
     cleaned = re.sub(r"\[visual:[^\]]*", " ", cleaned, flags=re.IGNORECASE)
+    cleaned = cleaned.replace('\\"', '"')
     cleaned = re.sub(r"\s+", " ", cleaned).strip()
     return cleaned
 
@@ -63,6 +65,8 @@ def _is_structural_fragment(sentence: str) -> bool:
     if not stripped:
         return True
     if _STRUCTURAL_ONLY_PATTERN.match(stripped):
+        return True
+    if _DIRECTIVE_PREFIX_PATTERN.match(stripped):
         return True
     if len(stripped) <= 3 and re.match(r"^\d+\.?$", stripped):
         return True
