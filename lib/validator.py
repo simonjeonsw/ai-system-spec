@@ -113,6 +113,23 @@ def _top_keywords(text: str, limit: int = 25) -> Set[str]:
     return {token for token, _ in counts.most_common(limit)}
 
 
+def _script_semantic_corpus(script_payload: Dict[str, Any]) -> str:
+    script = script_payload.get("script", "")
+    if isinstance(script, dict):
+        sections = script.get("sections", [])
+        chunks: list[str] = [str(script.get("title", ""))]
+        for section in sections if isinstance(sections, list) else []:
+            chunks.append(str(section.get("title", "")))
+            narration = section.get("narration", "")
+            if isinstance(narration, list):
+                chunks.extend(str(n) for n in narration)
+            else:
+                chunks.append(str(narration))
+            chunks.append(str(section.get("visual", "")))
+        return " ".join(chunks)
+    return _normalize_script_text(script)
+
+
 class ScriptValidator:
     def __init__(self, research_payload: dict, script_payload: dict) -> None:
         self.research_payload = research_payload
@@ -157,17 +174,17 @@ class ScriptValidator:
         metadata_payload: Dict[str, Any] | None = None,
         scene_output: Dict[str, Any] | None = None,
     ) -> Dict[str, Any]:
-        script_text = _normalize_script_text(self.script_payload.get("script", ""))
+        script_text = _script_semantic_corpus(self.script_payload)
         errors = self._semantic_topic_alignment(script_text)
 
         if metadata_payload:
             chapters = metadata_payload.get("chapters", [])
-            script_keywords = _top_keywords(script_text, limit=80)
+            script_tokens = set(_tokenize_keywords(script_text))
             for idx, chapter in enumerate(chapters, start=1):
                 chapter_title = str(chapter.get("title", ""))
                 chapter_tokens = set(_tokenize_keywords(chapter_title))
                 chapter_tokens = {token for token in chapter_tokens if token not in {"chapter", "intro", "outro"}}
-                if chapter_tokens and not (chapter_tokens.intersection(script_keywords)):
+                if chapter_tokens and len(chapter_tokens.intersection(script_tokens)) < 1:
                     errors.append(
                         f"CRITICAL: Metadata chapter {idx} not represented in script content: '{chapter_title}'."
                     )

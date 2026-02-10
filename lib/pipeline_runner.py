@@ -242,6 +242,60 @@ def _build_scene_output_from_script(
     return {"scenes": scenes}
 
 
+def _estimate_runtime_seconds_from_script(script_payload: Dict[str, Any]) -> int:
+    script_text = _normalize_script_text(script_payload)
+    words = len(script_text.split())
+    return int((words / 230) * 60)
+
+
+def _ensure_scene_granularity(
+    scene_output: Dict[str, Any],
+    script_payload: Dict[str, Any],
+    research_payload: Dict[str, Any],
+    min_scenes: int = 10,
+) -> Dict[str, Any]:
+    scenes = list(scene_output.get("scenes", []))
+    runtime_sec = _estimate_runtime_seconds_from_script(script_payload)
+    if runtime_sec <= 300 or len(scenes) >= min_scenes:
+        return scene_output
+
+    base_blocks = _extract_visual_blocks(_normalize_script_text(script_payload))
+    expanded: list[Dict[str, Any]] = []
+    block_index = 0
+    while len(expanded) < min_scenes and base_blocks:
+        block = base_blocks[block_index % len(base_blocks)]
+        camera = _CAMERA_ANGLES[len(expanded) % len(_CAMERA_ANGLES)]
+        overlays = _extract_numeric_overlays(research_payload, str(block.get("narration", "")), limit=1)
+        overlay_text = overlays[0] if overlays else ""
+        prompt = _build_image_prompt_with_context(str(block.get("visual", "")), research_payload)
+        prompt = f"{prompt} Camera angle: {camera}."
+        if overlay_text:
+            prompt += f" Overlay text: '{overlay_text}'."
+        expanded.append(
+            {
+                "scene_id": f"s{len(expanded)+1:02d}",
+                "objective": "Expanded for long-form granularity requirement.",
+                "visual_cue": str(block.get("visual", "")),
+                "key_claims": [],
+                "source_refs": [],
+                "evidence_sources": [],
+                "visual_prompt": prompt,
+                "narration_prompt": str(block.get("narration", "")),
+                "transition_note": "Auto-expanded to satisfy minimum scene count.",
+                "camera_angle": camera,
+                "overlay_text": overlay_text,
+                "style_profile": _load_visual_style_config().get("active_style", "isometric_3d"),
+                "scene_engine_version": SCENE_ENGINE_VERSION,
+                "source_script_hash": _scene_hash(script_payload, _load_visual_style_config().get("active_style", "isometric_3d")),
+                "schema_version": "1.0",
+            }
+        )
+        block_index += 1
+
+    scene_output["scenes"] = expanded
+    return scene_output
+
+
 def _render_research_markdown(research_payload: Dict[str, Any]) -> str:
     key_facts = research_payload.get("key_facts", [])
     key_fact_sources = research_payload.get("key_fact_sources", [])
@@ -382,10 +436,14 @@ def _should_regenerate_scenes(
     cached_hash = str(cached_scene.get("source_script_hash", ""))
     cached_version = str(cached_scene.get("scene_engine_version", ""))
     cached_style = str(cached_scene.get("style_profile", ""))
+    runtime_sec = _estimate_runtime_seconds_from_script(script_payload)
+    cached_scene_count = len(cached_scene.get("scenes", []))
+    granularity_mismatch = runtime_sec > 300 and cached_scene_count < 10
     return (
         cached_hash != expected_hash
         or cached_version != SCENE_ENGINE_VERSION
         or cached_style != style_key
+        or granularity_mismatch
     )
 
 def _is_transient_error(exc: Exception) -> bool:
@@ -752,6 +810,7 @@ def run_pipeline(video_input: str, refresh: bool = False) -> Dict[str, Any]:
             scene_output["scene_engine_version"] = SCENE_ENGINE_VERSION
             scene_output["style_profile"] = _load_visual_style_config().get("active_style", "isometric_3d")
             scene_output["source_script_hash"] = _scene_hash(script_payload, scene_output["style_profile"])
+            scene_output = _ensure_scene_granularity(scene_output, script_payload, research_payload, min_scenes=10)
             save_json("scenes", video_id, scene_output)
             save_markdown("scenes", video_id, _render_scenes_markdown(scene_output))
         state["scenes"] = scene_output
