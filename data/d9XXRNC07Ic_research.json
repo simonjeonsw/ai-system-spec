@@ -1,0 +1,45 @@
+{
+  "executive_summary": "This video explores the paradox of working harder and becoming poorer, suggesting that current economic systems, possibly designed by the state, trap individuals in a cycle of poverty. The content aims to explain complex global economic issues in an accessible manner.",
+  "key_facts": [
+    "The video proposes that individuals may become poorer despite working harder.",
+    "It suggests that national economic designs might contribute to this phenomenon.",
+    "The channel aims to make economic concepts easy to understand with visuals."
+  ],
+  "key_fact_sources": [
+    {
+      "fact_id": "fact-001",
+      "claim": "The video proposes that individuals may become poorer despite working harder.",
+      "source_ids": [
+        "src-001"
+      ]
+    },
+    {
+      "fact_id": "fact-002",
+      "claim": "It suggests that national economic designs might contribute to this phenomenon.",
+      "source_ids": [
+        "src-001"
+      ]
+    },
+    {
+      "fact_id": "fact-003",
+      "claim": "The channel aims to make economic concepts easy to understand with visuals.",
+      "source_ids": [
+        "src-001"
+      ]
+    }
+  ],
+  "data_points": [],
+  "sources": [
+    {
+      "source_id": "src-001",
+      "title": "열심히 일할수록 더 가난해지는 이유 (국가가 설계한 '합법적인 방법')",
+      "url": "https://www.youtube.com/watch?v=d9XXRNC07Ic",
+      "as_of_date": "2023-11-19",
+      "source_tier": "tier_2",
+      "freshness_window_days": 180
+    }
+  ],
+  "contrarian_angle": "The video challenges the conventional wisdom that hard work directly leads to increased wealth, positing that systemic economic structures might be designed to perpetuate poverty regardless of individual effort.",
+  "viewer_takeaway": "Viewers may leave with a critical perspective on economic systems, questioning the direct correlation between labor and financial prosperity, and considering the potential impact of government-designed economic policies on individual wealth accumulation.",
+  "schema_version": "1.0"
+}
