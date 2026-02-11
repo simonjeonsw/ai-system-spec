@@ -10,6 +10,13 @@ from typing import Any, Dict, List, Set
 
 _SOURCE_ID_PATTERN = re.compile(r"src-\d+", re.IGNORECASE)
 _WORD_PATTERN = re.compile(r"[A-Za-z][A-Za-z\-']+")
+_STAGE_TAG_PATTERN = re.compile(r"\[(?:visual|narration|scene)\s*:[^\]]*\]|\[(?:visual|narration|scene)\]", re.IGNORECASE)
+_PART_MARKER_PATTERN = re.compile(r"---\s*PART\s*\d+\s*:[^-]+---", re.IGNORECASE)
+_STRUCTURAL_ONLY_PATTERN = re.compile(r"^(?:\*+|\d+\.|\[src-\d+\]|[-–—\s]+)$", re.IGNORECASE)
+_DIRECTIVE_PREFIX_PATTERN = re.compile(r"^(opening shot|title card|graph|animation|overlay|host appears|secondary graph|chart|infographic)\s*:", re.IGNORECASE)
+_SCREENPLAY_CUE_PATTERN = re.compile(r"\*{0,2}\[\d{1,2}:\d{2}\]\*{0,2}", re.IGNORECASE)
+_SCENE_BOUNDARY_PATTERN = re.compile(r"\[\s*SCENE\s+(?:START|END)\s*\]", re.IGNORECASE)
+_SLUGLINE_PATTERN = re.compile(r"\b(?:INT|EXT)\.[^\n]{0,120}?\b(?:DAY|NIGHT)\b\s*[:\-]*", re.IGNORECASE)
 _STOPWORDS = {
     "the", "and", "for", "that", "with", "from", "this", "have", "your", "into", "their", "about", "will",
     "they", "were", "there", "what", "when", "where", "which", "while", "then", "than", "them", "been",
@@ -33,7 +40,7 @@ class VerificationResult:
     status: str
     errors: List[str]
     sentence_map: List[Dict[str, Any]]
-    coverage: Dict[str, float]
+    coverage: Dict[str, float | bool]
     semantic: Dict[str, Any]
 
 
@@ -47,12 +54,46 @@ def _normalize_script_text(script_text: str | List[str]) -> str:
     return str(script_text)
 
 
+def _clean_validation_text(text: str) -> str:
+    cleaned = _STAGE_TAG_PATTERN.sub(" ", text or "")
+    cleaned = _PART_MARKER_PATTERN.sub(" ", cleaned)
+    cleaned = _SCENE_BOUNDARY_PATTERN.sub(" ", cleaned)
+    cleaned = _SCREENPLAY_CUE_PATTERN.sub(" ", cleaned)
+    cleaned = _SLUGLINE_PATTERN.sub(" ", cleaned)
+    cleaned = re.sub(r"\[visual:[^\]]*", " ", cleaned, flags=re.IGNORECASE)
+    cleaned = cleaned.replace('\\"', '"')
+    cleaned = re.sub(r"\*{1,3}", " ", cleaned)
+    cleaned = re.sub(r"\s+", " ", cleaned).strip()
+    return cleaned
+
+
+def _is_structural_fragment(sentence: str) -> bool:
+    stripped = sentence.strip()
+    if not stripped:
+        return True
+    if _STRUCTURAL_ONLY_PATTERN.match(stripped):
+        return True
+    if _DIRECTIVE_PREFIX_PATTERN.match(stripped):
+        return True
+    if len(stripped) <= 3 and re.match(r"^\d+\.?$", stripped):
+        return True
+    if re.match(r"^(?:\[[^\]]+\]|\*+|[A-Z\s]{6,}:?)$", stripped):
+        return True
+    return False
+
+
 def _split_sentences(script_text: str | List[str]) -> List[str]:
     normalized = _normalize_script_text(script_text).strip()
     if not normalized:
         return []
-    sentences = re.split(r"(?<=[.!?])\s+", normalized)
-    return [sentence.strip() for sentence in sentences if sentence.strip()]
+    cleaned = _clean_validation_text(normalized)
+    raw_sentences = re.split(r"(?<=[.!?])\s+", cleaned)
+    normalized_sentences: List[str] = []
+    for sentence in raw_sentences:
+        cleaned_sentence = re.sub(r"^[\s:;,.\-–—]+", "", sentence.strip())
+        if cleaned_sentence and not _is_structural_fragment(cleaned_sentence):
+            normalized_sentences.append(cleaned_sentence)
+    return normalized_sentences
 
 
 def _is_low_risk(sentence: str) -> bool:
@@ -78,7 +119,7 @@ def _is_high_risk(sentence: str) -> bool:
         re.search(
             r"\b(invest|investment|stock|bond|crypto|etf|portfolio|interest rate|"
             r"tax|regulation|legal|lawsuit|compliance|inflation|gdp|cpi|fed|"
-            r"central bank|recession|yield|earnings|balance sheet)\b",
+            r"central bank|recession|yield|earnings|balance sheet|wage|productivity|poverty)\b",
             sentence,
             re.IGNORECASE,
         )
@@ -101,6 +142,19 @@ def _risk_level(sentence: str) -> str:
     if _is_high_risk(sentence):
         return "high"
     return "medium"
+
+
+def _sources_per_claim_stats(sentence_map: List[Dict[str, Any]]) -> Dict[str, float | bool]:
+    high_risk_claims = [entry for entry in sentence_map if entry.get("risk_level") == "high"]
+    if not high_risk_claims:
+        return {"avg_sources_per_high_risk_claim": 0.0, "over_assignment_risk": False}
+
+    avg_sources = sum(len(entry.get("sources", [])) for entry in high_risk_claims) / len(high_risk_claims)
+    over_assignment_risk = avg_sources > 2.2 and len(high_risk_claims) >= 4
+    return {
+        "avg_sources_per_high_risk_claim": round(avg_sources, 4),
+        "over_assignment_risk": over_assignment_risk,
+    }
 
 
 def _tokenize_keywords(text: str) -> List[str]:
@@ -210,6 +264,7 @@ class ScriptValidator:
         citations = self.script_payload.get("citations", [])
         sentences = _split_sentences(script_text)
         citation_ids = _extract_source_ids(" ".join(citations)) if citations else set()
+        single_citation_id = next(iter(citation_ids)) if len(citation_ids) == 1 else None
 
         errors: List[str] = []
         sentence_map: List[Dict[str, Any]] = []
@@ -217,14 +272,15 @@ class ScriptValidator:
         factual_cited = 0
         section_total = {"high": 0, "medium": 0}
         section_cited = {"high": 0, "medium": 0}
+        high_risk_source_ids: list[str] = []
 
         for index, sentence in enumerate(sentences, start=1):
             sentence_sources = _extract_source_ids(sentence)
             if not sentence_sources and citations:
                 if len(citations) == len(sentences):
                     sentence_sources = _extract_source_ids(citations[index - 1])
-                else:
-                    sentence_sources = citation_ids
+                elif single_citation_id:
+                    sentence_sources = {single_citation_id}
 
             normalized_sources = sorted({src for src in sentence_sources if src in self.source_ids})
             risk = _risk_level(sentence)
@@ -250,8 +306,10 @@ class ScriptValidator:
                     factual_cited += 1
                     if risk in section_cited:
                         section_cited[risk] += 1
-            if risk == "high" and not normalized_sources:
-                errors.append(f"Sentence {index} high-risk claim missing verified source_id.")
+            if risk == "high":
+                high_risk_source_ids.extend(normalized_sources)
+                if not normalized_sources:
+                    errors.append(f"Sentence {index} high-risk claim missing verified source_id.")
             if risk == "medium" and requires_source and not normalized_sources:
                 errors.append(f"Sentence {index} medium-risk claim missing verified source_id.")
 
@@ -263,11 +321,23 @@ class ScriptValidator:
         semantic = self.semantic_consistency_check()
         errors.extend(semantic["errors"])
 
+        high_risk_total = section_total["high"]
+        unique_high_sources = set(high_risk_source_ids)
+        source_diversity_score = round((len(unique_high_sources) / high_risk_total), 4) if high_risk_total else 0.0
+        single_source_risk = bool(high_risk_total and len(unique_high_sources) <= 1)
+        source_precision = _sources_per_claim_stats(sentence_map)
+        if source_precision.get("over_assignment_risk"):
+            errors.append("Source precision warning: high-risk claims appear over-assigned to too many sources.")
+
         status = "pass" if not errors else "fail"
-        coverage = {
+        coverage: Dict[str, float | bool] = {
             "factual_coverage": round((factual_cited / factual_total), 4) if factual_total else 0.0,
             "high_risk_coverage": round((section_cited["high"] / section_total["high"]), 4) if section_total["high"] else 0.0,
             "medium_risk_coverage": round((section_cited["medium"] / section_total["medium"]), 4) if section_total["medium"] else 0.0,
+            "source_diversity_score": source_diversity_score,
+            "single_source_risk": single_source_risk,
+            "avg_sources_per_high_risk_claim": source_precision.get("avg_sources_per_high_risk_claim", 0.0),
+            "over_assignment_risk": source_precision.get("over_assignment_risk", False),
         }
         return VerificationResult(
             status=status,
