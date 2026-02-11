@@ -37,6 +37,9 @@ _STAGE_MARKER_PATTERN = re.compile(r"\[(?:scene|visual|narration)\s*:[^\]]*\]|\[
 _PART_MARKER_PATTERN = re.compile(r"---\s*PART\s*\d+\s*:[^-]+---", re.IGNORECASE)
 _SECTION_HEADER_PATTERN = re.compile(r"---\s*CONCLUSION\s*---", re.IGNORECASE)
 _DIRECTIVE_PREFIX_PATTERN = re.compile(r"^(opening shot|title card|graph|animation|overlay|host appears|secondary graph|chart|infographic)\s*:", re.IGNORECASE)
+_SCREENPLAY_CUE_PATTERN = re.compile(r"\*{0,2}\[\d{1,2}:\d{2}\]\*{0,2}", re.IGNORECASE)
+_SCENE_BOUNDARY_PATTERN = re.compile(r"\[\s*SCENE\s+(?:START|END)\s*\]", re.IGNORECASE)
+_SLUGLINE_PATTERN = re.compile(r"\b(?:INT|EXT)\.[^\n]{0,120}?\b(?:DAY|NIGHT)\b\s*[:\-]*", re.IGNORECASE)
 _CLAIM_TOKEN_STOPWORDS = {
     "that",
     "with",
@@ -274,6 +277,10 @@ def _strip_stage_artifacts(text: str) -> str:
     cleaned = _STAGE_MARKER_PATTERN.sub(" ", text or "")
     cleaned = _PART_MARKER_PATTERN.sub(" ", cleaned)
     cleaned = _SECTION_HEADER_PATTERN.sub(" ", cleaned)
+    cleaned = _SCENE_BOUNDARY_PATTERN.sub(" ", cleaned)
+    cleaned = _SCREENPLAY_CUE_PATTERN.sub(" ", cleaned)
+    cleaned = _SLUGLINE_PATTERN.sub(" ", cleaned)
+    cleaned = re.sub(r"\*{1,3}", " ", cleaned)
     cleaned = re.sub(r"\s+", " ", cleaned).strip()
     return cleaned
 
@@ -370,8 +377,10 @@ def _pick_overlay_text(
 def _normalize_claim_text(text: str) -> str:
     cleaned = _strip_stage_artifacts(text)
     cleaned = cleaned.replace('\\"', '"').strip()
+    cleaned = re.sub(r"^(?:\*{0,2}[A-Z0-9][A-Z0-9\s&'\-\.]{5,}:\s*)+", "", cleaned)
     cleaned = re.sub(r'^["“”\']+|["“”\']+$', '', cleaned)
     cleaned = re.sub(r"\s+([,.!?;:])", r"\1", cleaned)
+    cleaned = re.sub(r"([.!?])\s*:", r"\1", cleaned)
     cleaned = re.sub(r"([.!?]){2,}", r"\1", cleaned)
     cleaned = re.sub(r'"\.$', '.', cleaned)
     cleaned = re.sub(r'\.$"', '.', cleaned)
@@ -387,6 +396,8 @@ def _sentence_claims_from_text(text: str, max_claims: int = 2) -> list[str]:
     claims: list[str] = []
     for sentence in sentences:
         if len(sentence) < 20 or _DIRECTIVE_PREFIX_PATTERN.match(sentence):
+            continue
+        if re.match(r"^(?:\[[^\]]+\]|\*+|[A-Z\s]{6,}:?)$", sentence.strip()):
             continue
         sentence = _normalize_claim_text(sentence)
         if sentence and sentence[-1] not in ".?!":

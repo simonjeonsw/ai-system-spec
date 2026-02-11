@@ -14,6 +14,9 @@ _STAGE_TAG_PATTERN = re.compile(r"\[(?:visual|narration|scene)\s*:[^\]]*\]|\[(?:
 _PART_MARKER_PATTERN = re.compile(r"---\s*PART\s*\d+\s*:[^-]+---", re.IGNORECASE)
 _STRUCTURAL_ONLY_PATTERN = re.compile(r"^(?:\*+|\d+\.|\[src-\d+\]|[-–—\s]+)$", re.IGNORECASE)
 _DIRECTIVE_PREFIX_PATTERN = re.compile(r"^(opening shot|title card|graph|animation|overlay|host appears|secondary graph|chart|infographic)\s*:", re.IGNORECASE)
+_SCREENPLAY_CUE_PATTERN = re.compile(r"\*{0,2}\[\d{1,2}:\d{2}\]\*{0,2}", re.IGNORECASE)
+_SCENE_BOUNDARY_PATTERN = re.compile(r"\[\s*SCENE\s+(?:START|END)\s*\]", re.IGNORECASE)
+_SLUGLINE_PATTERN = re.compile(r"\b(?:INT|EXT)\.[^\n]{0,120}?\b(?:DAY|NIGHT)\b\s*[:\-]*", re.IGNORECASE)
 _STOPWORDS = {
     "the", "and", "for", "that", "with", "from", "this", "have", "your", "into", "their", "about", "will",
     "they", "were", "there", "what", "when", "where", "which", "while", "then", "than", "them", "been",
@@ -54,8 +57,12 @@ def _normalize_script_text(script_text: str | List[str]) -> str:
 def _clean_validation_text(text: str) -> str:
     cleaned = _STAGE_TAG_PATTERN.sub(" ", text or "")
     cleaned = _PART_MARKER_PATTERN.sub(" ", cleaned)
+    cleaned = _SCENE_BOUNDARY_PATTERN.sub(" ", cleaned)
+    cleaned = _SCREENPLAY_CUE_PATTERN.sub(" ", cleaned)
+    cleaned = _SLUGLINE_PATTERN.sub(" ", cleaned)
     cleaned = re.sub(r"\[visual:[^\]]*", " ", cleaned, flags=re.IGNORECASE)
     cleaned = cleaned.replace('\\"', '"')
+    cleaned = re.sub(r"\*{1,3}", " ", cleaned)
     cleaned = re.sub(r"\s+", " ", cleaned).strip()
     return cleaned
 
@@ -69,6 +76,8 @@ def _is_structural_fragment(sentence: str) -> bool:
     if _DIRECTIVE_PREFIX_PATTERN.match(stripped):
         return True
     if len(stripped) <= 3 and re.match(r"^\d+\.?$", stripped):
+        return True
+    if re.match(r"^(?:\[[^\]]+\]|\*+|[A-Z\s]{6,}:?)$", stripped):
         return True
     return False
 
@@ -255,6 +264,7 @@ class ScriptValidator:
         citations = self.script_payload.get("citations", [])
         sentences = _split_sentences(script_text)
         citation_ids = _extract_source_ids(" ".join(citations)) if citations else set()
+        single_citation_id = next(iter(citation_ids)) if len(citation_ids) == 1 else None
 
         errors: List[str] = []
         sentence_map: List[Dict[str, Any]] = []
@@ -269,8 +279,8 @@ class ScriptValidator:
             if not sentence_sources and citations:
                 if len(citations) == len(sentences):
                     sentence_sources = _extract_source_ids(citations[index - 1])
-                else:
-                    sentence_sources = citation_ids
+                elif single_citation_id:
+                    sentence_sources = {single_citation_id}
 
             normalized_sources = sorted({src for src in sentence_sources if src in self.source_ids})
             risk = _risk_level(sentence)
