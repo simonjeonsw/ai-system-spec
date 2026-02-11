@@ -68,10 +68,63 @@ def _parse_payload(text: str) -> Dict[str, Any]:
 
 
 def _normalize_script_text(script_payload: Dict[str, Any]) -> str:
+    def _collect_script_lines(node: Any, lines: list[str]) -> None:
+        if isinstance(node, str):
+            text = node.strip()
+            if text:
+                lines.append(text)
+            return
+        if isinstance(node, list):
+            for item in node:
+                _collect_script_lines(item, lines)
+            return
+        if not isinstance(node, dict):
+            return
+
+        title = str(node.get("title", "")).strip()
+        if title:
+            lines.append(title)
+
+        visuals = node.get("visuals")
+        if isinstance(visuals, list):
+            for visual in visuals:
+                visual_text = str(visual).strip()
+                if visual_text:
+                    lines.append(f"[Visual] {visual_text}")
+
+        narration_value = node.get("narration")
+        if isinstance(narration_value, list):
+            for sentence in narration_value:
+                sentence_text = str(sentence).strip()
+                if sentence_text:
+                    lines.append(f"[Narration] {sentence_text}")
+        elif isinstance(narration_value, str):
+            sentence_text = narration_value.strip()
+            if sentence_text:
+                lines.append(f"[Narration] {sentence_text}")
+
+        text_value = node.get("text")
+        if isinstance(text_value, list):
+            for sentence in text_value:
+                sentence_text = str(sentence).strip()
+                if sentence_text:
+                    lines.append(f"[Narration] {sentence_text}")
+        elif isinstance(text_value, str):
+            sentence_text = text_value.strip()
+            if sentence_text:
+                lines.append(f"[Narration] {sentence_text}")
+
+        # recurse nested dict/list values conservatively
+        for key, value in node.items():
+            if key in {"title", "visuals", "narration", "text"}:
+                continue
+            if isinstance(value, (dict, list)):
+                _collect_script_lines(value, lines)
+
     script_text = script_payload.get("script", "")
     if isinstance(script_text, str):
         stripped = script_text.strip()
-        if stripped.startswith("{") and stripped.endswith("}"):
+        if (stripped.startswith("{") and stripped.endswith("}")) or (stripped.startswith("[") and stripped.endswith("]")):
             try:
                 parsed = json.loads(stripped)
                 script_payload["script"] = parsed
@@ -79,10 +132,18 @@ def _normalize_script_text(script_payload: Dict[str, Any]) -> str:
             except Exception:
                 pass
     if isinstance(script_text, list):
+        lines: list[str] = []
+        _collect_script_lines(script_text, lines)
+        if lines:
+            return "\n".join(lines).strip()
         return "\n".join(str(item) for item in script_text).strip()
     if isinstance(script_text, dict):
-        sections = script_text.get("sections", [])
         lines: list[str] = []
+        _collect_script_lines(script_text, lines)
+        if lines:
+            return "\n".join(lines).strip()
+        sections = script_text.get("sections", [])
+        lines = []
         if isinstance(sections, list) and sections:
             for section in sections:
                 visual = str(section.get("visual", "")).strip()
@@ -447,7 +508,7 @@ def _extract_section_beats(script_payload: Dict[str, Any]) -> list[Dict[str, str
     script = script_payload.get("script")
     if isinstance(script, str):
         stripped = script.strip()
-        if stripped.startswith("{") and stripped.endswith("}"):
+        if (stripped.startswith("{") and stripped.endswith("}")) or (stripped.startswith("[") and stripped.endswith("]")):
             try:
                 script = json.loads(stripped)
             except json.JSONDecodeError:

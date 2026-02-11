@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import re
 from collections import Counter
 from dataclasses import dataclass
@@ -49,7 +50,58 @@ def _extract_source_ids(text: str) -> Set[str]:
 
 
 def _normalize_script_text(script_text: str | List[str]) -> str:
+    def _collect(node: Any, lines: List[str]) -> None:
+        if isinstance(node, str):
+            text = node.strip()
+            if text:
+                lines.append(text)
+            return
+        if isinstance(node, list):
+            for item in node:
+                _collect(item, lines)
+            return
+        if not isinstance(node, dict):
+            return
+
+        for key in ("title", "heading"):
+            value = str(node.get(key, "")).strip()
+            if value:
+                lines.append(value)
+
+        for key in ("narration", "text"):
+            value = node.get(key)
+            if isinstance(value, list):
+                for item in value:
+                    item_text = str(item).strip()
+                    if item_text:
+                        lines.append(item_text)
+            elif isinstance(value, str):
+                item_text = value.strip()
+                if item_text:
+                    lines.append(item_text)
+
+        for key, value in node.items():
+            if key in {"title", "heading", "narration", "text"}:
+                continue
+            if isinstance(value, (dict, list)):
+                _collect(value, lines)
+
+    if isinstance(script_text, str):
+        stripped = script_text.strip()
+        if (stripped.startswith("{") and stripped.endswith("}")) or (stripped.startswith("[") and stripped.endswith("]")):
+            try:
+                parsed = json.loads(stripped)
+                lines: List[str] = []
+                _collect(parsed, lines)
+                if lines:
+                    return "\n".join(lines)
+            except Exception:
+                pass
     if isinstance(script_text, list):
+        lines: List[str] = []
+        _collect(script_text, lines)
+        if lines:
+            return "\n".join(lines)
         return "\n".join(str(item) for item in script_text)
     return str(script_text)
 
