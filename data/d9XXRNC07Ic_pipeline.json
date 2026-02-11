@@ -1,0 +1,12 @@
+{
+  "video_id": "d9XXRNC07Ic",
+  "files": {
+    "research": "data/d9XXRNC07Ic_research.json",
+    "plan": "data/d9XXRNC07Ic_plan.json",
+    "scenes": "data/d9XXRNC07Ic_scenes.json",
+    "script": "data/d9XXRNC07Ic_script.json",
+    "metadata": "data/d9XXRNC07Ic_metadata.json",
+    "validation_report": "data/d9XXRNC07Ic_validation_report.json",
+    "verification_report": "data/d9XXRNC07Ic_verification_report.json"
+  }
+}
