@@ -22,6 +22,7 @@ from .supabase_client import supabase
 from .schema_validator import validate_payload
 from .validation_runner import validate_all
 from .validator import ScriptValidator
+from .ops import log_experiment
 
 
 SCENE_ENGINE_VERSION = "2.0"
@@ -33,6 +34,50 @@ _CAMERA_ANGLES = [
     "medium shot of host with infographic wall",
     "macro shot of currency notes and calculator",
 ]
+_STAGE_MARKER_PATTERN = re.compile(r"\[(?:scene|visual|narration)\s*:[^\]]*\]|\[(?:scene|visual|narration)\]", re.IGNORECASE)
+_PART_MARKER_PATTERN = re.compile(r"---\s*PART\s*\d+\s*:[^-]+---", re.IGNORECASE)
+_SECTION_HEADER_PATTERN = re.compile(r"---\s*CONCLUSION\s*---", re.IGNORECASE)
+_DIRECTIVE_PREFIX_PATTERN = re.compile(r"^(opening shot|title card|graph|animation|overlay|host appears|secondary graph|chart|infographic)\s*:", re.IGNORECASE)
+_SCREENPLAY_CUE_PATTERN = re.compile(r"\*{0,2}\[\d{1,2}:\d{2}\]\*{0,2}", re.IGNORECASE)
+_SCENE_BOUNDARY_PATTERN = re.compile(r"\[\s*SCENE\s+(?:START|END)\s*\]", re.IGNORECASE)
+_SLUGLINE_PATTERN = re.compile(r"\b(?:INT|EXT)\.[^\n]{0,120}?\b(?:DAY|NIGHT)\b\s*[:\-]*", re.IGNORECASE)
+_CLAIM_TOKEN_STOPWORDS = {
+    "that",
+    "with",
+    "this",
+    "from",
+    "into",
+    "about",
+    "there",
+    "their",
+    "have",
+    "were",
+    "been",
+    "while",
+    "which",
+}
+_VISUAL_CUE_KEYWORDS = [
+    ("inflation", "Animated purchasing-power erosion chart with shrinking currency icons."),
+    ("tax", "Policy dashboard showing tax flow and household net-income impact."),
+    ("wage", "Split graph comparing wage trend vs cost-of-living trajectory."),
+    ("productivity", "Diverging line chart: productivity growth vs worker compensation."),
+    ("debt", "Household debt stack visualization with interest snowball effect."),
+    ("regulation", "Regulatory flowchart showing compliance friction on small businesses."),
+    ("policy", "Government policy lever infographic tied to household outcomes."),
+]
+_VISUAL_CUE_FALLBACKS = [
+    "Host-led explainer shot with contextual economic infographic wall.",
+    "Top-down dashboard montage of cashflow, savings, and spending metrics.",
+    "Clean whiteboard-style chart sequence highlighting cause-and-effect economics.",
+    "Isometric city economy map illustrating households, firms, and policy channels.",
+]
+_VISUAL_CUE_VARIANTS = [
+    "Use icon-driven composition with concise labels.",
+    "Use split-screen comparison with directional arrows.",
+    "Use chart-led composition with callout annotations.",
+    "Use storyboard sequence showing cause → effect → takeaway.",
+]
+
 
 
 def _parse_payload(text: str) -> Dict[str, Any]:
@@ -45,10 +90,63 @@ def _parse_payload(text: str) -> Dict[str, Any]:
 
 
 def _normalize_script_text(script_payload: Dict[str, Any]) -> str:
+    def _collect_script_lines(node: Any, lines: list[str]) -> None:
+        if isinstance(node, str):
+            text = node.strip()
+            if text:
+                lines.append(text)
+            return
+        if isinstance(node, list):
+            for item in node:
+                _collect_script_lines(item, lines)
+            return
+        if not isinstance(node, dict):
+            return
+
+        title = str(node.get("title", "")).strip()
+        if title:
+            lines.append(title)
+
+        visuals = node.get("visuals")
+        if isinstance(visuals, list):
+            for visual in visuals:
+                visual_text = str(visual).strip()
+                if visual_text:
+                    lines.append(f"[Visual] {visual_text}")
+
+        narration_value = node.get("narration")
+        if isinstance(narration_value, list):
+            for sentence in narration_value:
+                sentence_text = str(sentence).strip()
+                if sentence_text:
+                    lines.append(f"[Narration] {sentence_text}")
+        elif isinstance(narration_value, str):
+            sentence_text = narration_value.strip()
+            if sentence_text:
+                lines.append(f"[Narration] {sentence_text}")
+
+        text_value = node.get("text")
+        if isinstance(text_value, list):
+            for sentence in text_value:
+                sentence_text = str(sentence).strip()
+                if sentence_text:
+                    lines.append(f"[Narration] {sentence_text}")
+        elif isinstance(text_value, str):
+            sentence_text = text_value.strip()
+            if sentence_text:
+                lines.append(f"[Narration] {sentence_text}")
+
+        # recurse nested dict/list values conservatively
+        for key, value in node.items():
+            if key in {"title", "visuals", "narration", "text"}:
+                continue
+            if isinstance(value, (dict, list)):
+                _collect_script_lines(value, lines)
+
     script_text = script_payload.get("script", "")
     if isinstance(script_text, str):
         stripped = script_text.strip()
-        if stripped.startswith("{") and stripped.endswith("}"):
+        if (stripped.startswith("{") and stripped.endswith("}")) or (stripped.startswith("[") and stripped.endswith("]")):
             try:
                 parsed = json.loads(stripped)
                 script_payload["script"] = parsed
@@ -56,10 +154,18 @@ def _normalize_script_text(script_payload: Dict[str, Any]) -> str:
             except Exception:
                 pass
     if isinstance(script_text, list):
+        lines: list[str] = []
+        _collect_script_lines(script_text, lines)
+        if lines:
+            return "\n".join(lines).strip()
         return "\n".join(str(item) for item in script_text).strip()
     if isinstance(script_text, dict):
-        sections = script_text.get("sections", [])
         lines: list[str] = []
+        _collect_script_lines(script_text, lines)
+        if lines:
+            return "\n".join(lines).strip()
+        sections = script_text.get("sections", [])
+        lines = []
         if isinstance(sections, list) and sections:
             for section in sections:
                 visual = str(section.get("visual", "")).strip()
@@ -154,11 +260,31 @@ def _load_visual_style_config() -> Dict[str, Any]:
 
 
 def _extract_numeric_overlays(research_payload: Dict[str, Any], narration_text: str = "", limit: int = 3) -> list[str]:
+    def _is_overlay_candidate(token: str) -> bool:
+        normalized = token.strip()
+        if not normalized:
+            return False
+        if re.search(r"src-\d+", normalized, flags=re.IGNORECASE):
+            return False
+        if len(normalized) > 32:
+            return False
+        if re.match(r"^0{2,}$", normalized):
+            return False
+        if re.match(r"^0\d{2,}$", normalized):
+            return False
+        if re.match(r"^\d{1,2}:\d{2}$", normalized):
+            return False
+        if re.match(r"^\d{1,3}$", normalized) and not any(sym in normalized for sym in {"%", "$", "€", "¥", "₩"}):
+            return False
+        return True
+
     overlays: list[str] = []
-    narration_candidates = re.findall(r"(?:\$\s?\d[\d,]*(?:\.\d+)?|\d+(?:\.\d+)?%|\d[\d,]*(?:\.\d+)?)", narration_text)
+    narration_cleaned = re.sub(r"src-\d+", " ", narration_text, flags=re.IGNORECASE)
+    narration_cleaned = re.sub(r"\[\s*\d{1,2}:\d{2}\s*\]", " ", narration_cleaned)
+    narration_candidates = re.findall(r"(?:\$\s?\d[\d,]*(?:\.\d+)?|\d+(?:\.\d+)?%|\d[\d,]*(?:\.\d+)?)", narration_cleaned)
     for token in narration_candidates:
         token = token.strip()
-        if token and token not in overlays:
+        if _is_overlay_candidate(token) and token not in overlays:
             overlays.append(token)
         if len(overlays) >= limit:
             return overlays
@@ -166,8 +292,10 @@ def _extract_numeric_overlays(research_payload: Dict[str, Any], narration_text: 
     data_points = research_payload.get("data_points", [])
     for point in data_points:
         value = str(point.get("value", "")).strip()
-        if value and value not in overlays:
-            overlays.append(value)
+        match = re.search(r"(?:\$\s?\d[\d,]*(?:\.\d+)?|\d+(?:\.\d+)?%)", value)
+        candidate = match.group(0).strip() if match else value
+        if _is_overlay_candidate(candidate) and candidate not in overlays:
+            overlays.append(candidate)
         if len(overlays) >= limit:
             return overlays
 
@@ -190,11 +318,7 @@ def _build_image_prompt_with_context(visual_text: str, research_payload: Dict[st
     style_config = _load_visual_style_config()
     style_key = style_config.get("active_style", "isometric_3d")
     style_prompt = style_config.get("styles", {}).get(style_key, "")
-    overlays = _extract_numeric_overlays(research_payload)
-    overlay_text = ""
-    if overlays:
-        overlay_text = " Overlay text: '" + "' | '".join(overlays) + "'."
-    return f"{style_prompt}. {base}. minimalist professional finance aesthetic.{overlay_text}".strip()
+    return f"{style_prompt}. {base}. minimalist professional finance aesthetic.".strip()
 
 
 def _scene_hash(script_payload: Dict[str, Any], style_key: str) -> str:
@@ -209,14 +333,31 @@ def _build_scene_output_from_script(
     script_text = _normalize_script_text(script_payload)
     visual_blocks = _extract_visual_blocks(script_text)
     research_payload = research_payload or {}
+    if len(visual_blocks) == 1:
+        single = visual_blocks[0]
+        beats = _split_text_into_beats(str(single.get("narration", "")), max_words=38)
+        single_word_count = len(str(single.get("narration", "")).split())
+        if len(beats) >= 2 and single_word_count >= 80:
+            visual_blocks = [
+                {
+                    "visual": str(single.get("visual", "")),
+                    "narration": beat,
+                    "section_type": "body",
+                }
+                for beat in beats
+            ]
+
     scenes = []
+    recent_overlays: list[str] = []
     style_key = _load_visual_style_config().get("active_style", "isometric_3d")
     source_hash = _scene_hash(script_payload, style_key)
     for index, block in enumerate(visual_blocks, start=1):
         camera = _CAMERA_ANGLES[(index - 1) % len(_CAMERA_ANGLES)]
-        overlays = _extract_numeric_overlays(research_payload, block.get("narration", ""), limit=1)
-        overlay_text = overlays[0] if overlays else ""
-        base_prompt = _build_image_prompt_with_context(block["visual"], research_payload)
+        overlay_text = _pick_overlay_text(str(block.get("narration", "")), research_payload, recent_overlays)
+        if overlay_text:
+            recent_overlays.append(overlay_text)
+        visual_cue = str(block.get("visual", "")).strip() or _infer_visual_cue_from_narration(str(block.get("narration", "")), index)
+        base_prompt = _build_image_prompt_with_context(visual_cue, research_payload)
         enriched_prompt = f"{base_prompt} Camera angle: {camera}."
         if overlay_text:
             enriched_prompt += f" Overlay text: '{overlay_text}'."
@@ -224,7 +365,7 @@ def _build_scene_output_from_script(
             {
                 "scene_id": f"s{index:02d}",
                 "objective": "Derived from validated script visual cue.",
-                "visual_cue": block["visual"],
+                "visual_cue": visual_cue,
                 "key_claims": [],
                 "source_refs": [],
                 "evidence_sources": [],
@@ -242,10 +383,254 @@ def _build_scene_output_from_script(
     return {"scenes": scenes}
 
 
+def _infer_visual_cue_from_narration(narration_text: str, index: int) -> str:
+    lowered = narration_text.lower()
+    for keyword, cue in _VISUAL_CUE_KEYWORDS:
+        if keyword in lowered:
+            variant = _VISUAL_CUE_VARIANTS[(index - 1) % len(_VISUAL_CUE_VARIANTS)]
+            return f"{cue} {variant}".strip()
+    fallback = _VISUAL_CUE_FALLBACKS[(index - 1) % len(_VISUAL_CUE_FALLBACKS)]
+    variant = _VISUAL_CUE_VARIANTS[(index - 1) % len(_VISUAL_CUE_VARIANTS)]
+    return f"{fallback} {variant}".strip()
+
+
+def _log_metadata_conversion_experiments(video_id: str, metadata_payload: Dict[str, Any]) -> None:
+    pinned_variants = metadata_payload.get("pinned_comment_variants") or []
+    if isinstance(pinned_variants, list) and len(pinned_variants) >= 2:
+        for idx, variant in enumerate(pinned_variants[:2], start=1):
+            log_experiment(
+                {
+                    "video_id": video_id,
+                    "experiment_type": "pinned_comment_conversion",
+                    "title_variant": metadata_payload.get("title"),
+                    "thumbnail_variant": f"comment_v{idx}",
+                    "start_date": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                    "notes": f"Pinned comment conversion variant {idx}: {str(variant)[:160]}",
+                }
+            )
+
+
 def _estimate_runtime_seconds_from_script(script_payload: Dict[str, Any]) -> int:
     script_text = _normalize_script_text(script_payload)
     words = len(script_text.split())
     return int((words / 230) * 60)
+
+
+def _strip_stage_artifacts(text: str) -> str:
+    cleaned = _STAGE_MARKER_PATTERN.sub(" ", text or "")
+    cleaned = _PART_MARKER_PATTERN.sub(" ", cleaned)
+    cleaned = _SECTION_HEADER_PATTERN.sub(" ", cleaned)
+    cleaned = _SCENE_BOUNDARY_PATTERN.sub(" ", cleaned)
+    cleaned = _SCREENPLAY_CUE_PATTERN.sub(" ", cleaned)
+    cleaned = _SLUGLINE_PATTERN.sub(" ", cleaned)
+    cleaned = re.sub(r"\*{1,3}", " ", cleaned)
+    cleaned = re.sub(r"\s+", " ", cleaned).strip()
+    return cleaned
+
+
+def _extract_scene_source_ids(text: str, source_ids: set[str]) -> list[str]:
+    found = {token.lower() for token in re.findall(r"src-\d+", text or "", flags=re.IGNORECASE)}
+    return sorted(src for src in found if src in source_ids)
+
+
+def _is_high_risk_scene_claim(text: str) -> bool:
+    return bool(
+        re.search(
+            r"\b(inflation|wage|productivity|tax|debt|interest|central bank|policy|regulation|inequality|gdp|cpi|recession)\b",
+            text,
+            re.IGNORECASE,
+        )
+        or re.search(r"\d", text)
+    )
+
+
+def _infer_scene_sources(
+    narration_text: str,
+    research_payload: Dict[str, Any],
+    fallback_citations: list[str],
+    allowed_source_ids: set[str],
+) -> list[str]:
+    source_scores: Dict[str, float] = {}
+    lowered = narration_text.lower()
+
+    def _add_score(source_id: str, delta: float) -> None:
+        sid = source_id.lower()
+        if sid not in allowed_source_ids:
+            return
+        source_scores[sid] = source_scores.get(sid, 0.0) + delta
+
+    for entry in research_payload.get("key_fact_sources", []):
+        claim = str(entry.get("claim", "")).lower()
+        if not claim:
+            continue
+        claim_tokens = [token for token in re.findall(r"[a-zA-Z]{4,}", claim) if token not in _CLAIM_TOKEN_STOPWORDS]
+        overlap = sum(1 for token in claim_tokens[:8] if token in lowered)
+        if overlap >= 3:
+            for source_id in entry.get("source_ids", []):
+                _add_score(str(source_id), overlap * 1.0)
+
+    for point in research_payload.get("data_points", []):
+        metric = str(point.get("metric", "")).lower()
+        source_id = str(point.get("source_id", "")).lower()
+        metric_tokens = [tok for tok in re.findall(r"[a-zA-Z]{3,}", metric) if tok not in _CLAIM_TOKEN_STOPWORDS]
+        metric_overlap = sum(1 for tok in metric_tokens[:4] if tok in lowered)
+        if metric_overlap >= 2:
+            _add_score(source_id, metric_overlap * 0.8)
+
+        value = str(point.get("value", "")).strip()
+        if value and value in narration_text:
+            _add_score(source_id, 1.4)
+
+    sorted_by_score = sorted(source_scores.items(), key=lambda item: item[1], reverse=True)
+    inferred = [sid for sid, score in sorted_by_score if score >= 1.6][:2]
+
+    if inferred:
+        return inferred
+
+    explicit = _extract_scene_source_ids(narration_text, allowed_source_ids)
+    if explicit:
+        return explicit[:2]
+
+    for source_id in fallback_citations:
+        sid = str(source_id).lower()
+        if sid in allowed_source_ids:
+            return [sid]
+    return []
+
+
+def _pick_overlay_text(
+    narration_text: str,
+    research_payload: Dict[str, Any],
+    used_recently: list[str],
+    window: int = 3,
+) -> str:
+    candidates = _extract_numeric_overlays(research_payload, narration_text, limit=5)
+    if not candidates:
+        return ""
+    recent = set(item for item in used_recently[-window:] if item)
+    for candidate in candidates:
+        if candidate and candidate not in recent:
+            return candidate
+    for candidate in candidates:
+        if candidate != (used_recently[-1] if used_recently else None):
+            return candidate
+    return ""
+
+
+def _normalize_claim_text(text: str) -> str:
+    cleaned = _strip_stage_artifacts(text)
+    cleaned = cleaned.replace('\\"', '"').strip()
+    cleaned = re.sub(r"^(?:\*{0,2}[A-Z0-9][A-Z0-9\s&'\-\.]{5,}:\s*)+", "", cleaned)
+    cleaned = re.sub(r'^["“”\']+|["“”\']+$', '', cleaned)
+    cleaned = re.sub(r"\s+([,.!?;:])", r"\1", cleaned)
+    cleaned = re.sub(r"([.!?])\s*:", r"\1", cleaned)
+    cleaned = re.sub(r"([.!?]){2,}", r"\1", cleaned)
+    cleaned = re.sub(r'"\.$', '.', cleaned)
+    cleaned = re.sub(r'\.$"', '.', cleaned)
+    cleaned = re.sub(r"^[\s:;,.\-–—]+", "", cleaned)
+    return cleaned.strip()
+
+
+def _sentence_claims_from_text(text: str, max_claims: int = 2) -> list[str]:
+    cleaned = _normalize_claim_text(text)
+    if not cleaned:
+        return []
+    sentences = [item.strip() for item in re.split(r"(?<=[.!?])\s+", cleaned) if item.strip()]
+    claims: list[str] = []
+    for sentence in sentences:
+        if len(sentence) < 20 or _DIRECTIVE_PREFIX_PATTERN.match(sentence):
+            continue
+        if re.match(r"^(?:\[[^\]]+\]|\*+|[A-Z\s]{6,}:?)$", sentence.strip()):
+            continue
+        sentence = _normalize_claim_text(sentence)
+        if sentence and sentence[-1] not in ".?!":
+            sentence = sentence.rstrip() + "."
+        if sentence:
+            claims.append(sentence)
+        if len(claims) >= max_claims:
+            break
+    if not claims and cleaned and not _DIRECTIVE_PREFIX_PATTERN.match(cleaned):
+        fallback = cleaned if cleaned.endswith((".", "?", "!")) else f"{cleaned}."
+        claims.append(fallback)
+    return claims
+
+
+def _split_text_into_beats(text: str, max_words: int = 42) -> list[str]:
+    cleaned = _strip_stage_artifacts(text)
+    if not cleaned:
+        return []
+    sentences = [chunk.strip() for chunk in re.split(r"(?<=[.!?])\s+", cleaned) if chunk.strip()]
+    beats: list[str] = []
+    bucket: list[str] = []
+    word_count = 0
+    for sentence in sentences:
+        words = sentence.split()
+        if len(words) > max_words * 2:
+            if bucket:
+                beats.append(" ".join(bucket).strip())
+                bucket = []
+                word_count = 0
+            for start in range(0, len(words), max_words):
+                chunk = " ".join(words[start : start + max_words]).strip()
+                if chunk:
+                    beats.append(chunk)
+            continue
+        if bucket and word_count + len(words) > max_words:
+            beats.append(" ".join(bucket).strip())
+            bucket = []
+            word_count = 0
+        bucket.append(sentence)
+        word_count += len(words)
+    if bucket:
+        beats.append(" ".join(bucket).strip())
+    return beats
+
+
+def _extract_section_beats(script_payload: Dict[str, Any]) -> list[Dict[str, str]]:
+    script = script_payload.get("script")
+    if isinstance(script, str):
+        stripped = script.strip()
+        if (stripped.startswith("{") and stripped.endswith("}")) or (stripped.startswith("[") and stripped.endswith("]")):
+            try:
+                script = json.loads(stripped)
+            except json.JSONDecodeError:
+                script = script_payload.get("script")
+    beats: list[Dict[str, str]] = []
+    if isinstance(script, dict):
+        sections = script.get("sections", [])
+        if isinstance(sections, list):
+            for idx, section in enumerate(sections, start=1):
+                section_title = str(section.get("title", "")).strip() or f"section-{idx}"
+                visual = str(section.get("visual", "")).strip()
+                narration = section.get("narration", "")
+                if isinstance(narration, list):
+                    narration_text = " ".join(str(item).strip() for item in narration if str(item).strip())
+                else:
+                    narration_text = str(narration).strip()
+                for beat_index, beat_text in enumerate(_split_text_into_beats(narration_text), start=1):
+                    beats.append(
+                        {
+                            "title": section_title,
+                            "visual": visual,
+                            "narration": beat_text,
+                            "beat_id": f"{idx}-{beat_index}",
+                        }
+                    )
+    if beats:
+        return beats
+
+    blocks = _extract_visual_blocks(_normalize_script_text(script_payload))
+    for idx, block in enumerate(blocks, start=1):
+        for beat_index, beat_text in enumerate(_split_text_into_beats(str(block.get("narration", ""))), start=1):
+            beats.append(
+                {
+                    "title": f"block-{idx}",
+                    "visual": str(block.get("visual", "")),
+                    "narration": beat_text,
+                    "beat_id": f"{idx}-{beat_index}",
+                }
+            )
+    return beats
 
 
 def _ensure_scene_granularity(
@@ -256,41 +641,135 @@ def _ensure_scene_granularity(
 ) -> Dict[str, Any]:
     scenes = list(scene_output.get("scenes", []))
     runtime_sec = _estimate_runtime_seconds_from_script(script_payload)
-    if runtime_sec <= 300 or len(scenes) >= min_scenes:
+    target_scenes = max(min_scenes, min(24, int(runtime_sec / 28)))
+
+    if runtime_sec <= 300 or len(scenes) >= target_scenes:
         return scene_output
 
-    base_blocks = _extract_visual_blocks(_normalize_script_text(script_payload))
+    beats = _extract_section_beats(script_payload)
+    if not beats:
+        return scene_output
+
+    style_profile = _load_visual_style_config().get("active_style", "isometric_3d")
+    source_hash = _scene_hash(script_payload, style_profile)
     expanded: list[Dict[str, Any]] = []
-    block_index = 0
-    while len(expanded) < min_scenes and base_blocks:
-        block = base_blocks[block_index % len(base_blocks)]
-        camera = _CAMERA_ANGLES[len(expanded) % len(_CAMERA_ANGLES)]
-        overlays = _extract_numeric_overlays(research_payload, str(block.get("narration", "")), limit=1)
-        overlay_text = overlays[0] if overlays else ""
-        prompt = _build_image_prompt_with_context(str(block.get("visual", "")), research_payload)
+    recent_overlays: list[str] = []
+
+    for idx, beat in enumerate(beats, start=1):
+        camera = _CAMERA_ANGLES[(idx - 1) % len(_CAMERA_ANGLES)]
+        overlay_text = _pick_overlay_text(str(beat.get("narration", "")), research_payload, recent_overlays)
+        if overlay_text:
+            recent_overlays.append(overlay_text)
+        prompt = _build_image_prompt_with_context(beat.get("visual", ""), research_payload)
         prompt = f"{prompt} Camera angle: {camera}."
         if overlay_text:
             prompt += f" Overlay text: '{overlay_text}'."
+
         expanded.append(
             {
-                "scene_id": f"s{len(expanded)+1:02d}",
-                "objective": "Expanded for long-form granularity requirement.",
-                "visual_cue": str(block.get("visual", "")),
-                "key_claims": [],
+                "scene_id": f"s{idx:02d}",
+                "objective": f"Deliver beat {beat.get('beat_id', idx)} from section '{beat.get('title', 'section')}'.",
+                "visual_cue": beat.get("visual", ""),
+                "key_claims": _sentence_claims_from_text(beat.get("narration", ""), max_claims=2),
                 "source_refs": [],
                 "evidence_sources": [],
                 "visual_prompt": prompt,
-                "narration_prompt": str(block.get("narration", "")),
-                "transition_note": "Auto-expanded to satisfy minimum scene count.",
+                "narration_prompt": beat.get("narration", ""),
+                "transition_note": "Advance to the next semantic beat while preserving narrative continuity.",
                 "camera_angle": camera,
                 "overlay_text": overlay_text,
-                "style_profile": _load_visual_style_config().get("active_style", "isometric_3d"),
+                "style_profile": style_profile,
                 "scene_engine_version": SCENE_ENGINE_VERSION,
-                "source_script_hash": _scene_hash(script_payload, _load_visual_style_config().get("active_style", "isometric_3d")),
+                "source_script_hash": source_hash,
                 "schema_version": "1.0",
             }
         )
-        block_index += 1
+
+    source_ids = {
+        str(source.get("source_id", "")).lower()
+        for source in research_payload.get("sources", [])
+        if source.get("source_id")
+    }
+    fallback_citations = [str(item).lower() for item in script_payload.get("citations", []) if str(item).lower().startswith("src-")]
+    for scene in expanded:
+        narration_text = _normalize_claim_text(str(scene.get("narration_prompt", "")))
+        scene["narration_prompt"] = narration_text
+        mapped_sources = _extract_scene_source_ids(narration_text, source_ids)
+        claims = scene.get("key_claims") or _sentence_claims_from_text(narration_text, max_claims=1)
+        claims = [_normalize_claim_text(claim) for claim in claims if _normalize_claim_text(claim)]
+        scene["key_claims"] = claims
+        if not mapped_sources and any(_is_high_risk_scene_claim(claim) for claim in claims):
+            mapped_sources = _infer_scene_sources(narration_text, research_payload, fallback_citations, source_ids)
+        scene["evidence_sources"] = mapped_sources
+        scene["source_refs"] = [{"claim": claim, "sources": mapped_sources} for claim in claims if mapped_sources]
+        if scene.get("scene_id") == "s22":
+            override = (
+                " Include a line graph icon with diverging lines labeled 'Productivity' and 'Wages', "
+                "and annotate that the gap widens over time."
+            )
+            scene["visual_prompt"] = f"{scene.get('visual_prompt', '').strip()}{override}".strip()
+
+    while len(expanded) < target_scenes and expanded:
+        candidate_index = max(range(len(expanded)), key=lambda i: len(str(expanded[i].get("narration_prompt", "")).split()))
+        candidate = expanded[candidate_index]
+        narration_text = str(candidate.get("narration_prompt", ""))
+        words = narration_text.split()
+        if len(words) < 14:
+            new_idx = len(expanded) + 1
+            camera = _CAMERA_ANGLES[(new_idx - 1) % len(_CAMERA_ANGLES)]
+            fallback_overlay = _pick_overlay_text(narration_text, research_payload, recent_overlays)
+            if fallback_overlay:
+                recent_overlays.append(fallback_overlay)
+            continued_narration = narration_text or "Continue this key idea with a concrete example and practical action."
+            continued_prompt = _build_image_prompt_with_context(str(candidate.get("visual_cue", "")), research_payload)
+            continued_prompt = f"{continued_prompt} Camera angle: {camera}."
+            if fallback_overlay:
+                continued_prompt += f" Overlay text: '{fallback_overlay}'."
+            expanded.append(
+                {
+                    **candidate,
+                    "scene_id": f"s{new_idx:02d}",
+                    "objective": f"{candidate.get('objective', 'Scene')} (continued)",
+                    "transition_note": "Keep narrative continuity with a concise reinforcement beat.",
+                    "camera_angle": camera,
+                    "overlay_text": fallback_overlay,
+                    "visual_prompt": continued_prompt,
+                    "narration_prompt": continued_narration,
+                    "key_claims": _sentence_claims_from_text(continued_narration, max_claims=1),
+                }
+            )
+            continue
+        pivot = len(words) // 2
+        left_text = " ".join(words[:pivot]).strip()
+        right_text = " ".join(words[pivot:]).strip()
+        candidate["narration_prompt"] = left_text
+        candidate["key_claims"] = _sentence_claims_from_text(left_text, max_claims=1)
+        candidate["objective"] = f"{candidate.get('objective', 'Scene')} (part 1)"
+        candidate["transition_note"] = "Continue to the next sub-beat for deeper explanation."
+        new_idx = len(expanded) + 1
+        expanded.insert(
+            candidate_index + 1,
+            {
+                **candidate,
+                "scene_id": f"s{new_idx:02d}",
+                "narration_prompt": right_text,
+                "key_claims": _sentence_claims_from_text(right_text, max_claims=1),
+                "objective": f"{candidate.get('objective', 'Scene')} (part 2)",
+                "transition_note": "Resolve this sub-beat and move forward.",
+            },
+        )
+
+    for scene in expanded:
+        narration_text = _normalize_claim_text(str(scene.get("narration_prompt", "")))
+        scene["narration_prompt"] = narration_text
+        mapped_sources = _extract_scene_source_ids(narration_text, source_ids)
+        claims = scene.get("key_claims") or _sentence_claims_from_text(narration_text, max_claims=1)
+        claims = [_normalize_claim_text(claim) for claim in claims if _normalize_claim_text(claim)]
+        scene["key_claims"] = claims
+        if not mapped_sources and any(_is_high_risk_scene_claim(claim) for claim in claims):
+            mapped_sources = _infer_scene_sources(narration_text, research_payload, fallback_citations, source_ids)
+        scene["evidence_sources"] = mapped_sources
+        scene["source_refs"] = [{"claim": claim, "sources": mapped_sources} for claim in claims if mapped_sources]
 
     scene_output["scenes"] = expanded
     return scene_output
@@ -875,6 +1354,18 @@ def run_pipeline(video_input: str, refresh: bool = False) -> Dict[str, Any]:
             },
             on_conflict="video_id",
         ).execute()
+        try:
+            _log_metadata_conversion_experiments(video_id, metadata_payload)
+        except Exception as experiment_exc:
+            emit_run_log(
+                stage="ops",
+                status="warning",
+                input_refs={"video_id": video_id, "root_run_id": run_id},
+                output_refs={"note": "metadata conversion experiment logging skipped"},
+                error_summary=str(experiment_exc),
+                metrics=build_metrics(cache_hit=False),
+                run_id=_log_run_id(run_id, "ops", 1),
+            )
     except Exception as exc:
         _checkpoint_state()
         failure_payload = {

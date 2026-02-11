@@ -82,3 +82,20 @@ CREATE TABLE IF NOT EXISTS video_scripts (
   created_at timestamptz DEFAULT now(),
   updated_at timestamptz DEFAULT now()
 );
+
+-- metadata_experiments: packaging/conversion experiment logs
+CREATE TABLE IF NOT EXISTS metadata_experiments (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  video_id text NOT NULL,
+  experiment_type text NOT NULL,
+  title_variant text,
+  thumbnail_variant text,
+  start_date timestamptz,
+  end_date timestamptz,
+  ctr numeric,
+  avd numeric,
+  notes text,
+  created_at timestamptz DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS metadata_experiments_video_id_idx ON metadata_experiments (video_id);

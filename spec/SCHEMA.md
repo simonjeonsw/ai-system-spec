@@ -66,7 +66,7 @@ Stores A/B testing results for titles and thumbnails.
 |-------------------|-------------|--------------------------------------------------------|
 | id                | uuid        | PK, default gen_random_uuid()                          |
 | video_id          | text        | Stable video identifier                                |
-| experiment_type   | text        | title / thumbnail / other                              |
+| experiment_type   | text        | title / thumbnail / pinned_comment_conversion / other |
 | title_variant     | text        | Title variant label or value                           |
 | thumbnail_variant | text        | Thumbnail variant label or asset reference             |
 | start_date        | timestamptz | Experiment start                                       |
