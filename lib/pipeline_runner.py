@@ -411,6 +411,16 @@ def _split_text_into_beats(text: str, max_words: int = 42) -> list[str]:
     word_count = 0
     for sentence in sentences:
         words = sentence.split()
+        if len(words) > max_words * 2:
+            if bucket:
+                beats.append(" ".join(bucket).strip())
+                bucket = []
+                word_count = 0
+            for start in range(0, len(words), max_words):
+                chunk = " ".join(words[start : start + max_words]).strip()
+                if chunk:
+                    beats.append(chunk)
+            continue
         if bucket and word_count + len(words) > max_words:
             beats.append(" ".join(bucket).strip())
             bucket = []
@@ -551,7 +561,30 @@ def _ensure_scene_granularity(
         narration_text = str(candidate.get("narration_prompt", ""))
         words = narration_text.split()
         if len(words) < 14:
-            break
+            new_idx = len(expanded) + 1
+            camera = _CAMERA_ANGLES[(new_idx - 1) % len(_CAMERA_ANGLES)]
+            fallback_overlay = _pick_overlay_text(narration_text, research_payload, recent_overlays)
+            if fallback_overlay:
+                recent_overlays.append(fallback_overlay)
+            continued_narration = narration_text or "Continue this key idea with a concrete example and practical action."
+            continued_prompt = _build_image_prompt_with_context(str(candidate.get("visual_cue", "")), research_payload)
+            continued_prompt = f"{continued_prompt} Camera angle: {camera}."
+            if fallback_overlay:
+                continued_prompt += f" Overlay text: '{fallback_overlay}'."
+            expanded.append(
+                {
+                    **candidate,
+                    "scene_id": f"s{new_idx:02d}",
+                    "objective": f"{candidate.get('objective', 'Scene')} (continued)",
+                    "transition_note": "Keep narrative continuity with a concise reinforcement beat.",
+                    "camera_angle": camera,
+                    "overlay_text": fallback_overlay,
+                    "visual_prompt": continued_prompt,
+                    "narration_prompt": continued_narration,
+                    "key_claims": _sentence_claims_from_text(continued_narration, max_claims=1),
+                }
+            )
+            continue
         pivot = len(words) // 2
         left_text = " ".join(words[:pivot]).strip()
         right_text = " ".join(words[pivot:]).strip()
