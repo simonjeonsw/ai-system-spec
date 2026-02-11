@@ -122,7 +122,8 @@ class ContentScripter:
             script_payload = extract_json_relaxed(response_text)
             if isinstance(script_payload.get("script"), list):
                 script_payload["script"] = "\n".join(
-                    f"[{item.get('type', 'line').upper()}] {item.get('content', '').strip()}"
+                    f"[{item.get('type', 'line').upper()}] "
+                    f"{str(item.get('content') or item.get('narration') or '').strip()}"
                     for item in script_payload["script"]
                 ).strip()
             elif isinstance(script_payload.get("script"), dict):
@@ -200,7 +201,8 @@ class ContentScripter:
         expanded_payload = extract_json_relaxed(self.router.generate_content(prompt))
         if isinstance(expanded_payload.get("script"), list):
             expanded_payload["script"] = "\n".join(
-                f"[{item.get('type', 'line').upper()}] {item.get('content', '').strip()}"
+                f"[{item.get('type', 'line').upper()}] "
+                f"{str(item.get('content') or item.get('narration') or '').strip()}"
                 for item in expanded_payload["script"]
             ).strip()
         elif isinstance(expanded_payload.get("script"), dict):
@@ -231,7 +233,8 @@ class ContentScripter:
         shortened_payload = extract_json_relaxed(self.router.generate_content(prompt))
         if isinstance(shortened_payload.get("script"), list):
             shortened_payload["script"] = "\n".join(
-                f"[{item.get('type', 'line').upper()}] {item.get('content', '').strip()}"
+                f"[{item.get('type', 'line').upper()}] "
+                f"{str(item.get('content') or item.get('narration') or '').strip()}"
                 for item in shortened_payload["script"]
             ).strip()
         elif isinstance(shortened_payload.get("script"), dict):
