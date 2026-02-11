@@ -37,6 +37,21 @@ _STAGE_MARKER_PATTERN = re.compile(r"\[(?:scene|visual|narration)\s*:[^\]]*\]|\[
 _PART_MARKER_PATTERN = re.compile(r"---\s*PART\s*\d+\s*:[^-]+---", re.IGNORECASE)
 _SECTION_HEADER_PATTERN = re.compile(r"---\s*CONCLUSION\s*---", re.IGNORECASE)
 _DIRECTIVE_PREFIX_PATTERN = re.compile(r"^(opening shot|title card|graph|animation|overlay|host appears|secondary graph|chart|infographic)\s*:", re.IGNORECASE)
+_CLAIM_TOKEN_STOPWORDS = {
+    "that",
+    "with",
+    "this",
+    "from",
+    "into",
+    "about",
+    "there",
+    "their",
+    "have",
+    "were",
+    "been",
+    "while",
+    "which",
+}
 
 
 
@@ -215,12 +230,14 @@ def _build_scene_output_from_script(
     visual_blocks = _extract_visual_blocks(script_text)
     research_payload = research_payload or {}
     scenes = []
+    recent_overlays: list[str] = []
     style_key = _load_visual_style_config().get("active_style", "isometric_3d")
     source_hash = _scene_hash(script_payload, style_key)
     for index, block in enumerate(visual_blocks, start=1):
         camera = _CAMERA_ANGLES[(index - 1) % len(_CAMERA_ANGLES)]
-        overlays = _extract_numeric_overlays(research_payload, block.get("narration", ""), limit=1)
-        overlay_text = overlays[0] if overlays else ""
+        overlay_text = _pick_overlay_text(str(block.get("narration", "")), research_payload, recent_overlays)
+        if overlay_text:
+            recent_overlays.append(overlay_text)
         base_prompt = _build_image_prompt_with_context(block["visual"], research_payload)
         enriched_prompt = f"{base_prompt} Camera angle: {camera}."
         if overlay_text:
@@ -283,33 +300,71 @@ def _infer_scene_sources(
     fallback_citations: list[str],
     allowed_source_ids: set[str],
 ) -> list[str]:
-    inferred: list[str] = []
+    source_scores: Dict[str, float] = {}
     lowered = narration_text.lower()
+
+    def _add_score(source_id: str, delta: float) -> None:
+        sid = source_id.lower()
+        if sid not in allowed_source_ids:
+            return
+        source_scores[sid] = source_scores.get(sid, 0.0) + delta
 
     for entry in research_payload.get("key_fact_sources", []):
         claim = str(entry.get("claim", "")).lower()
         if not claim:
             continue
-        claim_tokens = [token for token in re.findall(r"[a-zA-Z]{4,}", claim) if token not in {"that", "with", "this", "from"}]
+        claim_tokens = [token for token in re.findall(r"[a-zA-Z]{4,}", claim) if token not in _CLAIM_TOKEN_STOPWORDS]
         overlap = sum(1 for token in claim_tokens[:8] if token in lowered)
-        if overlap >= 2:
+        if overlap >= 3:
             for source_id in entry.get("source_ids", []):
-                source_id = str(source_id).lower()
-                if source_id in allowed_source_ids and source_id not in inferred:
-                    inferred.append(source_id)
+                _add_score(str(source_id), overlap * 1.0)
 
     for point in research_payload.get("data_points", []):
         metric = str(point.get("metric", "")).lower()
         source_id = str(point.get("source_id", "")).lower()
-        if source_id in allowed_source_ids and metric and any(tok in lowered for tok in metric.split()[:3]):
-            if source_id not in inferred:
-                inferred.append(source_id)
+        metric_tokens = [tok for tok in re.findall(r"[a-zA-Z]{3,}", metric) if tok not in _CLAIM_TOKEN_STOPWORDS]
+        metric_overlap = sum(1 for tok in metric_tokens[:4] if tok in lowered)
+        if metric_overlap >= 2:
+            _add_score(source_id, metric_overlap * 0.8)
+
+        value = str(point.get("value", "")).strip()
+        if value and value in narration_text:
+            _add_score(source_id, 1.4)
+
+    sorted_by_score = sorted(source_scores.items(), key=lambda item: item[1], reverse=True)
+    inferred = [sid for sid, score in sorted_by_score if score >= 1.6][:2]
+
+    if inferred:
+        return inferred
+
+    explicit = _extract_scene_source_ids(narration_text, allowed_source_ids)
+    if explicit:
+        return explicit[:2]
 
     for source_id in fallback_citations:
         sid = str(source_id).lower()
-        if sid in allowed_source_ids and sid not in inferred:
-            inferred.append(sid)
-    return inferred
+        if sid in allowed_source_ids:
+            return [sid]
+    return []
+
+
+def _pick_overlay_text(
+    narration_text: str,
+    research_payload: Dict[str, Any],
+    used_recently: list[str],
+    window: int = 3,
+) -> str:
+    candidates = _extract_numeric_overlays(research_payload, narration_text, limit=5)
+    if not candidates:
+        return ""
+    recent = set(item for item in used_recently[-window:] if item)
+    for candidate in candidates:
+        if candidate and candidate not in recent:
+            return candidate
+    for candidate in candidates:
+        if candidate != (used_recently[-1] if used_recently else None):
+            return candidate
+    return candidates[0]
 
 
 def _normalize_claim_text(text: str) -> str:
@@ -320,6 +375,7 @@ def _normalize_claim_text(text: str) -> str:
     cleaned = re.sub(r"([.!?]){2,}", r"\1", cleaned)
     cleaned = re.sub(r'"\.$', '.', cleaned)
     cleaned = re.sub(r'\.$"', '.', cleaned)
+    cleaned = re.sub(r"^[\s:;,.\-–—]+", "", cleaned)
     return cleaned.strip()
 
 
@@ -433,11 +489,13 @@ def _ensure_scene_granularity(
     style_profile = _load_visual_style_config().get("active_style", "isometric_3d")
     source_hash = _scene_hash(script_payload, style_profile)
     expanded: list[Dict[str, Any]] = []
+    recent_overlays: list[str] = []
 
     for idx, beat in enumerate(beats, start=1):
         camera = _CAMERA_ANGLES[(idx - 1) % len(_CAMERA_ANGLES)]
-        overlays = _extract_numeric_overlays(research_payload, beat.get("narration", ""), limit=1)
-        overlay_text = overlays[0] if overlays else ""
+        overlay_text = _pick_overlay_text(str(beat.get("narration", "")), research_payload, recent_overlays)
+        if overlay_text:
+            recent_overlays.append(overlay_text)
         prompt = _build_image_prompt_with_context(beat.get("visual", ""), research_payload)
         prompt = f"{prompt} Camera angle: {camera}."
         if overlay_text:

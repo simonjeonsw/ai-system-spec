@@ -79,7 +79,12 @@ def _split_sentences(script_text: str | List[str]) -> List[str]:
         return []
     cleaned = _clean_validation_text(normalized)
     raw_sentences = re.split(r"(?<=[.!?])\s+", cleaned)
-    return [sentence.strip() for sentence in raw_sentences if sentence.strip() and not _is_structural_fragment(sentence)]
+    normalized_sentences: List[str] = []
+    for sentence in raw_sentences:
+        cleaned_sentence = re.sub(r"^[\s:;,.\-–—]+", "", sentence.strip())
+        if cleaned_sentence and not _is_structural_fragment(cleaned_sentence):
+            normalized_sentences.append(cleaned_sentence)
+    return normalized_sentences
 
 
 def _is_low_risk(sentence: str) -> bool:
@@ -128,6 +133,19 @@ def _risk_level(sentence: str) -> str:
     if _is_high_risk(sentence):
         return "high"
     return "medium"
+
+
+def _sources_per_claim_stats(sentence_map: List[Dict[str, Any]]) -> Dict[str, float | bool]:
+    high_risk_claims = [entry for entry in sentence_map if entry.get("risk_level") == "high"]
+    if not high_risk_claims:
+        return {"avg_sources_per_high_risk_claim": 0.0, "over_assignment_risk": False}
+
+    avg_sources = sum(len(entry.get("sources", [])) for entry in high_risk_claims) / len(high_risk_claims)
+    over_assignment_risk = avg_sources > 2.2 and len(high_risk_claims) >= 4
+    return {
+        "avg_sources_per_high_risk_claim": round(avg_sources, 4),
+        "over_assignment_risk": over_assignment_risk,
+    }
 
 
 def _tokenize_keywords(text: str) -> List[str]:
@@ -297,6 +315,9 @@ class ScriptValidator:
         unique_high_sources = set(high_risk_source_ids)
         source_diversity_score = round((len(unique_high_sources) / high_risk_total), 4) if high_risk_total else 0.0
         single_source_risk = bool(high_risk_total and len(unique_high_sources) <= 1)
+        source_precision = _sources_per_claim_stats(sentence_map)
+        if source_precision.get("over_assignment_risk"):
+            errors.append("Source precision warning: high-risk claims appear over-assigned to too many sources.")
 
         status = "pass" if not errors else "fail"
         coverage: Dict[str, float | bool] = {
@@ -305,6 +326,8 @@ class ScriptValidator:
             "medium_risk_coverage": round((section_cited["medium"] / section_total["medium"]), 4) if section_total["medium"] else 0.0,
             "source_diversity_score": source_diversity_score,
             "single_source_risk": single_source_risk,
+            "avg_sources_per_high_risk_claim": source_precision.get("avg_sources_per_high_risk_claim", 0.0),
+            "over_assignment_risk": source_precision.get("over_assignment_risk", False),
         }
         return VerificationResult(
             status=status,
