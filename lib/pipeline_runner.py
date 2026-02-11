@@ -22,6 +22,7 @@ from .supabase_client import supabase
 from .schema_validator import validate_payload
 from .validation_runner import validate_all
 from .validator import ScriptValidator
+from .ops import log_experiment
 
 
 SCENE_ENGINE_VERSION = "2.0"
@@ -55,6 +56,27 @@ _CLAIM_TOKEN_STOPWORDS = {
     "while",
     "which",
 }
+_VISUAL_CUE_KEYWORDS = [
+    ("inflation", "Animated purchasing-power erosion chart with shrinking currency icons."),
+    ("tax", "Policy dashboard showing tax flow and household net-income impact."),
+    ("wage", "Split graph comparing wage trend vs cost-of-living trajectory."),
+    ("productivity", "Diverging line chart: productivity growth vs worker compensation."),
+    ("debt", "Household debt stack visualization with interest snowball effect."),
+    ("regulation", "Regulatory flowchart showing compliance friction on small businesses."),
+    ("policy", "Government policy lever infographic tied to household outcomes."),
+]
+_VISUAL_CUE_FALLBACKS = [
+    "Host-led explainer shot with contextual economic infographic wall.",
+    "Top-down dashboard montage of cashflow, savings, and spending metrics.",
+    "Clean whiteboard-style chart sequence highlighting cause-and-effect economics.",
+    "Isometric city economy map illustrating households, firms, and policy channels.",
+]
+_VISUAL_CUE_VARIANTS = [
+    "Use icon-driven composition with concise labels.",
+    "Use split-screen comparison with directional arrows.",
+    "Use chart-led composition with callout annotations.",
+    "Use storyboard sequence showing cause → effect → takeaway.",
+]
 
 
 
@@ -238,11 +260,31 @@ def _load_visual_style_config() -> Dict[str, Any]:
 
 
 def _extract_numeric_overlays(research_payload: Dict[str, Any], narration_text: str = "", limit: int = 3) -> list[str]:
+    def _is_overlay_candidate(token: str) -> bool:
+        normalized = token.strip()
+        if not normalized:
+            return False
+        if re.search(r"src-\d+", normalized, flags=re.IGNORECASE):
+            return False
+        if len(normalized) > 32:
+            return False
+        if re.match(r"^0{2,}$", normalized):
+            return False
+        if re.match(r"^0\d{2,}$", normalized):
+            return False
+        if re.match(r"^\d{1,2}:\d{2}$", normalized):
+            return False
+        if re.match(r"^\d{1,3}$", normalized) and not any(sym in normalized for sym in {"%", "$", "€", "¥", "₩"}):
+            return False
+        return True
+
     overlays: list[str] = []
-    narration_candidates = re.findall(r"(?:\$\s?\d[\d,]*(?:\.\d+)?|\d+(?:\.\d+)?%|\d[\d,]*(?:\.\d+)?)", narration_text)
+    narration_cleaned = re.sub(r"src-\d+", " ", narration_text, flags=re.IGNORECASE)
+    narration_cleaned = re.sub(r"\[\s*\d{1,2}:\d{2}\s*\]", " ", narration_cleaned)
+    narration_candidates = re.findall(r"(?:\$\s?\d[\d,]*(?:\.\d+)?|\d+(?:\.\d+)?%|\d[\d,]*(?:\.\d+)?)", narration_cleaned)
     for token in narration_candidates:
         token = token.strip()
-        if token and token not in overlays:
+        if _is_overlay_candidate(token) and token not in overlays:
             overlays.append(token)
         if len(overlays) >= limit:
             return overlays
@@ -250,8 +292,10 @@ def _extract_numeric_overlays(research_payload: Dict[str, Any], narration_text: 
     data_points = research_payload.get("data_points", [])
     for point in data_points:
         value = str(point.get("value", "")).strip()
-        if value and value not in overlays:
-            overlays.append(value)
+        match = re.search(r"(?:\$\s?\d[\d,]*(?:\.\d+)?|\d+(?:\.\d+)?%)", value)
+        candidate = match.group(0).strip() if match else value
+        if _is_overlay_candidate(candidate) and candidate not in overlays:
+            overlays.append(candidate)
         if len(overlays) >= limit:
             return overlays
 
@@ -274,11 +318,7 @@ def _build_image_prompt_with_context(visual_text: str, research_payload: Dict[st
     style_config = _load_visual_style_config()
     style_key = style_config.get("active_style", "isometric_3d")
     style_prompt = style_config.get("styles", {}).get(style_key, "")
-    overlays = _extract_numeric_overlays(research_payload)
-    overlay_text = ""
-    if overlays:
-        overlay_text = " Overlay text: '" + "' | '".join(overlays) + "'."
-    return f"{style_prompt}. {base}. minimalist professional finance aesthetic.{overlay_text}".strip()
+    return f"{style_prompt}. {base}. minimalist professional finance aesthetic.".strip()
 
 
 def _scene_hash(script_payload: Dict[str, Any], style_key: str) -> str:
@@ -293,6 +333,20 @@ def _build_scene_output_from_script(
     script_text = _normalize_script_text(script_payload)
     visual_blocks = _extract_visual_blocks(script_text)
     research_payload = research_payload or {}
+    if len(visual_blocks) == 1:
+        single = visual_blocks[0]
+        beats = _split_text_into_beats(str(single.get("narration", "")), max_words=38)
+        single_word_count = len(str(single.get("narration", "")).split())
+        if len(beats) >= 2 and single_word_count >= 80:
+            visual_blocks = [
+                {
+                    "visual": str(single.get("visual", "")),
+                    "narration": beat,
+                    "section_type": "body",
+                }
+                for beat in beats
+            ]
+
     scenes = []
     recent_overlays: list[str] = []
     style_key = _load_visual_style_config().get("active_style", "isometric_3d")
@@ -302,7 +356,8 @@ def _build_scene_output_from_script(
         overlay_text = _pick_overlay_text(str(block.get("narration", "")), research_payload, recent_overlays)
         if overlay_text:
             recent_overlays.append(overlay_text)
-        base_prompt = _build_image_prompt_with_context(block["visual"], research_payload)
+        visual_cue = str(block.get("visual", "")).strip() or _infer_visual_cue_from_narration(str(block.get("narration", "")), index)
+        base_prompt = _build_image_prompt_with_context(visual_cue, research_payload)
         enriched_prompt = f"{base_prompt} Camera angle: {camera}."
         if overlay_text:
             enriched_prompt += f" Overlay text: '{overlay_text}'."
@@ -310,7 +365,7 @@ def _build_scene_output_from_script(
             {
                 "scene_id": f"s{index:02d}",
                 "objective": "Derived from validated script visual cue.",
-                "visual_cue": block["visual"],
+                "visual_cue": visual_cue,
                 "key_claims": [],
                 "source_refs": [],
                 "evidence_sources": [],
@@ -326,6 +381,33 @@ def _build_scene_output_from_script(
             }
         )
     return {"scenes": scenes}
+
+
+def _infer_visual_cue_from_narration(narration_text: str, index: int) -> str:
+    lowered = narration_text.lower()
+    for keyword, cue in _VISUAL_CUE_KEYWORDS:
+        if keyword in lowered:
+            variant = _VISUAL_CUE_VARIANTS[(index - 1) % len(_VISUAL_CUE_VARIANTS)]
+            return f"{cue} {variant}".strip()
+    fallback = _VISUAL_CUE_FALLBACKS[(index - 1) % len(_VISUAL_CUE_FALLBACKS)]
+    variant = _VISUAL_CUE_VARIANTS[(index - 1) % len(_VISUAL_CUE_VARIANTS)]
+    return f"{fallback} {variant}".strip()
+
+
+def _log_metadata_conversion_experiments(video_id: str, metadata_payload: Dict[str, Any]) -> None:
+    pinned_variants = metadata_payload.get("pinned_comment_variants") or []
+    if isinstance(pinned_variants, list) and len(pinned_variants) >= 2:
+        for idx, variant in enumerate(pinned_variants[:2], start=1):
+            log_experiment(
+                {
+                    "video_id": video_id,
+                    "experiment_type": "pinned_comment_conversion",
+                    "title_variant": metadata_payload.get("title"),
+                    "thumbnail_variant": f"comment_v{idx}",
+                    "start_date": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                    "notes": f"Pinned comment conversion variant {idx}: {str(variant)[:160]}",
+                }
+            )
 
 
 def _estimate_runtime_seconds_from_script(script_payload: Dict[str, Any]) -> int:
@@ -432,7 +514,7 @@ def _pick_overlay_text(
     for candidate in candidates:
         if candidate != (used_recently[-1] if used_recently else None):
             return candidate
-    return candidates[0]
+    return ""
 
 
 def _normalize_claim_text(text: str) -> str:
@@ -1272,6 +1354,18 @@ def run_pipeline(video_input: str, refresh: bool = False) -> Dict[str, Any]:
             },
             on_conflict="video_id",
         ).execute()
+        try:
+            _log_metadata_conversion_experiments(video_id, metadata_payload)
+        except Exception as experiment_exc:
+            emit_run_log(
+                stage="ops",
+                status="warning",
+                input_refs={"video_id": video_id, "root_run_id": run_id},
+                output_refs={"note": "metadata conversion experiment logging skipped"},
+                error_summary=str(experiment_exc),
+                metrics=build_metrics(cache_hit=False),
+                run_id=_log_run_id(run_id, "ops", 1),
+            )
     except Exception as exc:
         _checkpoint_state()
         failure_payload = {

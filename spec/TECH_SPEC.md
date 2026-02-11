@@ -153,6 +153,19 @@ Use this schema for scene-level structured outputs. It can be stored as JSON and
 - If embedding alongside other research data, wrap the structured output with a top-level envelope to avoid collisions (example: `{ "type": "structured_output", "version": "1.0", "scenes": [ ... ] }`).
 - Consumers must accept either raw text (legacy) or JSON-serialized structured output and branch based on whether `content` parses as JSON.
 
+## Metadata Conversion Experiment Logging
+To improve comment-to-click conversion, metadata generation must emit experiment logs into `metadata_experiments`.
+
+- `experiment_type` should support `pinned_comment_conversion` in addition to packaging experiments.
+- For each generated `pinned_comment_variants` candidate, log one experiment row with:
+  - `video_id`
+  - `experiment_type = pinned_comment_conversion`
+  - `title_variant` (active title)
+  - `thumbnail_variant` (variant label such as `comment_v1`)
+  - `start_date`
+  - `notes` (short variant summary)
+- Logging failures must be non-fatal and should not block content pipeline completion.
+
 # 🛠 Technical Specification (Cost-Efficient Edition)
 
 ## 1. LLM Strategy: Multi-Tier Free API Routing
