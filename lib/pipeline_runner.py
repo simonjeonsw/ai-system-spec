@@ -23,6 +23,9 @@ from .schema_validator import validate_payload
 from .validation_runner import validate_all
 from .validator import ScriptValidator
 from .ops import log_experiment
+from .scene_contract_builder import build_scene_contract
+from .image_builder import build_image_contract
+from .motion_builder import build_motion_contract
 
 
 SCENE_ENGINE_VERSION = "2.0"
@@ -1380,7 +1383,9 @@ def run_pipeline(video_input: str, refresh: bool = False) -> Dict[str, Any]:
             raw_scene_output["source_script_hash"] = _scene_hash(script_payload, "scene-structure")
             raw_scene_output = _ensure_scene_granularity(raw_scene_output, script_payload, research_payload, min_scenes=10)
 
-        scene_output, image_output, motion_output = _separate_scene_image_motion_contracts(raw_scene_output)
+        scene_output, scene_contexts = build_scene_contract(raw_scene_output)
+        image_output = build_image_contract(scene_contexts)
+        motion_output = build_motion_contract(image_output)
         save_json("scenes", video_id, scene_output)
         save_json("image", video_id, image_output)
         save_json("motion", video_id, motion_output)
