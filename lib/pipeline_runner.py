@@ -351,6 +351,75 @@ def _build_scene_output_from_script(
     return build_structure_only_scenes(visual_blocks)
 
 
+def _separate_scene_image_motion_contracts(scene_output: Dict[str, Any]) -> tuple[Dict[str, Any], Dict[str, Any], Dict[str, Any]]:
+    scenes_in = list(scene_output.get("scenes", []))
+    scene_items: list[Dict[str, Any]] = []
+    image_items: list[Dict[str, Any]] = []
+    motion_items: list[Dict[str, Any]] = []
+    cursor_sec = 0.0
+
+    for idx, scene in enumerate(scenes_in, start=1):
+        scene_id = str(scene.get("scene_id", f"s{idx:02d}"))
+        narration = str(scene.get("narration_prompt", "")).strip()
+        objective = str(scene.get("objective", "Deliver script segment with clear transition.")).strip()
+        script_ref = narration[:140] if narration else f"script_segment_{idx:02d}"
+        duration = max(6.0, min(24.0, round(max(12, len(narration.split()) // 2), 1)))
+        start_sec = round(cursor_sec, 1)
+        end_sec = round(cursor_sec + duration, 1)
+        cursor_sec = end_sec
+
+        scene_items.append(
+            {
+                "scene_id": scene_id,
+                "objective": objective,
+                "script_refs": [script_ref],
+                "start_sec": start_sec,
+                "end_sec": end_sec,
+                "transition_note": str(scene.get("transition_note", "Advance to next scene.")).strip(),
+                "schema_version": "2.0",
+            }
+        )
+
+        style_profile = str(
+            scene.get("style_profile")
+            or scene_output.get("style_profile")
+            or _load_visual_style_config().get("active_style", "isometric_3d")
+        )
+        composition = str(scene.get("visual_cue") or objective).strip()
+        overlay_spec = str(scene.get("overlay_text") or "").strip()
+        asset_id = f"{scene_id}-img"
+        image_items.append(
+            {
+                "scene_id": scene_id,
+                "asset_id": asset_id,
+                "composition": composition,
+                "style_profile": style_profile,
+                "overlay_spec": overlay_spec,
+                "schema_version": "1.0",
+            }
+        )
+
+        motion_items.append(
+            {
+                "scene_id": scene_id,
+                "asset_id": asset_id,
+                "entrance": ["fade_in", "slide_up", "scale_in"][(idx - 1) % 3],
+                "emphasis": ["none", "micro_shake", "slow_zoom"][(idx - 1) % 3],
+                "exit": ["hard_cut", "fade_out", "cross_dissolve"][(idx - 1) % 3],
+                "schema_version": "1.0",
+            }
+        )
+
+    scene_contract = {
+        "scenes": scene_items,
+        "scene_engine_version": scene_output.get("scene_engine_version", SCENE_ENGINE_VERSION),
+        "source_script_hash": scene_output.get("source_script_hash", ""),
+    }
+    image_contract = {"images": image_items, "schema_version": "1.0"}
+    motion_contract = {"motions": motion_items, "schema_version": "1.0"}
+    return scene_contract, image_contract, motion_contract
+
+
 def _infer_visual_cue_from_narration(narration_text: str, index: int) -> str:
     lowered = narration_text.lower()
     for keyword, cue in _VISUAL_CUE_KEYWORDS:
