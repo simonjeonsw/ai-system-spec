@@ -5,33 +5,23 @@
   "required": [
     "scene_id",
     "objective",
-    "key_claims",
-    "source_refs",
-    "evidence_sources",
-    "visual_prompt",
-    "narration_prompt",
+    "script_refs",
+    "start_sec",
+    "end_sec",
     "transition_note",
     "schema_version"
   ],
   "properties": {
     "scene_id": { "type": "string" },
     "objective": { "type": "string" },
-    "key_claims": { "type": "array", "items": { "type": "string" } },
-    "source_refs": {
+    "script_refs": {
       "type": "array",
-      "items": {
-        "type": "object",
-        "required": ["claim", "sources"],
-        "properties": {
-          "claim": { "type": "string" },
-          "sources": { "type": "array", "items": { "type": "string" } }
-        }
-      }
+      "items": { "type": "string" }
     },
-    "evidence_sources": { "type": "array", "items": { "type": "string" } },
-    "visual_prompt": { "type": "string" },
-    "narration_prompt": { "type": "string" },
+    "start_sec": { "type": "number" },
+    "end_sec": { "type": "number" },
     "transition_note": { "type": "string" },
     "schema_version": { "type": "string" }
-  }
+  },
+  "additionalProperties": true
 }

@@ -1,0 +1,22 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ImageOutput",
+  "type": "object",
+  "required": [
+    "scene_id",
+    "asset_id",
+    "composition",
+    "style_profile",
+    "overlay_spec",
+    "schema_version"
+  ],
+  "properties": {
+    "scene_id": { "type": "string" },
+    "asset_id": { "type": "string" },
+    "composition": { "type": "string" },
+    "style_profile": { "type": "string" },
+    "overlay_spec": { "type": "string" },
+    "schema_version": { "type": "string" }
+  },
+  "additionalProperties": true
+}

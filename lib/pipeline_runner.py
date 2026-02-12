@@ -23,6 +23,9 @@ from .schema_validator import validate_payload
 from .validation_runner import validate_all
 from .validator import ScriptValidator
 from .ops import log_experiment
+from .scene_contract_builder import build_scene_contract
+from .image_builder import build_image_contract
+from .motion_builder import build_motion_contract
 
 
 SCENE_ENGINE_VERSION = "2.0"
@@ -350,7 +353,7 @@ def _build_scene_output_from_script(
     scenes = []
     recent_overlays: list[str] = []
     style_key = _load_visual_style_config().get("active_style", "isometric_3d")
-    source_hash = _scene_hash(script_payload, style_key)
+    source_hash = _scene_hash(script_payload, "scene-structure")
     for index, block in enumerate(visual_blocks, start=1):
         camera = _CAMERA_ANGLES[(index - 1) % len(_CAMERA_ANGLES)]
         overlay_text = _pick_overlay_text(str(block.get("narration", "")), research_payload, recent_overlays)
@@ -651,7 +654,7 @@ def _ensure_scene_granularity(
         return scene_output
 
     style_profile = _load_visual_style_config().get("active_style", "isometric_3d")
-    source_hash = _scene_hash(script_payload, style_profile)
+    source_hash = _scene_hash(script_payload, "scene-structure")
     expanded: list[Dict[str, Any]] = []
     recent_overlays: list[str] = []
 
@@ -848,25 +851,17 @@ def _render_plan_markdown(plan_payload: Dict[str, Any]) -> str:
 
 
 def _render_scenes_markdown(scene_output: Dict[str, Any]) -> str:
-    lines = ["# Scene Prompts", ""]
-    lines.append("| Scene ID | Camera | Overlay | Visual Cue | Image Prompt | Narration |")
+    lines = ["# Scene Structure", ""]
+    lines.append("| Scene ID | Start (sec) | End (sec) | Objective | Script Refs | Transition |")
     lines.append("| --- | --- | --- | --- | --- | --- |")
-    overlay_count = 0
     for scene in scene_output.get("scenes", []):
-        visual_cue = scene.get("visual_cue", "")
-        visual_prompt = scene.get("visual_prompt", "")
-        narration = scene.get("narration_prompt", "")
-        camera = scene.get("camera_angle", "")
-        overlay = scene.get("overlay_text", "")
-        if overlay:
-            overlay_count += 1
+        refs = ", ".join(scene.get("script_refs", []))
         lines.append(
-            f"| {scene.get('scene_id', '')} | {camera} | {overlay} | {visual_cue} | {visual_prompt} | {narration} |"
+            f"| {scene.get('scene_id', '')} | {scene.get('start_sec', '')} | {scene.get('end_sec', '')} | {scene.get('objective', '')} | {refs} | {scene.get('transition_note', '')} |"
         )
     lines.append("")
     lines.append("## Scene Summary")
     lines.append(f"- Total scenes: {len(scene_output.get('scenes', []))}")
-    lines.append(f"- Scenes with overlays: {overlay_count}")
     lines.append(f"- Scene engine version: {scene_output.get('scene_engine_version', SCENE_ENGINE_VERSION)}")
     lines.append("")
     return "\n".join(lines)
@@ -910,20 +905,18 @@ def _should_regenerate_scenes(
 ) -> bool:
     if not cached_scene:
         return True
-    style_key = _load_visual_style_config().get("active_style", "isometric_3d")
-    expected_hash = _scene_hash(script_payload, style_key)
+    expected_hash = _scene_hash(script_payload, "scene-structure")
     cached_hash = str(cached_scene.get("source_script_hash", ""))
     cached_version = str(cached_scene.get("scene_engine_version", ""))
-    cached_style = str(cached_scene.get("style_profile", ""))
     runtime_sec = _estimate_runtime_seconds_from_script(script_payload)
     cached_scene_count = len(cached_scene.get("scenes", []))
     granularity_mismatch = runtime_sec > 300 and cached_scene_count < 10
     return (
         cached_hash != expected_hash
         or cached_version != SCENE_ENGINE_VERSION
-        or cached_style != style_key
         or granularity_mismatch
     )
+
 
 def _is_transient_error(exc: Exception) -> bool:
     message = str(exc).lower()
@@ -988,6 +981,8 @@ _STAGE_SCHEMA = {
     "research": "research_output",
     "plan": "planner_output",
     "scenes": "scene_output",
+    "image": "image_output",
+    "motion": "motion_output",
     "script": "script_output",
     "script_long": "script_output",
     "script_shorts": "script_output",
@@ -1016,6 +1011,32 @@ def _load_stage_payload(stage: str, video_id: str) -> Optional[Dict[str, Any]]:
                 try:
                     for scene in scenes:
                         validate_payload(schema_name, scene)
+                except Exception:
+                    print(f"⚠️ Schema validation failed for {stage}. Regenerating.")
+                    path.unlink(missing_ok=True)
+                    return None
+            elif stage == "image":
+                images = payload.get("images", [])
+                if not images:
+                    print(f"⚠️ Invalid image payload for {stage}. Regenerating.")
+                    path.unlink(missing_ok=True)
+                    return None
+                try:
+                    for image in images:
+                        validate_payload(schema_name, image)
+                except Exception:
+                    print(f"⚠️ Schema validation failed for {stage}. Regenerating.")
+                    path.unlink(missing_ok=True)
+                    return None
+            elif stage == "motion":
+                motions = payload.get("motions", [])
+                if not motions:
+                    print(f"⚠️ Invalid motion payload for {stage}. Regenerating.")
+                    path.unlink(missing_ok=True)
+                    return None
+                try:
+                    for motion in motions:
+                        validate_payload(schema_name, motion)
                 except Exception:
                     print(f"⚠️ Schema validation failed for {stage}. Regenerating.")
                     path.unlink(missing_ok=True)
@@ -1054,6 +1075,10 @@ def run_pipeline(video_input: str, refresh: bool = False) -> Dict[str, Any]:
             save_json("plan", video_id, state["plan"])
         if state.get("scenes"):
             save_json("scenes", video_id, state["scenes"])
+        if state.get("image"):
+            save_json("image", video_id, state["image"])
+        if state.get("motion"):
+            save_json("motion", video_id, state["motion"])
         if state.get("script_long"):
             save_json("script", video_id, state["script_long"])
             save_json("script_long", video_id, state["script_long"])
@@ -1282,17 +1307,23 @@ def run_pipeline(video_input: str, refresh: bool = False) -> Dict[str, Any]:
 
         cached_scene = None if refresh or script_updated else _load_stage_payload("scenes", video_id)
         if cached_scene and not script_updated and not _should_regenerate_scenes(cached_scene, script_payload):
-            scene_output = cached_scene
-            save_markdown("scenes", video_id, _render_scenes_markdown(scene_output))
+            raw_scene_output = cached_scene
         else:
-            scene_output = _build_scene_output_from_script(script_payload, research_payload)
-            scene_output["scene_engine_version"] = SCENE_ENGINE_VERSION
-            scene_output["style_profile"] = _load_visual_style_config().get("active_style", "isometric_3d")
-            scene_output["source_script_hash"] = _scene_hash(script_payload, scene_output["style_profile"])
-            scene_output = _ensure_scene_granularity(scene_output, script_payload, research_payload, min_scenes=10)
-            save_json("scenes", video_id, scene_output)
-            save_markdown("scenes", video_id, _render_scenes_markdown(scene_output))
+            raw_scene_output = _build_scene_output_from_script(script_payload, research_payload)
+            raw_scene_output["scene_engine_version"] = SCENE_ENGINE_VERSION
+            raw_scene_output["source_script_hash"] = _scene_hash(script_payload, "scene-structure")
+            raw_scene_output = _ensure_scene_granularity(raw_scene_output, script_payload, research_payload, min_scenes=10)
+
+        scene_output, scene_contexts = build_scene_contract(raw_scene_output)
+        image_output = build_image_contract(scene_contexts)
+        motion_output = build_motion_contract(image_output)
+        save_json("scenes", video_id, scene_output)
+        save_json("image", video_id, image_output)
+        save_json("motion", video_id, motion_output)
+        save_markdown("scenes", video_id, _render_scenes_markdown(scene_output))
         state["scenes"] = scene_output
+        state["image"] = image_output
+        state["motion"] = motion_output
         supabase.table("video_scenes").upsert(
             {
                 "video_id": video_id,
@@ -1397,6 +1428,8 @@ def run_pipeline(video_input: str, refresh: bool = False) -> Dict[str, Any]:
         "research": research_payload,
         "plan": plan_payload,
         "scenes": scene_output,
+        "image": image_output,
+        "motion": motion_output,
         "script_long": script_payload,
         "script_shorts": shorts_payload,
         "validation_report": validation_report,
@@ -1444,7 +1477,7 @@ def main() -> int:
         print(json.dumps(result, ensure_ascii=False, indent=2))
     else:
         print(f"✅ Pipeline completed: {result['video_id']}")
-        print("Artifacts: data/{video_id}_{research|plan|script|script_long|script_shorts|scenes|metadata}.{json|md}")
+        print("Artifacts: data/{video_id}_{research|plan|script|script_long|script_shorts|scenes|image|motion|metadata}.{json|md}")
     save_json("validation_report", result["video_id"], result.get("validation_report") or {"status": "n/a", "errors": [], "sentence_map": []})
     save_json("verification_report", result["video_id"], result.get("validation_report") or {"status": "n/a", "errors": [], "sentence_map": []})
     manifest_path = Path(__file__).resolve().parent.parent / "data" / f"{result['video_id']}_pipeline.json"
@@ -1454,6 +1487,8 @@ def main() -> int:
             "research": f"data/{result['video_id']}_research.json",
             "plan": f"data/{result['video_id']}_plan.json",
             "scenes": f"data/{result['video_id']}_scenes.json",
+            "image": f"data/{result['video_id']}_image.json",
+            "motion": f"data/{result['video_id']}_motion.json",
             "script": f"data/{result['video_id']}_script.json",
             "metadata": f"data/{result['video_id']}_metadata.json",
             "validation_report": f"data/{result['video_id']}_validation_report.json",
