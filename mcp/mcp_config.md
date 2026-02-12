@@ -1,34 +1,18 @@
 # MCP + GitHub Context Integration
 
 ## Purpose
-MCP is used to inject persistent project context
-into all agent executions.
+Inject persistent, canonical project context into agent executions.
 
-This ensures:
-- Agents never forget system goals
-- Specs are always referenced
-- Long-term coherence
-
-## Required Context Files
-Always loaded into MCP:
-- spec/PRD.md
-- spec/RULES.md
+## Required Context Files (Canonical)
+- spec/SPEC_INDEX.md
 - spec/SYSTEM_ARCH.md
-- spec/AGENTS.md
-- spec/STYLE.md
-- spec/EVAL.md
+- spec/AGENT_ARCHITECTURE.md
+- spec/SCHEMAS.md
+- spec/VALIDATION_PLAN.md
 
-## MCP Context Policy
-- Spec > System Prompt > User Prompt
-- If conflict exists, Spec wins
-- Agents must explicitly acknowledge spec load
-
-## GitHub Integration Pattern
-1. Specs live in GitHub
-2. MCP pulls latest main branch
-3. Agents read specs via MCP context
-4. All outputs must conform to specs
+## Context Policy
+- Canonical spec files override all prompts and ad-hoc instructions.
+- Deprecated files must not be loaded as normative context.
 
 ## Version Discipline
-- All spec changes require commit
-- Agents assume latest main branch state
+- Spec changes require commit and release-note linkage.
