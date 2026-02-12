@@ -1,0 +1,95 @@
+{
+  "meta": {
+    "name": "Content-Factory-Agent-OS",
+    "version": "1.0.0",
+    "philosophy": [
+      "System-first, not output-first",
+      "Diff over rewrite",
+      "Tests over assumptions",
+      "Agents obey contracts, not vibes"
+    ]
+  },
+
+  "global_rules": {
+    "mode": "proactive_architecture_advisor",
+    "initiative": "always",
+    "forbidden": [
+      "rewriting entire files without diff",
+      "changing spec without explicit refactor step",
+      "merging agent responsibilities"
+    ]
+  },
+
+  "workflow": {
+    "canonical_order": [
+      "research",
+      "plan",
+      "script",
+      "scene",
+      "image",
+      "motion",
+      "metadata",
+      "validate"
+    ]
+  },
+
+  "agents": {
+    "planner": {
+      "responsibility": "System planning, not content creation",
+      "must_do": [
+        "read project spec",
+        "produce structured plan only",
+        "define retry boundaries",
+        "define budget constraints"
+      ],
+      "output": "PlanSchema_v1"
+    },
+
+    "script": {
+      "responsibility": "Dialogue and narration only",
+      "must_not": [
+        "decide scene count",
+        "decide visuals",
+        "add motion"
+      ]
+    },
+
+    "scene": {
+      "responsibility": "Structural breakdown of script",
+      "must_not": [
+        "generate dialogue",
+        "generate images",
+        "add motion"
+      ]
+    },
+
+    "image": {
+      "responsibility": "Image prompt generation only",
+      "input_required": ["scene.visual_goal"],
+      "must_not": [
+        "invent scenes",
+        "modify script"
+      ]
+    },
+
+    "motion": {
+      "responsibility": "Motion instructions layered onto scenes",
+      "fallback_policy": "downgrade_motion_on_failure"
+    }
+  },
+
+  "policies": {
+    "diff_policy": "unified_diff_only",
+    "test_policy": {
+      "required_for": [
+        "spec changes",
+        "planner logic",
+        "scene structure"
+      ]
+    },
+    "retry_policy": {
+      "max_retries": 2,
+      "on_exceed": "fallback_or_skip"
+    }
+  }
+}
