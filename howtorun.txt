@@ -1,45 +1,17 @@
+1. Run stages according to canonical order in spec/SYSTEM_ARCH.md (Canonical Pipeline Contract v1)
+research → plan → script → scene → image → motion → metadata → validate
 
-1. Trend scan and topic selection
+2. Current runtime commands
 python -m lib.trend_scout
-
-2. Viral analysis (researcher.py)
 python -m lib.researcher
-    Checkpoints:
-    1. yt-dlp successfully fetches transcript/comments.
-    2. Gemini returns analysis output.
-    3. Data is stored in Supabase research_cache.
-
-3. Planner output (planner.py)
 python -m lib.planner
-
-4. Scene builder (scene_builder.py)
 python -m lib.scene_builder
-
-5. Script drafting (scripter.py)
 python -m lib.scripter
-
-6. Metadata generation (metadata_generator.py)
 python -m lib.metadata_generator data/planner_<video_id>.json data/script_<video_id>.json
-
-7. Schema validation (validation_runner.py)
-python -m lib.validation_runner planner spec/samples/planner_output_sample.json
-python -m lib.validation_runner research spec/samples/research_output_sample.json
-python -m lib.validation_runner scene spec/samples/scene_output_sample.json
-python -m lib.validation_runner script spec/samples/script_output_sample.json
 python -m lib.validation_runner all --url <youtube_url_or_id>
-
-8. Analytics collection (analytics_collector.py)
-python -m lib.analytics_collector <video_id> [start_date] [end_date]
-python -m lib.analytics_collector path/to/video_ids.txt [start_date] [end_date]
-
-9. End-to-end runner (pipeline_runner.py)
 python -m lib.pipeline_runner --url <youtube_url_or_id> --validate
 
-10. QA gate decision (qa_gate.py)
-python -m lib.qa_gate spec/samples/metrics_sample.json
-
-Environment:
-- Copy .env.example to .env and fill in API keys.
-- Do not commit .env to GitHub.
-- Each stage writes a local backup JSON to data/<stage>_<video_id>.json.
-- Outputs are upserted to Supabase for reuse and refreshes.
+3. Guardrails
+- Do not reinterpret stage order.
+- Apply regeneration scope from spec/EVOLUTION_CONTRACT.md.
+- Run pre-release Contract Drift Checklist from spec/VALIDATION_PLAN.md.

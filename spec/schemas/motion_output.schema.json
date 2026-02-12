@@ -1,0 +1,22 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "MotionOutput",
+  "type": "object",
+  "required": [
+    "scene_id",
+    "asset_id",
+    "entrance",
+    "emphasis",
+    "exit",
+    "schema_version"
+  ],
+  "properties": {
+    "scene_id": { "type": "string" },
+    "asset_id": { "type": "string" },
+    "entrance": { "type": "string" },
+    "emphasis": { "type": "string" },
+    "exit": { "type": "string" },
+    "schema_version": { "type": "string" }
+  },
+  "additionalProperties": true
+}
