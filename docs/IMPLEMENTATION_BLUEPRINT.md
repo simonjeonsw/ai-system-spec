@@ -152,3 +152,15 @@ Run full validation checklist and report pass/fail by stage.
 - Introduce stage-scoped ownership tests in CI to prevent contract drift regressions.
 - Add contract version pinning per run for deterministic replay audits.
 - Add stage-level failure isolation dashboards (scene/image/motion split observability).
+
+
+## M2 Operational Execution Status (Latest)
+- [x] Scene source generation emits structure-only scene fields at source builder level (`lib/scene_source_builder.py`).
+- [x] Orchestrator uses direct canonical handoff Scene → Image → Motion without active bridge adapter in runtime path.
+- [x] Image builder consumes canonical `scene_output` contract.
+- [x] Motion builder consumes canonical `image_output` contract.
+- [x] Added automated unit checks for structure-only scene enforcement and image/motion schema compliance (`tests/test_contract_builders.py`).
+- [x] Forbidden-field validator remains active as a hard gate (`lib/schema_validator.py`).
+
+### Legacy Bridge Note
+`lib/scene_contract_builder.py` remains as legacy reference only and is not used by active runtime path. Remove fully after one release-cycle stability window.
