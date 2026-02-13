@@ -23,6 +23,9 @@ from .schema_validator import validate_payload
 from .validation_runner import validate_all
 from .validator import ScriptValidator
 from .ops import log_experiment
+from .image_builder import build_image_contract
+from .motion_builder import build_motion_contract
+from .scene_source_builder import build_structure_only_scenes
 
 
 SCENE_ENGINE_VERSION = "2.0"
@@ -332,7 +335,6 @@ def _build_scene_output_from_script(
 ) -> Dict[str, Any]:
     script_text = _normalize_script_text(script_payload)
     visual_blocks = _extract_visual_blocks(script_text)
-    research_payload = research_payload or {}
     if len(visual_blocks) == 1:
         single = visual_blocks[0]
         beats = _split_text_into_beats(str(single.get("narration", "")), max_words=38)
@@ -340,47 +342,13 @@ def _build_scene_output_from_script(
         if len(beats) >= 2 and single_word_count >= 80:
             visual_blocks = [
                 {
-                    "visual": str(single.get("visual", "")),
                     "narration": beat,
                     "section_type": "body",
                 }
                 for beat in beats
             ]
 
-    scenes = []
-    recent_overlays: list[str] = []
-    style_key = _load_visual_style_config().get("active_style", "isometric_3d")
-    source_hash = _scene_hash(script_payload, style_key)
-    for index, block in enumerate(visual_blocks, start=1):
-        camera = _CAMERA_ANGLES[(index - 1) % len(_CAMERA_ANGLES)]
-        overlay_text = _pick_overlay_text(str(block.get("narration", "")), research_payload, recent_overlays)
-        if overlay_text:
-            recent_overlays.append(overlay_text)
-        visual_cue = str(block.get("visual", "")).strip() or _infer_visual_cue_from_narration(str(block.get("narration", "")), index)
-        base_prompt = _build_image_prompt_with_context(visual_cue, research_payload)
-        enriched_prompt = f"{base_prompt} Camera angle: {camera}."
-        if overlay_text:
-            enriched_prompt += f" Overlay text: '{overlay_text}'."
-        scenes.append(
-            {
-                "scene_id": f"s{index:02d}",
-                "objective": "Derived from validated script visual cue.",
-                "visual_cue": visual_cue,
-                "key_claims": [],
-                "source_refs": [],
-                "evidence_sources": [],
-                "visual_prompt": enriched_prompt,
-                "narration_prompt": block["narration"] or "Narration derived from script.",
-                "transition_note": "Auto-generated from script sequence.",
-                "camera_angle": camera,
-                "overlay_text": overlay_text,
-                "style_profile": style_key,
-                "scene_engine_version": SCENE_ENGINE_VERSION,
-                "source_script_hash": source_hash,
-                "schema_version": "1.0",
-            }
-        )
-    return {"scenes": scenes}
+    return build_structure_only_scenes(visual_blocks)
 
 
 def _infer_visual_cue_from_narration(narration_text: str, index: int) -> str:
@@ -650,126 +618,29 @@ def _ensure_scene_granularity(
     if not beats:
         return scene_output
 
-    style_profile = _load_visual_style_config().get("active_style", "isometric_3d")
-    source_hash = _scene_hash(script_payload, style_profile)
     expanded: list[Dict[str, Any]] = []
-    recent_overlays: list[str] = []
-
+    cursor_sec = 0.0
     for idx, beat in enumerate(beats, start=1):
-        camera = _CAMERA_ANGLES[(idx - 1) % len(_CAMERA_ANGLES)]
-        overlay_text = _pick_overlay_text(str(beat.get("narration", "")), research_payload, recent_overlays)
-        if overlay_text:
-            recent_overlays.append(overlay_text)
-        prompt = _build_image_prompt_with_context(beat.get("visual", ""), research_payload)
-        prompt = f"{prompt} Camera angle: {camera}."
-        if overlay_text:
-            prompt += f" Overlay text: '{overlay_text}'."
+        narration = _normalize_claim_text(str(beat.get("narration", "")))
+        objective_candidates = _sentence_claims_from_text(narration, max_claims=1)
+        objective = objective_candidates[0] if objective_candidates else f"Deliver beat {beat.get('beat_id', idx)}"
+        duration = max(6.0, min(20.0, round(max(10, len(narration.split()) // 2), 1)))
+        start_sec = round(cursor_sec, 1)
+        end_sec = round(cursor_sec + duration, 1)
+        cursor_sec = end_sec
+        script_ref = narration[:140] if narration else f"script_segment_{idx:02d}"
 
         expanded.append(
             {
                 "scene_id": f"s{idx:02d}",
-                "objective": f"Deliver beat {beat.get('beat_id', idx)} from section '{beat.get('title', 'section')}'.",
-                "visual_cue": beat.get("visual", ""),
-                "key_claims": _sentence_claims_from_text(beat.get("narration", ""), max_claims=2),
-                "source_refs": [],
-                "evidence_sources": [],
-                "visual_prompt": prompt,
-                "narration_prompt": beat.get("narration", ""),
+                "objective": objective,
+                "script_refs": [script_ref],
+                "start_sec": start_sec,
+                "end_sec": end_sec,
                 "transition_note": "Advance to the next semantic beat while preserving narrative continuity.",
-                "camera_angle": camera,
-                "overlay_text": overlay_text,
-                "style_profile": style_profile,
-                "scene_engine_version": SCENE_ENGINE_VERSION,
-                "source_script_hash": source_hash,
-                "schema_version": "1.0",
+                "schema_version": "2.0",
             }
         )
-
-    source_ids = {
-        str(source.get("source_id", "")).lower()
-        for source in research_payload.get("sources", [])
-        if source.get("source_id")
-    }
-    fallback_citations = [str(item).lower() for item in script_payload.get("citations", []) if str(item).lower().startswith("src-")]
-    for scene in expanded:
-        narration_text = _normalize_claim_text(str(scene.get("narration_prompt", "")))
-        scene["narration_prompt"] = narration_text
-        mapped_sources = _extract_scene_source_ids(narration_text, source_ids)
-        claims = scene.get("key_claims") or _sentence_claims_from_text(narration_text, max_claims=1)
-        claims = [_normalize_claim_text(claim) for claim in claims if _normalize_claim_text(claim)]
-        scene["key_claims"] = claims
-        if not mapped_sources and any(_is_high_risk_scene_claim(claim) for claim in claims):
-            mapped_sources = _infer_scene_sources(narration_text, research_payload, fallback_citations, source_ids)
-        scene["evidence_sources"] = mapped_sources
-        scene["source_refs"] = [{"claim": claim, "sources": mapped_sources} for claim in claims if mapped_sources]
-        if scene.get("scene_id") == "s22":
-            override = (
-                " Include a line graph icon with diverging lines labeled 'Productivity' and 'Wages', "
-                "and annotate that the gap widens over time."
-            )
-            scene["visual_prompt"] = f"{scene.get('visual_prompt', '').strip()}{override}".strip()
-
-    while len(expanded) < target_scenes and expanded:
-        candidate_index = max(range(len(expanded)), key=lambda i: len(str(expanded[i].get("narration_prompt", "")).split()))
-        candidate = expanded[candidate_index]
-        narration_text = str(candidate.get("narration_prompt", ""))
-        words = narration_text.split()
-        if len(words) < 14:
-            new_idx = len(expanded) + 1
-            camera = _CAMERA_ANGLES[(new_idx - 1) % len(_CAMERA_ANGLES)]
-            fallback_overlay = _pick_overlay_text(narration_text, research_payload, recent_overlays)
-            if fallback_overlay:
-                recent_overlays.append(fallback_overlay)
-            continued_narration = narration_text or "Continue this key idea with a concrete example and practical action."
-            continued_prompt = _build_image_prompt_with_context(str(candidate.get("visual_cue", "")), research_payload)
-            continued_prompt = f"{continued_prompt} Camera angle: {camera}."
-            if fallback_overlay:
-                continued_prompt += f" Overlay text: '{fallback_overlay}'."
-            expanded.append(
-                {
-                    **candidate,
-                    "scene_id": f"s{new_idx:02d}",
-                    "objective": f"{candidate.get('objective', 'Scene')} (continued)",
-                    "transition_note": "Keep narrative continuity with a concise reinforcement beat.",
-                    "camera_angle": camera,
-                    "overlay_text": fallback_overlay,
-                    "visual_prompt": continued_prompt,
-                    "narration_prompt": continued_narration,
-                    "key_claims": _sentence_claims_from_text(continued_narration, max_claims=1),
-                }
-            )
-            continue
-        pivot = len(words) // 2
-        left_text = " ".join(words[:pivot]).strip()
-        right_text = " ".join(words[pivot:]).strip()
-        candidate["narration_prompt"] = left_text
-        candidate["key_claims"] = _sentence_claims_from_text(left_text, max_claims=1)
-        candidate["objective"] = f"{candidate.get('objective', 'Scene')} (part 1)"
-        candidate["transition_note"] = "Continue to the next sub-beat for deeper explanation."
-        new_idx = len(expanded) + 1
-        expanded.insert(
-            candidate_index + 1,
-            {
-                **candidate,
-                "scene_id": f"s{new_idx:02d}",
-                "narration_prompt": right_text,
-                "key_claims": _sentence_claims_from_text(right_text, max_claims=1),
-                "objective": f"{candidate.get('objective', 'Scene')} (part 2)",
-                "transition_note": "Resolve this sub-beat and move forward.",
-            },
-        )
-
-    for scene in expanded:
-        narration_text = _normalize_claim_text(str(scene.get("narration_prompt", "")))
-        scene["narration_prompt"] = narration_text
-        mapped_sources = _extract_scene_source_ids(narration_text, source_ids)
-        claims = scene.get("key_claims") or _sentence_claims_from_text(narration_text, max_claims=1)
-        claims = [_normalize_claim_text(claim) for claim in claims if _normalize_claim_text(claim)]
-        scene["key_claims"] = claims
-        if not mapped_sources and any(_is_high_risk_scene_claim(claim) for claim in claims):
-            mapped_sources = _infer_scene_sources(narration_text, research_payload, fallback_citations, source_ids)
-        scene["evidence_sources"] = mapped_sources
-        scene["source_refs"] = [{"claim": claim, "sources": mapped_sources} for claim in claims if mapped_sources]
 
     scene_output["scenes"] = expanded
     return scene_output
@@ -848,25 +719,17 @@ def _render_plan_markdown(plan_payload: Dict[str, Any]) -> str:
 
 
 def _render_scenes_markdown(scene_output: Dict[str, Any]) -> str:
-    lines = ["# Scene Prompts", ""]
-    lines.append("| Scene ID | Camera | Overlay | Visual Cue | Image Prompt | Narration |")
+    lines = ["# Scene Structure", ""]
+    lines.append("| Scene ID | Start (sec) | End (sec) | Objective | Script Refs | Transition |")
     lines.append("| --- | --- | --- | --- | --- | --- |")
-    overlay_count = 0
     for scene in scene_output.get("scenes", []):
-        visual_cue = scene.get("visual_cue", "")
-        visual_prompt = scene.get("visual_prompt", "")
-        narration = scene.get("narration_prompt", "")
-        camera = scene.get("camera_angle", "")
-        overlay = scene.get("overlay_text", "")
-        if overlay:
-            overlay_count += 1
+        refs = ", ".join(scene.get("script_refs", []))
         lines.append(
-            f"| {scene.get('scene_id', '')} | {camera} | {overlay} | {visual_cue} | {visual_prompt} | {narration} |"
+            f"| {scene.get('scene_id', '')} | {scene.get('start_sec', '')} | {scene.get('end_sec', '')} | {scene.get('objective', '')} | {refs} | {scene.get('transition_note', '')} |"
         )
     lines.append("")
     lines.append("## Scene Summary")
     lines.append(f"- Total scenes: {len(scene_output.get('scenes', []))}")
-    lines.append(f"- Scenes with overlays: {overlay_count}")
     lines.append(f"- Scene engine version: {scene_output.get('scene_engine_version', SCENE_ENGINE_VERSION)}")
     lines.append("")
     return "\n".join(lines)
@@ -910,20 +773,18 @@ def _should_regenerate_scenes(
 ) -> bool:
     if not cached_scene:
         return True
-    style_key = _load_visual_style_config().get("active_style", "isometric_3d")
-    expected_hash = _scene_hash(script_payload, style_key)
+    expected_hash = _scene_hash(script_payload, "scene-structure")
     cached_hash = str(cached_scene.get("source_script_hash", ""))
     cached_version = str(cached_scene.get("scene_engine_version", ""))
-    cached_style = str(cached_scene.get("style_profile", ""))
     runtime_sec = _estimate_runtime_seconds_from_script(script_payload)
     cached_scene_count = len(cached_scene.get("scenes", []))
     granularity_mismatch = runtime_sec > 300 and cached_scene_count < 10
     return (
         cached_hash != expected_hash
         or cached_version != SCENE_ENGINE_VERSION
-        or cached_style != style_key
         or granularity_mismatch
     )
+
 
 def _is_transient_error(exc: Exception) -> bool:
     message = str(exc).lower()
@@ -988,6 +849,8 @@ _STAGE_SCHEMA = {
     "research": "research_output",
     "plan": "planner_output",
     "scenes": "scene_output",
+    "image": "image_output",
+    "motion": "motion_output",
     "script": "script_output",
     "script_long": "script_output",
     "script_shorts": "script_output",
@@ -1016,6 +879,32 @@ def _load_stage_payload(stage: str, video_id: str) -> Optional[Dict[str, Any]]:
                 try:
                     for scene in scenes:
                         validate_payload(schema_name, scene)
+                except Exception:
+                    print(f"⚠️ Schema validation failed for {stage}. Regenerating.")
+                    path.unlink(missing_ok=True)
+                    return None
+            elif stage == "image":
+                images = payload.get("images", [])
+                if not images:
+                    print(f"⚠️ Invalid image payload for {stage}. Regenerating.")
+                    path.unlink(missing_ok=True)
+                    return None
+                try:
+                    for image in images:
+                        validate_payload(schema_name, image)
+                except Exception:
+                    print(f"⚠️ Schema validation failed for {stage}. Regenerating.")
+                    path.unlink(missing_ok=True)
+                    return None
+            elif stage == "motion":
+                motions = payload.get("motions", [])
+                if not motions:
+                    print(f"⚠️ Invalid motion payload for {stage}. Regenerating.")
+                    path.unlink(missing_ok=True)
+                    return None
+                try:
+                    for motion in motions:
+                        validate_payload(schema_name, motion)
                 except Exception:
                     print(f"⚠️ Schema validation failed for {stage}. Regenerating.")
                     path.unlink(missing_ok=True)
@@ -1054,6 +943,10 @@ def run_pipeline(video_input: str, refresh: bool = False) -> Dict[str, Any]:
             save_json("plan", video_id, state["plan"])
         if state.get("scenes"):
             save_json("scenes", video_id, state["scenes"])
+        if state.get("image"):
+            save_json("image", video_id, state["image"])
+        if state.get("motion"):
+            save_json("motion", video_id, state["motion"])
         if state.get("script_long"):
             save_json("script", video_id, state["script_long"])
             save_json("script_long", video_id, state["script_long"])
@@ -1282,17 +1175,23 @@ def run_pipeline(video_input: str, refresh: bool = False) -> Dict[str, Any]:
 
         cached_scene = None if refresh or script_updated else _load_stage_payload("scenes", video_id)
         if cached_scene and not script_updated and not _should_regenerate_scenes(cached_scene, script_payload):
-            scene_output = cached_scene
-            save_markdown("scenes", video_id, _render_scenes_markdown(scene_output))
+            raw_scene_output = cached_scene
         else:
-            scene_output = _build_scene_output_from_script(script_payload, research_payload)
-            scene_output["scene_engine_version"] = SCENE_ENGINE_VERSION
-            scene_output["style_profile"] = _load_visual_style_config().get("active_style", "isometric_3d")
-            scene_output["source_script_hash"] = _scene_hash(script_payload, scene_output["style_profile"])
-            scene_output = _ensure_scene_granularity(scene_output, script_payload, research_payload, min_scenes=10)
-            save_json("scenes", video_id, scene_output)
-            save_markdown("scenes", video_id, _render_scenes_markdown(scene_output))
+            raw_scene_output = _build_scene_output_from_script(script_payload, research_payload)
+            raw_scene_output["scene_engine_version"] = SCENE_ENGINE_VERSION
+            raw_scene_output["source_script_hash"] = _scene_hash(script_payload, "scene-structure")
+            raw_scene_output = _ensure_scene_granularity(raw_scene_output, script_payload, research_payload, min_scenes=10)
+
+        scene_output = raw_scene_output
+        image_output = build_image_contract(scene_output, research_payload)
+        motion_output = build_motion_contract(image_output)
+        save_json("scenes", video_id, scene_output)
+        save_json("image", video_id, image_output)
+        save_json("motion", video_id, motion_output)
+        save_markdown("scenes", video_id, _render_scenes_markdown(scene_output))
         state["scenes"] = scene_output
+        state["image"] = image_output
+        state["motion"] = motion_output
         supabase.table("video_scenes").upsert(
             {
                 "video_id": video_id,
@@ -1397,6 +1296,8 @@ def run_pipeline(video_input: str, refresh: bool = False) -> Dict[str, Any]:
         "research": research_payload,
         "plan": plan_payload,
         "scenes": scene_output,
+        "image": image_output,
+        "motion": motion_output,
         "script_long": script_payload,
         "script_shorts": shorts_payload,
         "validation_report": validation_report,
@@ -1444,7 +1345,7 @@ def main() -> int:
         print(json.dumps(result, ensure_ascii=False, indent=2))
     else:
         print(f"✅ Pipeline completed: {result['video_id']}")
-        print("Artifacts: data/{video_id}_{research|plan|script|script_long|script_shorts|scenes|metadata}.{json|md}")
+        print("Artifacts: data/{video_id}_{research|plan|script|script_long|script_shorts|scenes|image|motion|metadata}.{json|md}")
     save_json("validation_report", result["video_id"], result.get("validation_report") or {"status": "n/a", "errors": [], "sentence_map": []})
     save_json("verification_report", result["video_id"], result.get("validation_report") or {"status": "n/a", "errors": [], "sentence_map": []})
     manifest_path = Path(__file__).resolve().parent.parent / "data" / f"{result['video_id']}_pipeline.json"
@@ -1454,6 +1355,8 @@ def main() -> int:
             "research": f"data/{result['video_id']}_research.json",
             "plan": f"data/{result['video_id']}_plan.json",
             "scenes": f"data/{result['video_id']}_scenes.json",
+            "image": f"data/{result['video_id']}_image.json",
+            "motion": f"data/{result['video_id']}_motion.json",
             "script": f"data/{result['video_id']}_script.json",
             "metadata": f"data/{result['video_id']}_metadata.json",
             "validation_report": f"data/{result['video_id']}_validation_report.json",

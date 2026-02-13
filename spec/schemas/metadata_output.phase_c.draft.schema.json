@@ -1,0 +1,21 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "MetadataOutputPhaseCDraft",
+  "description": "Locked draft for Phase C only. Not activated.",
+  "type": "object",
+  "required": ["faq_snippets", "key_claims_for_ai", "canonical_source_urls"],
+  "properties": {
+    "faq_snippets": {
+      "$ref": "metadata_output.phase_b.draft.schema.json#/properties/faq_snippets"
+    },
+    "key_claims_for_ai": {
+      "$ref": "metadata_output.phase_b.draft.schema.json#/properties/key_claims_for_ai"
+    },
+    "canonical_source_urls": {
+      "type": "array",
+      "items": {"type": "string", "format": "uri"},
+      "minItems": 1
+    }
+  },
+  "additionalProperties": true
+}
