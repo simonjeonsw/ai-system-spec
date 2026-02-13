@@ -1,11 +1,7 @@
 import json
-import os
 import tempfile
 import unittest
 from pathlib import Path
-
-os.environ.setdefault("SUPABASE_URL", "https://example.supabase.co")
-os.environ.setdefault("SUPABASE_KEY", "test-key")
 
 from lib.schema_validator import validate_payload
 from lib.validation_runner import validate_files
@@ -54,6 +50,12 @@ class MetadataContractTests(unittest.TestCase):
 
     def test_metadata_schema_supports_missing_geo_phase_a_fields(self) -> None:
         validate_payload("metadata_output", self._base_payload())
+
+    def test_metadata_schema_rejects_undeclared_fields(self) -> None:
+        payload = self._base_payload()
+        payload["geo_temp_note"] = "should fail"
+        with self.assertRaises(ValueError):
+            validate_payload("metadata_output", payload)
 
     def test_metadata_geo_warnings_are_warn_only(self) -> None:
         payload = self._base_payload()

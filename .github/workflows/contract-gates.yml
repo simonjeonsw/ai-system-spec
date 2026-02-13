@@ -19,7 +19,7 @@ jobs:
 
       - name: Syntax check
         run: |
-          python -m py_compile lib/pipeline_runner.py lib/scene_source_builder.py lib/image_builder.py lib/motion_builder.py lib/metadata_generator.py lib/schema_validator.py lib/validation_runner.py tests/test_contract_builders.py tests/test_metadata_contracts.py scripts/contract_ci_checks.py
+          python -m py_compile lib/pipeline_runner.py lib/scene_source_builder.py lib/image_builder.py lib/motion_builder.py lib/metadata_generator.py lib/schema_validator.py lib/validation_runner.py lib/policy_engine.py tests/test_contract_builders.py tests/test_metadata_contracts.py tests/test_policy_engine.py scripts/contract_ci_checks.py scripts/phase_state_report.py
 
       - name: Contract CI checks
         run: |
@@ -27,4 +27,4 @@ jobs:
 
       - name: Unit tests
         run: |
-          python -m unittest tests/test_contract_builders.py tests/test_metadata_contracts.py
+          python -m unittest tests/test_contract_builders.py tests/test_metadata_contracts.py tests/test_policy_engine.py

@@ -17,44 +17,103 @@
     "schema_version"
   ],
   "properties": {
-    "title": { "type": "string" },
-    "description": { "type": "string" },
-    "tags": { "type": "array", "items": { "type": "string" } },
+    "title": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
     "chapters": {
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["timecode", "title"],
+        "required": [
+          "timecode",
+          "title"
+        ],
         "properties": {
-          "timecode": { "type": "string" },
-          "title": { "type": "string" }
+          "timecode": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          }
         }
       }
     },
-    "pinned_comment": { "type": "string" },
-    "pinned_comment_variants": { "type": "array", "items": { "type": "string" } },
+    "pinned_comment": {
+      "type": "string"
+    },
+    "pinned_comment_variants": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
     "thumbnail_variants": {
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["label", "text", "visual_brief"],
+        "required": [
+          "label",
+          "text",
+          "visual_brief"
+        ],
         "properties": {
-          "label": { "type": "string" },
-          "text": { "type": "string" },
-          "visual_brief": { "type": "string" }
+          "label": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          },
+          "visual_brief": {
+            "type": "string"
+          }
         }
       }
     },
-    "community_post": { "type": "string" },
-    "community_post_variants": { "type": "array", "items": { "type": "string" } },
-    "estimated_runtime_sec": { "type": "integer" },
-    "speech_rate_wpm": { "type": "integer" },
-
-    "target_locale": { "type": "string" },
-    "target_region": { "type": "string" },
-    "primary_keyword": { "type": "string" },
-    "secondary_keywords": { "type": "array", "items": { "type": "string" } },
-
-    "schema_version": { "type": "string", "enum": ["1.1"] }
-  }
+    "community_post": {
+      "type": "string"
+    },
+    "community_post_variants": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "estimated_runtime_sec": {
+      "type": "integer"
+    },
+    "speech_rate_wpm": {
+      "type": "integer"
+    },
+    "target_locale": {
+      "type": "string"
+    },
+    "target_region": {
+      "type": "string"
+    },
+    "primary_keyword": {
+      "type": "string"
+    },
+    "secondary_keywords": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "schema_version": {
+      "type": "string",
+      "enum": [
+        "1.1"
+      ]
+    }
+  },
+  "additionalProperties": false
 }

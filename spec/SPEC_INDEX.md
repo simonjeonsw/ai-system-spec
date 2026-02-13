@@ -35,6 +35,8 @@ This index defines document authority, ownership, and lifecycle status for all s
 | spec/ADR.md | L3 | Architecture | Per change |
 | spec/RELEASE_NOTES.md | L3 | Release Manager | Per release |
 | spec/EVOLUTION_CONTRACT.md | L3 | Architecture + QA | Monthly |
+| spec/PHASE_STATE_POLICY.md | L3 | Ops + Architecture | Monthly |
+| spec/SOURCE_EVIDENCE_CONTRACT.md | L2 | Architecture + QA | Monthly |
 
 ## Secondary Files Registry
 | File | Layer | Reason |

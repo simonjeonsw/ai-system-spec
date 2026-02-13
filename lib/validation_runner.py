@@ -5,9 +5,8 @@ from __future__ import annotations
 import json
 import sys
 from pathlib import Path
-from typing import Iterable, List
+from typing import Any, Callable, Dict, Iterable, List
 
-from .run_logger import build_metrics, emit_run_log
 from .schema_validator import validate_json_file, validate_payload
 from .storage_utils import normalize_video_id
 
@@ -33,6 +32,31 @@ STAGE_FILENAMES = {
 }
 
 GEO_PHASE_A_WARN_FIELDS = ("target_locale", "target_region")
+
+
+def _build_metrics_default(**overrides: Any) -> Dict[str, Any]:
+    payload = {
+        "latency_ms": 0,
+        "tokens": 0,
+        "cost_usd": 0.0,
+        "cache_hit": False,
+        "retry_count": 0,
+    }
+    payload.update(overrides)
+    return payload
+
+
+def _resolve_run_logger() -> tuple[Callable[..., Dict[str, Any]], Callable[..., str]]:
+    """Return logger callables with a safe fallback in no-env contexts."""
+    try:
+        from .run_logger import build_metrics, emit_run_log
+
+        return build_metrics, emit_run_log
+    except Exception:
+        def _fallback_emit(**_: Any) -> str:
+            return "validation-log-disabled"
+
+        return _build_metrics_default, _fallback_emit
 
 
 def _validate_metadata_geo_readiness(payload: dict) -> List[str]:
@@ -115,6 +139,8 @@ def main() -> int:
         return 1
     else:
         json_paths = [str(Path(path)) for path in sys.argv[2:]]
+
+    build_metrics, emit_run_log = _resolve_run_logger()
 
     try:
         warnings: List[str] = []

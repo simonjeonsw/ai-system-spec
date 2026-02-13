@@ -167,3 +167,29 @@ Legacy reference module removed: `lib/scene_contract_builder.py` has been delete
 ### GEO Readiness Logging (Phase A)
 - Validation emits warning-only GEO readiness signals for missing locale/region.
 - Warning counts are tracked as metrics to support phase transition decisions.
+
+
+### M3 Governance Completion
+- ADR record: `spec/ADR.md` (`ADR-2026-001`).
+- Release tracking: `spec/RELEASE_NOTES.md` (`v1.1.0-m3`).
+- Regeneration contract linkage: `spec/EVOLUTION_CONTRACT.md` metadata-row policy.
+
+
+## M3.5 Policy-Driven Autonomy Upgrade
+
+### Deterministic Policy Assets
+- Config: `config/geo_phase_policy.json`
+- Evaluator: `lib/policy_engine.py`
+- CLI report: `scripts/phase_state_report.py`
+- Input schema/sample: `spec/schemas/phase_state_input.schema.json`, `spec/samples/phase_state_input_sample.json`
+
+### Autonomous Decision Contract
+- GEO escalation and incident/hold outcomes are machine-evaluated.
+- Phase A → B promotion is a deterministic state transition, not free-form human judgment.
+- Human approval is allowed only after machine criteria already pass.
+
+### Phase B/C Preparation (Locked Drafts)
+- Draft-only schemas are added and not active:
+  - `metadata_output.phase_b.draft.schema.json`
+  - `metadata_output.phase_c.draft.schema.json`
+- Source evidence is first-class via `spec/SOURCE_EVIDENCE_CONTRACT.md` and `source_evidence_contract.schema.json`.

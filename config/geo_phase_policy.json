@@ -1,0 +1,72 @@
+{
+  "policy_version": "1.0",
+  "phase": {
+    "current": "A",
+    "allow_human_approval_only": true,
+    "human_may_approve_but_not_define": true
+  },
+  "geo_readiness": {
+    "warning_metric": "geo_readiness_warning_count",
+    "evaluation_window_weeks": 4,
+    "escalation": {
+      "yellow": {
+        "min_weekly_warning_count": 3,
+        "sustained_increase_weeks": 2
+      },
+      "red": {
+        "min_weekly_warning_count": 5,
+        "sustained_increase_weeks": 3
+      }
+    },
+    "incident_rules": {
+      "create_incident_on_level": ["yellow", "red"],
+      "auto_hold_on_level": ["red"],
+      "auto_hold_when_incident_open": true
+    }
+  },
+  "phase_b_transition": {
+    "from_phase": "A",
+    "to_phase": "B",
+    "minimum_published_videos": 10,
+    "maximum_published_videos": 30,
+    "stability_window_weeks": 4,
+    "ctr": {
+      "max_relative_range": 0.2,
+      "min_data_points": 4
+    },
+    "avd": {
+      "max_relative_range": 0.2,
+      "min_data_points": 4
+    },
+    "source_evidence": {
+      "require_contract_ready": true,
+      "minimum_linkage_pass_rate": 0.98,
+      "minimum_research_source_coverage": 0.95
+    },
+    "exceptions": {
+      "insufficient_data_action": "hold",
+      "incident_open_action": "hold",
+      "manual_override_allowed": false
+    },
+    "rollback": {
+      "enabled": true,
+      "trigger_window_weeks": 2,
+      "ctr_drop_vs_baseline": 0.2,
+      "avd_drop_vs_baseline": 0.2,
+      "source_linkage_minimum": 0.95,
+      "action": "revert_to_phase_A"
+    }
+  },
+  "dashboard": {
+    "required_panels": [
+      "phase_state",
+      "phase_hold_reason_codes",
+      "ctr_trend",
+      "avd_trend",
+      "metadata_experiment_success_rate",
+      "geo_readiness_warning_count",
+      "source_linkage_pass_rate"
+    ],
+    "must_answer": "Why can/can't the system promote to Phase B right now?"
+  }
+}
