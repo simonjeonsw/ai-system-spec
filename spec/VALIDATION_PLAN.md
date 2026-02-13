@@ -6,7 +6,7 @@ Canonical (L3)
 Validation ensures structured outputs match schemas and quality gates before release.
 
 ## Unit Validation
-- Schema validation for planner, research, script, scene, image, and motion outputs.
+- Schema validation for planner, research, script, scene, image, motion, and metadata outputs.
 - Field-level checks for required keys and types.
 - Source governance checks where applicable.
 
@@ -32,3 +32,10 @@ Validation ensures structured outputs match schemas and quality gates before rel
 - Any contract drift checklist failure blocks release.
 - Any boundary violation blocks release.
 - Any deprecated-document normative rule blocks release.
+
+
+## Metadata Validation Policy (M3 v1.1)
+- SEO contract fields are hard-gated and block release on violation.
+- GEO Phase A placeholders (`target_locale`, `target_region`) are warning-only in validation.
+- GEO readiness warning counts are logged to support Phase A→B rollout decisions.
+- Phase B/C fields (`faq_snippets`, `key_claims_for_ai`, `canonical_source_urls`) remain deferred until activation criteria are met.

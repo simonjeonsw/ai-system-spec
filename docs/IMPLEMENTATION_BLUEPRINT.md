@@ -141,3 +141,29 @@ Legacy reference module removed: `lib/scene_contract_builder.py` has been delete
   - banned legacy symbols not present in Python source
   - canonical handoff symbols present in orchestrator
   - syntax compile + contract unit tests
+
+## M3 Rollout Plan — Metadata SEO/GEO v1.1
+
+### Phase A (0-10 published videos) — GEO-ready interface reservation
+- Schema target: `metadata_output.schema.json` v1.1
+- Hard gate: SEO fields remain strict (`title`, `description`, `tags`, `chapters`, variants, runtime fields).
+- Warn-only GEO placeholders: `target_locale`, `target_region`, `primary_keyword`, `secondary_keywords`.
+- Deferred fields (do not generate in Phase A): `faq_snippets`, `key_claims_for_ai`, `canonical_source_urls`.
+
+### Phase B (10-30 published videos) — Partial GEO activation
+- Introduce `faq_snippets` and `key_claims_for_ai` behind selective fail rules.
+- Enforce `source_ids` linkage to research/source contracts for activated records.
+- Continue soft rollout by cohort/channel segment until KPI stability is confirmed.
+
+### Phase C (30-50+ published videos) — Full GEO enforcement
+- Add `canonical_source_urls` and strict claim-evidence integrity checks.
+- GEO contract violations become hard CI fail conditions.
+- Require locale/region completeness and evidence traceability for production publish.
+
+### KPI Triggers for Phase Transition
+- Phase A → B: at least 10 published videos, stable metadata generation success rate, and non-trivial GEO placeholder coverage trend.
+- Phase B → C: at least 30 published videos, evidence linkage pass rate meets release threshold, and no sustained GEO regression alerts.
+
+### GEO Readiness Logging (Phase A)
+- Validation emits warning-only GEO readiness signals for missing locale/region.
+- Warning counts are tracked as metrics to support phase transition decisions.

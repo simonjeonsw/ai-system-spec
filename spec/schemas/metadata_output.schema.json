@@ -1,0 +1,60 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "MetadataOutput",
+  "type": "object",
+  "required": [
+    "title",
+    "description",
+    "tags",
+    "chapters",
+    "pinned_comment",
+    "pinned_comment_variants",
+    "thumbnail_variants",
+    "community_post",
+    "community_post_variants",
+    "estimated_runtime_sec",
+    "speech_rate_wpm",
+    "schema_version"
+  ],
+  "properties": {
+    "title": { "type": "string" },
+    "description": { "type": "string" },
+    "tags": { "type": "array", "items": { "type": "string" } },
+    "chapters": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["timecode", "title"],
+        "properties": {
+          "timecode": { "type": "string" },
+          "title": { "type": "string" }
+        }
+      }
+    },
+    "pinned_comment": { "type": "string" },
+    "pinned_comment_variants": { "type": "array", "items": { "type": "string" } },
+    "thumbnail_variants": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["label", "text", "visual_brief"],
+        "properties": {
+          "label": { "type": "string" },
+          "text": { "type": "string" },
+          "visual_brief": { "type": "string" }
+        }
+      }
+    },
+    "community_post": { "type": "string" },
+    "community_post_variants": { "type": "array", "items": { "type": "string" } },
+    "estimated_runtime_sec": { "type": "integer" },
+    "speech_rate_wpm": { "type": "integer" },
+
+    "target_locale": { "type": "string" },
+    "target_region": { "type": "string" },
+    "primary_keyword": { "type": "string" },
+    "secondary_keywords": { "type": "array", "items": { "type": "string" } },
+
+    "schema_version": { "type": "string", "enum": ["1.1"] }
+  }
+}

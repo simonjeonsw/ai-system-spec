@@ -1,11 +1,11 @@
-"""Run schema validation against planner/research/scene/script/image/motion JSON outputs."""
+"""Run schema validation against canonical stage JSON outputs."""
 
 from __future__ import annotations
 
 import json
 import sys
 from pathlib import Path
-from typing import Iterable
+from typing import Iterable, List
 
 from .run_logger import build_metrics, emit_run_log
 from .schema_validator import validate_json_file, validate_payload
@@ -19,6 +19,7 @@ VALIDATION_TARGETS = {
     "image": "image_output",
     "motion": "motion_output",
     "script": "script_output",
+    "metadata": "metadata_output",
 }
 
 STAGE_FILENAMES = {
@@ -28,10 +29,26 @@ STAGE_FILENAMES = {
     "image": "{video_id}_image.json",
     "motion": "{video_id}_motion.json",
     "script": "{video_id}_script.json",
+    "metadata": "{video_id}_metadata.json",
 }
 
+GEO_PHASE_A_WARN_FIELDS = ("target_locale", "target_region")
 
-def validate_files(stage: str, json_paths: Iterable[str]) -> None:
+
+def _validate_metadata_geo_readiness(payload: dict) -> List[str]:
+    """Warn-only checks for GEO Phase A placeholder readiness."""
+    warnings: List[str] = []
+    for field in GEO_PHASE_A_WARN_FIELDS:
+        value = payload.get(field)
+        if not isinstance(value, str) or not value.strip():
+            warnings.append(
+                f"GEO readiness warning: missing or empty '{field}' (Phase A warning-only gate)."
+            )
+    return warnings
+
+
+def validate_files(stage: str, json_paths: Iterable[str]) -> List[str]:
+    warnings: List[str] = []
     schema_name = VALIDATION_TARGETS[stage]
     for path in json_paths:
         if stage == "scenes":
@@ -55,23 +72,30 @@ def validate_files(stage: str, json_paths: Iterable[str]) -> None:
                 raise ValueError("Motion output missing 'motions' array.")
             for motion in motions:
                 validate_payload(schema_name, motion)
+        elif stage == "metadata":
+            payload = json.loads(Path(path).read_text(encoding="utf-8"))
+            validate_payload(schema_name, payload)
+            warnings.extend(_validate_metadata_geo_readiness(payload))
         else:
             validate_json_file(schema_name, path)
+    return warnings
 
 
-def validate_all(video_id: str) -> None:
+def validate_all(video_id: str) -> List[str]:
     data_dir = Path(__file__).resolve().parent.parent / "data"
+    warnings: List[str] = []
     for stage, template in STAGE_FILENAMES.items():
         path = data_dir / template.format(video_id=video_id)
         if not path.exists():
             raise FileNotFoundError(f"Missing file for stage {stage}: {path}")
-        validate_files(stage, [str(path)])
+        warnings.extend(validate_files(stage, [str(path)]))
+    return warnings
 
 
 def main() -> int:
     if len(sys.argv) < 3:
         print(
-            "Usage: python -m lib.validation_runner <plan|research|scenes|image|motion|script|all> <json_path>...",
+            "Usage: python -m lib.validation_runner <plan|research|scenes|image|motion|script|metadata|all> <json_path>...",
             file=sys.stderr,
         )
         return 1
@@ -93,16 +117,23 @@ def main() -> int:
         json_paths = [str(Path(path)) for path in sys.argv[2:]]
 
     try:
+        warnings: List[str] = []
         if stage == "all":
-            validate_all(video_id)
+            warnings = validate_all(video_id)
         else:
-            validate_files(stage, json_paths)
+            warnings = validate_files(stage, json_paths)
         emit_run_log(
             stage="validation",
             status="success",
             input_refs={"stage": stage, "files": json_paths or ["data/*"]},
-            metrics=build_metrics(cache_hit=False),
+            output_refs={"warnings": warnings} if warnings else None,
+            metrics={
+                **build_metrics(cache_hit=False),
+                "geo_readiness_warning_count": len(warnings),
+            },
         )
+        for warning in warnings:
+            print(warning, file=sys.stderr)
         print("Validation passed.")
         return 0
     except Exception as exc:

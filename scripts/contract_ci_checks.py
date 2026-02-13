@@ -33,6 +33,12 @@ def _assert_no_banned_tokens() -> None:
                 raise SystemExit(f"Banned legacy token '{token}' found in {path}")
 
 
+def _assert_validation_includes_metadata_stage() -> None:
+    source = (ROOT / "lib" / "validation_runner.py").read_text(encoding="utf-8")
+    if '"metadata": "metadata_output"' not in source:
+        raise SystemExit("validation_runner missing metadata_output stage mapping")
+
+
 def _assert_pipeline_uses_canonical_handoff() -> None:
     source = PIPELINE_FILE.read_text(encoding="utf-8")
     tree = ast.parse(source)
@@ -47,4 +53,5 @@ if __name__ == "__main__":
     _assert_legacy_removed()
     _assert_no_banned_tokens()
     _assert_pipeline_uses_canonical_handoff()
+    _assert_validation_includes_metadata_stage()
     print("contract ci checks passed")

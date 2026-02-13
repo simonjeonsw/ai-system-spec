@@ -17,7 +17,7 @@ from .storage_utils import save_json
 from .supabase_client import supabase
 
 
-DEFAULT_SCHEMA_VERSION = "1.0"
+DEFAULT_SCHEMA_VERSION = "1.1"
 
 
 def build_metadata_prompt(plan_payload: Dict[str, Any], script_payload: Dict[str, Any]) -> str:
@@ -38,6 +38,10 @@ You are a YouTube metadata generator. Return JSON only with this schema:
   "community_post_variants": ["...", "..."],
   "estimated_runtime_sec": 0,
   "speech_rate_wpm": 0,
+  "target_locale": "",
+  "target_region": "",
+  "primary_keyword": "",
+  "secondary_keywords": ["..."],
   "schema_version": "{DEFAULT_SCHEMA_VERSION}"
 }}
 
@@ -47,6 +51,9 @@ Constraints:
 - Description max 4000 characters.
 - Tags: 5-15 items.
 - Chapters should be ordered and cover major beats.
+- Return strict JSON only (no markdown, comments, or prose).
+- GEO Phase A placeholders (`target_locale`, `target_region`, `primary_keyword`, `secondary_keywords`) are optional.
+- Keep GEO placeholders conservative; do not fabricate FAQ answers, claim-evidence mappings, or source IDs.
 
 Planner JSON:
 {json.dumps(plan_payload, ensure_ascii=False)}
@@ -135,6 +142,8 @@ def _validate_metadata_payload(payload: Dict[str, Any]) -> List[str]:
         errors.append("Provide at least two pinned comment variants.")
     if "community_post_variants" in payload and len(payload["community_post_variants"]) < 2:
         errors.append("Provide at least two community post variants.")
+    if "secondary_keywords" in payload and not isinstance(payload["secondary_keywords"], list):
+        errors.append("secondary_keywords must be an array of strings when provided.")
     return errors
 
 
