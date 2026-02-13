@@ -1,4 +1,4 @@
-"""Run schema validation against planner/research/scene/script JSON outputs."""
+"""Run schema validation against planner/research/scene/script/image/motion JSON outputs."""
 
 from __future__ import annotations
 
@@ -16,6 +16,8 @@ VALIDATION_TARGETS = {
     "plan": "planner_output",
     "research": "research_output",
     "scenes": "scene_output",
+    "image": "image_output",
+    "motion": "motion_output",
     "script": "script_output",
 }
 
@@ -23,6 +25,8 @@ STAGE_FILENAMES = {
     "research": "{video_id}_research.json",
     "plan": "{video_id}_plan.json",
     "scenes": "{video_id}_scenes.json",
+    "image": "{video_id}_image.json",
+    "motion": "{video_id}_motion.json",
     "script": "{video_id}_script.json",
 }
 
@@ -37,6 +41,20 @@ def validate_files(stage: str, json_paths: Iterable[str]) -> None:
                 raise ValueError("Scene output missing 'scenes' array.")
             for scene in scenes:
                 validate_payload(schema_name, scene)
+        elif stage == "image":
+            payload = json.loads(Path(path).read_text(encoding="utf-8"))
+            images = payload.get("images", [])
+            if not images:
+                raise ValueError("Image output missing 'images' array.")
+            for image in images:
+                validate_payload(schema_name, image)
+        elif stage == "motion":
+            payload = json.loads(Path(path).read_text(encoding="utf-8"))
+            motions = payload.get("motions", [])
+            if not motions:
+                raise ValueError("Motion output missing 'motions' array.")
+            for motion in motions:
+                validate_payload(schema_name, motion)
         else:
             validate_json_file(schema_name, path)
 
@@ -53,7 +71,7 @@ def validate_all(video_id: str) -> None:
 def main() -> int:
     if len(sys.argv) < 3:
         print(
-            "Usage: python -m lib.validation_runner <plan|research|scenes|script|all> <json_path>...",
+            "Usage: python -m lib.validation_runner <plan|research|scenes|image|motion|script|all> <json_path>...",
             file=sys.stderr,
         )
         return 1
