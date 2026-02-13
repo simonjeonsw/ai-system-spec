@@ -193,3 +193,12 @@ Legacy reference module removed: `lib/scene_contract_builder.py` has been delete
   - `metadata_output.phase_b.draft.schema.json`
   - `metadata_output.phase_c.draft.schema.json`
 - Source evidence is first-class via `spec/SOURCE_EVIDENCE_CONTRACT.md` and `source_evidence_contract.schema.json`.
+
+
+## M4 — Decision Enforcement & Accountability
+- Decision outputs are binding: each reason code maps to mandatory action or explicit signed override.
+- Unknown reason codes fail the decision path.
+- Override records are TTL-bounded and auditable.
+- Decision provenance includes policy version, evaluated timestamp, input snapshot, and decision hash.
+- Weekly calibration reports false-hold / false-promote rates to prevent policy drift.
+- GEO Phase B/C fields remain draft-only and inactive during M4.

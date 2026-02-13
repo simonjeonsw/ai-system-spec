@@ -1,5 +1,5 @@
 {
-  "policy_version": "1.0",
+  "policy_version": "1.1",
   "phase": {
     "current": "A",
     "allow_human_approval_only": true,
@@ -19,8 +19,13 @@
       }
     },
     "incident_rules": {
-      "create_incident_on_level": ["yellow", "red"],
-      "auto_hold_on_level": ["red"],
+      "create_incident_on_level": [
+        "yellow",
+        "red"
+      ],
+      "auto_hold_on_level": [
+        "red"
+      ],
       "auto_hold_when_incident_open": true
     }
   },
@@ -55,6 +60,39 @@
       "avd_drop_vs_baseline": 0.2,
       "source_linkage_minimum": 0.95,
       "action": "revert_to_phase_A"
+    }
+  },
+  "decision_enforcement": {
+    "require_action_or_signed_override": true,
+    "unknown_reason_code_action": "hard_fail",
+    "override": {
+      "allowed": true,
+      "max_ttl_hours": 168,
+      "required_fields": [
+        "actor_id",
+        "approved_by",
+        "justification",
+        "created_at",
+        "expires_at",
+        "signature",
+        "scope"
+      ]
+    },
+    "reason_code_actions": {
+      "GEO_WARN_RED_THRESHOLD": "AUTO_HOLD_AND_OPEN_INCIDENT",
+      "GEO_WARN_YELLOW_THRESHOLD": "OPEN_INCIDENT_AND_REMEDIATE",
+      "OPEN_INCIDENT_HOLD": "BLOCK_PROMOTION_UNTIL_RESOLVED",
+      "VIDEO_COUNT_BELOW_MINIMUM": "HOLD_PROMOTION",
+      "VIDEO_COUNT_ABOVE_PHASE_B_WINDOW": "HOLD_PROMOTION",
+      "CTR_DATA_INSUFFICIENT": "HOLD_PROMOTION_PENDING_DATA",
+      "AVD_DATA_INSUFFICIENT": "HOLD_PROMOTION_PENDING_DATA",
+      "CTR_STABILITY_FAIL": "HOLD_PROMOTION_AND_KPI_REVIEW",
+      "AVD_STABILITY_FAIL": "HOLD_PROMOTION_AND_RETENTION_REVIEW",
+      "SOURCE_CONTRACT_NOT_READY": "BLOCK_PROMOTION_AND_FIX_SOURCE_CONTRACT",
+      "SOURCE_LINKAGE_PASS_RATE_FAIL": "BLOCK_PROMOTION_AND_FIX_LINKAGE",
+      "RESEARCH_SOURCE_COVERAGE_FAIL": "BLOCK_PROMOTION_AND_FIX_RESEARCH_COVERAGE",
+      "decision_hold_pending_info": "HOLD_PENDING_INFO_COLLECTION",
+      "OVERRIDE_REJECTED": "REJECT_OVERRIDE_AND_REQUIRE_REAPPROVAL"
     }
   },
   "dashboard": {

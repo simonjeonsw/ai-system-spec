@@ -46,3 +46,19 @@ Promotion is allowed only when all conditions pass:
 
 ## Explainability Requirement
 The system must always produce machine-readable reason codes for hold/promotion decisions.
+
+
+## Decision-to-Action Enforcement Contract
+- Every policy reason code must map to a mandatory action (see `config/geo_phase_policy.json`).
+- Unknown reason codes are contract errors and must fail evaluation.
+- Promotion cannot proceed when `phase_hold=true` or `incident_required=true` with unresolved incident state.
+- If information is insufficient, emit `decision_hold_pending_info` and block promotion until data sufficiency recovers.
+
+## Signed Override Contract
+- Overrides must be explicit, signed, and time-bounded.
+- Required fields: actor, approver, justification, created_at, expires_at, signature, scope.
+- Overrides exceeding TTL or missing required fields are audit violations and cannot bypass policy.
+
+## Decision Provenance
+- Each decision must emit immutable provenance: policy version, input snapshot, evaluated timestamp, and decision hash.
+- Decision provenance is required for audit and replay checks.

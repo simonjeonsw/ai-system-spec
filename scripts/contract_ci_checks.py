@@ -60,6 +60,9 @@ def _assert_policy_config_contract() -> None:
         ("geo_readiness", "escalation", "red", "min_weekly_warning_count"),
         ("phase_b_transition", "minimum_published_videos"),
         ("phase_b_transition", "source_evidence", "minimum_linkage_pass_rate"),
+        ("decision_enforcement", "require_action_or_signed_override"),
+        ("decision_enforcement", "unknown_reason_code_action"),
+        ("decision_enforcement", "reason_code_actions", "decision_hold_pending_info"),
     ]
     for path in required_paths:
         cursor = payload

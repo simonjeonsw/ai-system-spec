@@ -66,3 +66,9 @@ The dashboard must answer exactly:
 
 Reference implementation command:
 - `python scripts/phase_state_report.py spec/samples/phase_state_input_sample.json`
+
+
+## M4 Accountability Dashboard Additions
+- Required integrity panels: `decision_without_action_rate`, `promotion_during_hold_count`, `override_audit_violations`.
+- Required calibration panels: `false_hold_rate`, `false_promote_rate` (weekly and monthly).
+- Every blocked promotion must include machine reason codes and human-readable explanation text.

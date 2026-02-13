@@ -28,8 +28,9 @@ def main() -> int:
         source_linkage_pass_rate=payload["source_linkage_pass_rate"],
         research_source_coverage=payload["research_source_coverage"],
         incident_open=payload.get("incident_open", False),
+        override_record=payload.get("override_record"),
     )
-    result = evaluate_phase_state(data)
+    result = evaluate_phase_state(data, historical_outcomes=payload.get("historical_outcomes"))
     print(json.dumps(result, ensure_ascii=False, indent=2))
     return 0
 

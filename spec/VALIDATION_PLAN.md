@@ -53,3 +53,10 @@ Validation ensures structured outputs match schemas and quality gates before rel
 - Yellow/Red levels auto-create incident records according to policy.
 - Red level or open incident auto-holds promotion.
 - This gate is active in Phase A and does not activate Phase B/C schema requirements yet.
+
+
+## M4 Operational Integrity KPIs
+- `decision_without_action_rate` must remain 0.
+- `promotion_during_hold_count` must remain 0.
+- Override audit violations (missing fields, expired TTL, invalid signature metadata) must remain 0.
+- Weekly calibration must report `false_hold_rate` and `false_promote_rate`.
