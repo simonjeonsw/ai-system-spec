@@ -11,6 +11,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from lib.policy_engine import PhaseEvaluationInput, evaluate_phase_state
+from lib.policy_enforcement import evaluate_decision_action_closure
 
 
 def main() -> int:
@@ -30,8 +31,16 @@ def main() -> int:
         incident_open=payload.get("incident_open", False),
         override_record=payload.get("override_record"),
     )
-    result = evaluate_phase_state(data, historical_outcomes=payload.get("historical_outcomes"))
-    print(json.dumps(result, ensure_ascii=False, indent=2))
+    decision = evaluate_phase_state(data, historical_outcomes=payload.get("historical_outcomes"))
+
+    decision["operational_enforcement"] = evaluate_decision_action_closure(
+        decision,
+        executed_actions=payload.get("executed_actions"),
+        action_artifacts=payload.get("action_artifacts"),
+        observed_operations=payload.get("observed_operations"),
+    )
+
+    print(json.dumps(decision, ensure_ascii=False, indent=2))
     return 0
 
 

@@ -202,3 +202,6 @@ Legacy reference module removed: `lib/scene_contract_builder.py` has been delete
 - Decision provenance includes policy version, evaluated timestamp, input snapshot, and decision hash.
 - Weekly calibration reports false-hold / false-promote rates to prevent policy drift.
 - GEO Phase B/C fields remain draft-only and inactive during M4.
+
+- Operational closure check now computes `decision_action_closure_rate`, `out_of_band_action_count`, and `provenance_linkage_coverage`.
+- Every promotion/incident/hold artifact must carry matching `decision_hash` for audit replay.

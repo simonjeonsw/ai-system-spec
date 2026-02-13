@@ -62,3 +62,6 @@ The system must always produce machine-readable reason codes for hold/promotion 
 ## Decision Provenance
 - Each decision must emit immutable provenance: policy version, input snapshot, evaluated timestamp, and decision hash.
 - Decision provenance is required for audit and replay checks.
+
+- Decision-action closure requires downstream artifact linkage (`incident_id`/`release_id`/`hold_event_id`) with matching `decision_hash`.
+- Out-of-band operations without decision hash or signed override reference are contract violations.

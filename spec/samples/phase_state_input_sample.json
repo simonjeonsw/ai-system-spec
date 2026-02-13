@@ -11,5 +11,8 @@
     {"label": "correct_hold"},
     {"label": "false_hold"},
     {"label": "correct_promote"}
-  ]
+  ],
+  "executed_actions": ["PROMOTION_ALLOWED"],
+  "action_artifacts": [],
+  "observed_operations": []
 }

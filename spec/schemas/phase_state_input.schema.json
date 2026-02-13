@@ -63,13 +63,29 @@
         "scope"
       ],
       "properties": {
-        "actor_id": {"type": "string"},
-        "approved_by": {"type": "string"},
-        "justification": {"type": "string"},
-        "created_at": {"type": "string", "format": "date-time"},
-        "expires_at": {"type": "string", "format": "date-time"},
-        "signature": {"type": "string"},
-        "scope": {"type": "string"}
+        "actor_id": {
+          "type": "string"
+        },
+        "approved_by": {
+          "type": "string"
+        },
+        "justification": {
+          "type": "string"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "expires_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "signature": {
+          "type": "string"
+        },
+        "scope": {
+          "type": "string"
+        }
       },
       "additionalProperties": false
     },
@@ -77,7 +93,9 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["label"],
+        "required": [
+          "label"
+        ],
         "properties": {
           "label": {
             "type": "string",
@@ -90,6 +108,65 @@
           }
         },
         "additionalProperties": true
+      }
+    },
+    "executed_actions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "action_artifacts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "artifact_id",
+          "artifact_type",
+          "decision_hash"
+        ],
+        "properties": {
+          "artifact_id": {
+            "type": "string"
+          },
+          "artifact_type": {
+            "type": "string",
+            "enum": [
+              "incident",
+              "release",
+              "hold_event"
+            ]
+          },
+          "decision_hash": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "observed_operations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "operation",
+          "operation_id"
+        ],
+        "properties": {
+          "operation": {
+            "type": "string"
+          },
+          "operation_id": {
+            "type": "string"
+          },
+          "decision_hash": {
+            "type": "string"
+          },
+          "override_ref": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
       }
     }
   },

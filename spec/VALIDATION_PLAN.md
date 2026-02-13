@@ -60,3 +60,6 @@ Validation ensures structured outputs match schemas and quality gates before rel
 - `promotion_during_hold_count` must remain 0.
 - Override audit violations (missing fields, expired TTL, invalid signature metadata) must remain 0.
 - Weekly calibration must report `false_hold_rate` and `false_promote_rate`.
+
+- Operational enforcement metrics must be emitted for each phase decision: `decision_action_closure_rate`, `out_of_band_action_count`, `provenance_linkage_coverage`.
+- Any decision with missing mandatory action closure is a governance failure even if schema/CI checks pass.

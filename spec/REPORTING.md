@@ -72,3 +72,6 @@ Reference implementation command:
 - Required integrity panels: `decision_without_action_rate`, `promotion_during_hold_count`, `override_audit_violations`.
 - Required calibration panels: `false_hold_rate`, `false_promote_rate` (weekly and monthly).
 - Every blocked promotion must include machine reason codes and human-readable explanation text.
+
+- Additional integrity KPIs: `decision_action_closure_rate`, `out_of_band_action_count`, `provenance_linkage_coverage`.
+- Promotion operations must be linked to `decision_hash`; unlinked operations are governance incidents.

@@ -92,6 +92,15 @@ def _assert_draft_contract_files_exist() -> None:
         if not path.exists():
             raise SystemExit(f"Missing required draft/contract file: {path}")
 
+
+
+def _assert_phase_state_report_enforcement_integration() -> None:
+    source = (ROOT / "scripts" / "phase_state_report.py").read_text(encoding="utf-8")
+    required = ["evaluate_decision_action_closure", "operational_enforcement"]
+    missing = [token for token in required if token not in source]
+    if missing:
+        raise SystemExit(f"phase_state_report missing enforcement integration: {missing}")
+
 def _assert_pipeline_uses_canonical_handoff() -> None:
     source = PIPELINE_FILE.read_text(encoding="utf-8")
     tree = ast.parse(source)
@@ -111,4 +120,5 @@ if __name__ == "__main__":
     _assert_policy_config_contract()
     _assert_phase_b_c_not_activated()
     _assert_draft_contract_files_exist()
+    _assert_phase_state_report_enforcement_integration()
     print("contract ci checks passed")
