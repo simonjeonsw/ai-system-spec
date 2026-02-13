@@ -5,95 +5,66 @@ User / Operator
  → Control Plane
  → Agent Orchestrator
  → Specialized Agents
- → Content Pipeline (including Scene Structuring)
- → Evaluation Layer
+ → Content Pipeline
+ → Validation Layer
  → Publishing & Analytics
 
-## 1.1 Optional Multi-Skill Execution Mode
-For early-phase speed and low-risk iterations, the system can run a single agent
-that performs multiple stages in one pass. This is opt-in and must still emit
-per-stage run logs and schema-compliant outputs. See `spec/MULTI_SKILL_MODE.md`.
+## 2. Canonical Pipeline Contract v1 (Authoritative)
+**Canonical order:**
+`research → plan → script → scene → image → motion → metadata → validate`
 
-## 2. Control Plane
-- Spec Loader
-- Global Project Memory
-- State Management
-- GitHub Integration
-- MCP Context Injection
-- Orchestration requirements: stage gating, dependency resolution, and handoff criteria between agents
+### 2.1 Stage Ownership Summary
+- research: source-backed factual substrate
+- plan: topic and monetization strategy selection
+- script: semantic source-of-truth narrative
+- scene: structure/timing segmentation only
+- image: static visual asset specification only
+- motion: temporal animation directives only
+- metadata: packaging outputs for platform publishing
+- validate: contract and quality gate
 
-## 3. Observability
-- Agent output logs
-- Performance metrics (CTR, AVD, RPM)
-- Error tracking
-- Retry and escalation counters
-- Cost governance metrics (cache hit rate, API usage, 429 rate, fallback rate)
-- Run-log emission points at every stage (planner, research, scene, script, QA, ops)
-- Alerting on SLO breaches (latency, failure rate, retry rate, cache-hit)
-- Incident runbook reference (see OPERATIONS.md)
+### 2.2 Stage Skip Rules (Cache-hit Only)
+- Stage execution may be skipped only via cache-hit of the same contract version.
+- Skip logic must not reorder stage dependencies.
+- Any upstream semantic change invalidates downstream cache according to regeneration scope matrix.
 
-## 4. Data Flow
-Research
- → Script
- → Scene Structuring
- → Visual Design
- → Voice
- → Video Assembly
- → QA
- → Upload
- → Performance Feedback (CTR, AVD, RPM) → Metadata/Thumbnail/Script iteration loop
+### 2.3 Stage Name Normalization
+| Canonical Stage | Common Runtime Alias | Primary Artifact |
+| --- | --- | --- |
+| research | researcher | `data/<video_id>_research.json` |
+| plan | planner | `data/<video_id>_plan.json` |
+| script | scripter | `data/<video_id>_script_long.json` |
+| scene | scene_builder | `data/<video_id>_scenes.json` |
+| image | imaginer/visual | `data/<video_id>_image.json` (target contract) |
+| motion | motion | `data/<video_id>_motion.json` (target contract) |
+| metadata | metadata_generator | `data/<video_id>_metadata.json` |
+| validate | validation_runner/validator | `data/<video_id>_validation_report.json` |
 
-Experiment Logs (metadata_experiments)
- → Packaging adjustments (titles/thumbnails)
+## 3. Control Plane
+- Spec loader and contract resolver
+- State management and dependency gating
+- MCP context injection
+- Change governance via ADR
 
-## 4.2 Benchmarking & Competitor Intelligence Flow
-Collection
- → Normalization
- → Insight Extraction (hook patterns, pacing, packaging)
- → Recommendations (topic gaps, packaging guidance)
- → Planner Inputs (topic scoring, constraints)
-
-## 4.1 Learning Loop KPI Tracking (Research → Script → QA → Ops)
-- Research: topic demand signal, competitive saturation, predicted RPM band
-- Script: hook CTR proxy, projected AVD, clarity score from QA heuristics
-- QA: retention risk flags, factual accuracy score, rewrite count per episode
-- Ops: publish latency, CTR/AVD/RPM actuals, return viewer rate by topic
+## 4. Observability
+- Per-stage run logs
+- SLO tracking and incident linkage
+- Contract drift checkpoints pre-release
 
 ## 5. Failure Handling
-- Agent failure → retry
-- Quality failure → rewrite
-- Pipeline failure → rollback
+- Stage failure → bounded retry
+- Contract failure → block release
+- Publish failure → rollback + incident log
 
-## 6. Cost Governance (Free-Tier First)
-- Enforce cache-first lookups before any external API call
-- Implement quota-aware routing (primary → secondary → local fallback)
-- Apply exponential backoff and jitter on 429/5xx responses
-- Log per-provider RPM/RPD usage and cache hit rate
+## 6. Security and Access
+- Role-gated publish actions
+- Secret handling policy via `spec/SECURITY.md`
 
-## 7. Security & Access Boundaries
-- Role-gated access to trigger pipeline runs and publish actions
-- API keys stored in a secrets manager (no plaintext in repo)
-- Audit logging for publish approvals and config changes (see SECURITY.md)
+## 7. Multi-Channel Tenancy
+- Channel-specific configs and KPI targets
+- Shared infra with channel-level attribution
 
-## 8. Continuity & Handoff
-- Every pipeline run must emit a structured run log
-- Each decision that changes architecture requires an ADR entry
-- New operators must complete the Handoff checklist before executing changes
-
-## 9. Multi-Channel Tenancy Model
-- Each channel has a dedicated configuration profile (tone, format, KPI targets).
-- Shared research cache with per-channel attribution tracking.
-- Cost tracking and SLO reporting at the channel level.
-
-# 🏗 System Architecture
-
-## 1. High-Level Overview
-The system follows a **"Cache-First, API-Last"** approach to maximize the utility of free-tier credits.
-
-## 2. Key Components
-* **The Orchestrator (Planner):** Breaks down YouTube trends into actionable sub-tasks.
-* **Efficiency Layer (New):** * **Context Cache:** Checks SQLite if a similar topic was researched within the last 7 days.
-    * **Rate-Limit Guard:** Monitors RPM (Requests Per Minute) to prevent 429 errors from Google/DeepSeek APIs.
-* **Agent Worker Pool:** Distributed tasks across Gemini (Research), DeepSeek (Scripting), and Local TTS (Voice).
-* **Human-in-the-Loop (HITL) Portal:** A simple UI (Streamlit) for the user to approve scripts before final rendering.
-Centralized Data Layer: Use Supabase to sync research data and script history across sessions.
+## 8. Normative References
+- Agent boundaries: `spec/AGENT_ARCHITECTURE.md`
+- Interface contracts: `spec/SCHEMAS.md`, `spec/schemas/*.schema.json`
+- Regeneration scope: `spec/EVOLUTION_CONTRACT.md`
