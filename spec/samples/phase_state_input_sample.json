@@ -1,0 +1,15 @@
+{
+  "published_videos": 12,
+  "ctr_weekly": [0.051, 0.049, 0.05, 0.052],
+  "avd_weekly": [44.0, 45.0, 46.0, 45.0],
+  "geo_readiness_warning_count_weekly": [1, 1, 1, 1],
+  "source_contract_ready": true,
+  "source_linkage_pass_rate": 0.99,
+  "research_source_coverage": 0.97,
+  "incident_open": false,
+  "historical_outcomes": [
+    {"label": "correct_hold"},
+    {"label": "false_hold"},
+    {"label": "correct_promote"}
+  ]
+}

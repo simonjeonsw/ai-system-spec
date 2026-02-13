@@ -1,0 +1,97 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "PhaseStateInput",
+  "type": "object",
+  "required": [
+    "published_videos",
+    "ctr_weekly",
+    "avd_weekly",
+    "geo_readiness_warning_count_weekly",
+    "source_contract_ready",
+    "source_linkage_pass_rate",
+    "research_source_coverage"
+  ],
+  "properties": {
+    "published_videos": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "ctr_weekly": {
+      "type": "array",
+      "items": {
+        "type": "number"
+      }
+    },
+    "avd_weekly": {
+      "type": "array",
+      "items": {
+        "type": "number"
+      }
+    },
+    "geo_readiness_warning_count_weekly": {
+      "type": "array",
+      "items": {
+        "type": "integer",
+        "minimum": 0
+      }
+    },
+    "source_contract_ready": {
+      "type": "boolean"
+    },
+    "source_linkage_pass_rate": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "research_source_coverage": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "incident_open": {
+      "type": "boolean"
+    },
+    "override_record": {
+      "type": "object",
+      "required": [
+        "actor_id",
+        "approved_by",
+        "justification",
+        "created_at",
+        "expires_at",
+        "signature",
+        "scope"
+      ],
+      "properties": {
+        "actor_id": {"type": "string"},
+        "approved_by": {"type": "string"},
+        "justification": {"type": "string"},
+        "created_at": {"type": "string", "format": "date-time"},
+        "expires_at": {"type": "string", "format": "date-time"},
+        "signature": {"type": "string"},
+        "scope": {"type": "string"}
+      },
+      "additionalProperties": false
+    },
+    "historical_outcomes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["label"],
+        "properties": {
+          "label": {
+            "type": "string",
+            "enum": [
+              "correct_hold",
+              "false_hold",
+              "correct_promote",
+              "false_promote"
+            ]
+          }
+        },
+        "additionalProperties": true
+      }
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,54 +1,31 @@
 # Main Context Document (MCD)
 
 ## Purpose
-This document defines the absolute truth of the system.
-All agents must load and follow this document before acting.
+This document defines system-level context and links to canonical contract sources.
 
 ## Success Definition
-Success means the system consistently ships finance/economics and adjacent channel content that improves revenue (RPM/CPM and total revenue per video), retention (AVD, retention curve stability, and return viewer rate), and automation efficiency (shortening idea → publish time while reducing rewrites and QA failures) across multiple channel types.
-
-## System Identity
-This system is an AI-native operating system for building,
-testing, and scaling monetized media automation pipelines.
-
-It is designed to:
-- Prevent AI goal drift
-- Preserve long-term project memory
-- Enforce architectural consistency
-- Enable multi-agent specialization
-
-## Core Data Flow
-Idea
- → Planning
- → Research
- → Build
- → Evaluation
- → Versioned Output (GitHub)
- → Performance Feedback
- → Iteration
+Ship finance/economics content that improves revenue, retention, and automation efficiency while preserving contract consistency.
 
 ## Source of Truth Hierarchy
-1. MAIN_CONTEXT.md
-2. Other /spec documents
-3. System prompts
-4. User prompts
-5. Ad-hoc instructions
+1. `spec/SPEC_INDEX.md` (authority map)
+2. Canonical files listed in `spec/SPEC_INDEX.md`
+3. Secondary files (non-normative)
+4. Prompts and operational instructions
 
-## Long-Term Vision
-- Multi-channel automation
-- Shared pipeline templates
-- SaaS-style reuse
-- Revenue-optimized content engines
+## L0-L3 Layer Ownership
+- **L0:** PRD, ROADMAP, STRATEGY
+- **L1:** SYSTEM_ARCH, AGENT_ARCHITECTURE
+- **L2:** SCHEMAS + schema files, SCHEMA + schema.sql
+- **L3:** VALIDATION_PLAN, OPERATIONS, SECURITY, REPORTING, HANDOFF, ADR, RELEASE_NOTES, EVOLUTION_CONTRACT
 
 ## Non-Negotiables
-- No undocumented architectural changes
-- No skipping evaluation
-- No intuition-only decisions
-- No bypassing specs
-- All project artifacts, specs, schemas, and task outputs must be written in English
+- No undocumented contract changes
+- No pipeline order reinterpretation
+- No boundary violations across Scene/Image/Motion
+- All artifacts and specs in English
 
-## Definitions
-Agent = Specialized autonomous role
-Spec = System law
-Pipeline = Repeatable automation flow
-MCP = Context + tool protocol layer
+## Core References
+- Canonical pipeline: `spec/SYSTEM_ARCH.md`
+- Boundary contracts: `spec/AGENT_ARCHITECTURE.md`
+- Interface contracts: `spec/SCHEMAS.md`
+- Regeneration policy: `spec/EVOLUTION_CONTRACT.md`
