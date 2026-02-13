@@ -10,6 +10,7 @@ Executive reports summarize performance, risks, and decisions for stakeholders.
 - AVD: <value> (Δ week-over-week)
 - RPM/CPM: <value> (Δ week-over-week)
 - Publish cadence: <value>
+- geo_readiness_warning_count: <value> (metadata Phase A readiness trend)
 
 **Top Wins**
 - Best-performing title/thumbnail experiments (reference metadata_experiments).
@@ -36,3 +37,9 @@ Executive reports summarize performance, risks, and decisions for stakeholders.
 - Investigate: KPI declines exceed trend rules or SLO breach observed.
 - Iterate: KPIs are flat but within thresholds; test packaging variants.
 - Rollback: KPI declines persist after two iterations.
+
+
+## Metadata GEO Rollout Observation
+- Track `geo_readiness_warning_count` by publish batch and week.
+- Phase A → B readiness requires sustained warning decline and stable metadata success rates.
+- Sudden warning spikes indicate locale/region population regressions and should open a metadata contract incident.
