@@ -1,0 +1,30 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "attestation token claims",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "token_schema_version",
+    "decision_hash",
+    "jti",
+    "exp",
+    "issued_at",
+    "action_scope",
+    "policy_bundle_hash",
+    "enforcement_epoch",
+    "exec_identity_hash",
+    "kid"
+  ],
+  "properties": {
+    "token_schema_version": {"type": "string", "const": "1.0"},
+    "decision_hash": {"type": "string", "minLength": 16},
+    "jti": {"type": "string", "minLength": 12},
+    "exp": {"type": "integer", "minimum": 1},
+    "issued_at": {"type": "integer", "minimum": 1},
+    "action_scope": {"type": "string", "enum": ["promotion"]},
+    "policy_bundle_hash": {"type": "string", "minLength": 16},
+    "enforcement_epoch": {"type": "integer", "minimum": 1},
+    "exec_identity_hash": {"type": "string", "minLength": 16},
+    "kid": {"type": "string", "minLength": 8}
+  }
+}
