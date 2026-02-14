@@ -1,0 +1,42 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "fail-closed matrix",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["matrix_version", "rules"],
+  "properties": {
+    "matrix_version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+$"},
+    "rules": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["action_scope", "risk_level", "mode", "deny_on"],
+        "properties": {
+          "action_scope": {"type": "string", "enum": ["promotion"]},
+          "risk_level": {"type": "string", "enum": ["high"]},
+          "mode": {"type": "string", "enum": ["fail_closed"]},
+          "deny_on": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string",
+              "enum": [
+                "token_invalid",
+                "token_replay",
+                "revocation_uncertain",
+                "epoch_incompatible",
+                "identity_binding_mismatch",
+                "drift_check_failed",
+                "phase_hold_active",
+                "override_expired",
+                "ledger_commit_timeout"
+              ]
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -53,6 +53,16 @@ Canonical (L2)
 - File: `spec/schemas/source_evidence_contract.schema.json`
 - Purpose: independent first-class evidence layer required before GEO hard-gate activation.
 
+
+### Slice-0 Enforcement Contract Schemas (Phase-1 Freeze)
+- Files:
+  - `spec/schemas/authorize_execution.request.schema.json`
+  - `spec/schemas/authorize_execution.response.schema.json`
+  - `spec/schemas/attestation_token_claims.schema.json`
+  - `spec/schemas/enforcement_event.schema.json`
+  - `spec/schemas/fail_closed_matrix.schema.json`
+- Purpose: lock minimal-safe contracts before Slice-0 implementation (gateway/API, token claims, observability correlation, fail-closed policy matrix).
+
 ### Metadata GEO Draft Schemas (Locked, Not Activated)
 - Files:
   - `spec/schemas/metadata_output.phase_b.draft.schema.json`

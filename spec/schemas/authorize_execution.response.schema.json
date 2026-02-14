@@ -1,0 +1,52 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "authorize_execution response",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "authorization_id",
+    "verdict",
+    "decision_hash",
+    "policy_bundle_hash",
+    "enforcement_epoch",
+    "evaluated_at"
+  ],
+  "properties": {
+    "authorization_id": {"type": "string", "minLength": 8},
+    "verdict": {"type": "string", "enum": ["ALLOW", "DENY"]},
+    "denial_code": {
+      "type": "string",
+      "enum": [
+        "MISSING_DECISION_HASH",
+        "TOKEN_INVALID",
+        "TOKEN_REPLAY",
+        "REVOCATION_UNCERTAIN",
+        "EPOCH_INCOMPATIBLE",
+        "IDENTITY_BINDING_MISMATCH",
+        "DRIFT_DETECTED",
+        "PHASE_HOLD_ACTIVE",
+        "OVERRIDE_EXPIRED",
+        "LEDGER_COMMIT_TIMEOUT"
+      ]
+    },
+    "decision_hash": {"type": "string", "minLength": 16},
+    "policy_bundle_hash": {"type": "string", "minLength": 16},
+    "enforcement_epoch": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["value", "state"],
+      "properties": {
+        "value": {"type": "integer", "minimum": 1},
+        "state": {"type": "string", "enum": ["active", "drain", "deprecate"]},
+        "grace_window_seconds": {"type": "integer", "minimum": 0}
+      }
+    },
+    "evaluated_at": {"type": "string", "format": "date-time"}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"verdict": {"const": "DENY"}}},
+      "then": {"required": ["denial_code"]}
+    }
+  ]
+}

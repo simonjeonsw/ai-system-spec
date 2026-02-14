@@ -1,0 +1,44 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "enforcement observability event",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "event_id",
+    "event_type",
+    "occurred_at",
+    "decision_hash",
+    "token_jti",
+    "authorization_id",
+    "action_scope",
+    "region",
+    "agent_id"
+  ],
+  "properties": {
+    "event_id": {"type": "string", "minLength": 8},
+    "event_type": {
+      "type": "string",
+      "enum": [
+        "authorization_requested",
+        "authorization_approved",
+        "authorization_denied",
+        "execution_started",
+        "execution_completed",
+        "execution_aborted",
+        "revocation_hit",
+        "drift_detected",
+        "compensation_triggered",
+        "oob_detected"
+      ]
+    },
+    "occurred_at": {"type": "string", "format": "date-time"},
+    "decision_hash": {"type": "string", "minLength": 16},
+    "token_jti": {"type": "string", "minLength": 12},
+    "authorization_id": {"type": "string", "minLength": 8},
+    "action_scope": {"type": "string", "enum": ["promotion"]},
+    "region": {"type": "string", "minLength": 2},
+    "agent_id": {"type": "string", "minLength": 3},
+    "denial_code": {"type": "string"},
+    "details": {"type": "object"}
+  }
+}

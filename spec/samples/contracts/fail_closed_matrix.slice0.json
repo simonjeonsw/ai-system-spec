@@ -1,0 +1,21 @@
+{
+  "matrix_version": "1.0",
+  "rules": [
+    {
+      "action_scope": "promotion",
+      "risk_level": "high",
+      "mode": "fail_closed",
+      "deny_on": [
+        "token_invalid",
+        "token_replay",
+        "revocation_uncertain",
+        "epoch_incompatible",
+        "identity_binding_mismatch",
+        "drift_check_failed",
+        "phase_hold_active",
+        "override_expired",
+        "ledger_commit_timeout"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "authorize_execution request",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "decision_hash",
+    "attestation_token",
+    "action_scope",
+    "execution_identity",
+    "requested_at"
+  ],
+  "properties": {
+    "decision_hash": {"type": "string", "minLength": 16},
+    "attestation_token": {"type": "string", "minLength": 32},
+    "action_scope": {"type": "string", "enum": ["promotion"]},
+    "requested_at": {"type": "string", "format": "date-time"},
+    "execution_identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["agent_id", "pipeline_id", "region", "env_tier", "spiffe_id"],
+      "properties": {
+        "agent_id": {"type": "string", "minLength": 3},
+        "pipeline_id": {"type": "string", "minLength": 3},
+        "region": {"type": "string", "minLength": 2},
+        "env_tier": {"type": "string", "enum": ["prod", "stage", "dev"]},
+        "spiffe_id": {"type": "string", "pattern": "^spiffe://"}
+      }
+    }
+  }
+}
