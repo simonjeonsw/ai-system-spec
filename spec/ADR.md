@@ -77,3 +77,45 @@ Document why key architectural decisions were made, the alternatives considered,
 **Contract Governance Linkage**
 - Regeneration policy follows `spec/EVOLUTION_CONTRACT.md` (metadata changes require metadata + validate regeneration).
 - Release linkage: `spec/RELEASE_NOTES.md` section `v1.1.0-m3`.
+
+## ADR-2026-002 — Policy-Driven Phase-State Contract (M3.5)
+**Date:** 2026-02-13  
+**Status:** Accepted
+
+**Context**
+- M3 Phase A has observability but promotion decisions can still drift without deterministic policy contracts.
+- GEO readiness escalation must be automatic and auditable.
+- Phase B/C are not yet activated and must remain draft-locked.
+
+**Decision**
+- Introduce machine-evaluable policy config `config/geo_phase_policy.json`.
+- Introduce deterministic evaluator `lib/policy_engine.py` and report script `scripts/phase_state_report.py`.
+- Define explicit Phase A → B thresholds for videos, CTR/AVD stability, and source-evidence readiness.
+- Auto-hold promotion on red GEO escalation or open incident.
+- Add first-class source-evidence contract independent of metadata.
+- Add locked Phase B/C metadata schema drafts without activation.
+
+**Alternatives Considered**
+- Option A: Keep policy as prose in docs only.
+  - Rejected due to non-auditable human interpretation drift.
+- Option B: Activate Phase B gates immediately.
+  - Rejected because this release is policy hardening, not feature activation.
+
+**Consequences**
+- Benefits:
+  - Promotion decisions become reproducible and explainable.
+  - Incident escalation and phase hold are autonomous outputs.
+  - Source evidence becomes a prerequisite contract before GEO hard gates.
+- Risks:
+  - Incorrect threshold tuning can over-hold promotions early.
+- Cost impact:
+  - Medium; adds policy and evaluation layer plus contract drafts.
+
+**Revisit Criteria**
+- Revisit thresholds after 4 weekly windows of data.
+- Revisit policy if false-hold rate exceeds operational tolerance.
+
+**Contract Governance Linkage**
+- Validation linkage: `spec/VALIDATION_PLAN.md` phase-state validation gate.
+- Reporting linkage: `spec/REPORTING.md` unified dashboard contract.
+- Release linkage: `spec/RELEASE_NOTES.md` section `v1.1.1-m3.5`.

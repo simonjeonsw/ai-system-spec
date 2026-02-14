@@ -35,6 +35,8 @@ This index defines document authority, ownership, and lifecycle status for all s
 | spec/ADR.md | L3 | Architecture | Per change |
 | spec/RELEASE_NOTES.md | L3 | Release Manager | Per release |
 | spec/EVOLUTION_CONTRACT.md | L3 | Architecture + QA | Monthly |
+| spec/PHASE_STATE_POLICY.md | L3 | Ops + Architecture | Monthly |
+| spec/SOURCE_EVIDENCE_CONTRACT.md | L2 | Architecture + QA | Monthly |
 
 ## Secondary Files Registry
 | File | Layer | Reason |
@@ -44,6 +46,7 @@ This index defines document authority, ownership, and lifecycle status for all s
 | spec/IMPLEMENTATION_PLAN.md | L3 | Historical implementation planning context |
 | spec/CURRENT_STATE.md | L3 | Point-in-time status assessment |
 | spec/MULTI_SKILL_MODE.md | L1 | Optional execution mode guidance |
+| spec/SLICE0_SAFE_IMPLEMENTATION_PLAN.md | L3 | Slice-0 enforcement planning backlog (plan mode) |
 
 ## Deprecated Files Registry (Phase D1)
 | File | Layer | Canonical Replacement |

@@ -44,6 +44,21 @@ Canonical (L2)
 - GEO Phase B/C fields (`faq_snippets`, `key_claims_for_ai`, `canonical_source_urls`) are intentionally deferred.
 - Schema strictness: `additionalProperties: false` prevents undeclared metadata keys from passing.
 
+
+### Phase-State Input Schema (M3.5)
+- File: `spec/schemas/phase_state_input.schema.json`
+- Purpose: machine-evaluable input contract for autonomous phase decisions.
+
+### Source Evidence Contract Schema (v1.0)
+- File: `spec/schemas/source_evidence_contract.schema.json`
+- Purpose: independent first-class evidence layer required before GEO hard-gate activation.
+
+### Metadata GEO Draft Schemas (Locked, Not Activated)
+- Files:
+  - `spec/schemas/metadata_output.phase_b.draft.schema.json`
+  - `spec/schemas/metadata_output.phase_c.draft.schema.json`
+- Purpose: prepare future FAQ/claim/canonical-source fields without activating Phase B/C behavior.
+
 ## Forbidden Field Contract (Guard)
 - `scene_output` must not include image/motion-owned fields such as `camera_angle`, `style_profile`, `visual_style`, `animation`, `easing`, `transition_fx`.
 - `image_output` must not include motion-owned fields such as `entrance`, `exit`, `timeline`.

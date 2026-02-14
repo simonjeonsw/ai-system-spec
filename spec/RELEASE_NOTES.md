@@ -53,3 +53,36 @@
 ### Evolution Contract Linkage
 - Regeneration behavior follows `spec/EVOLUTION_CONTRACT.md`:
   - metadata contract changes require regeneration for `metadata` and `validate` stages only.
+
+## Release: v1.1.1-m3.5
+**Date:** 2026-02-13  
+**Scope:** policy + governance + schema drafts + tooling
+
+### Changes
+- Added deterministic policy config: `config/geo_phase_policy.json`.
+- Added machine-evaluable phase-state engine: `lib/policy_engine.py`.
+- Added phase-state report CLI: `scripts/phase_state_report.py`.
+- Added source-evidence first-class schema and spec:
+  - `spec/schemas/source_evidence_contract.schema.json`
+  - `spec/SOURCE_EVIDENCE_CONTRACT.md`
+- Added phase-state input contract artifacts:
+  - `spec/schemas/phase_state_input.schema.json`
+  - `spec/samples/phase_state_input_sample.json`
+- Added locked future drafts for Phase B/C GEO fields:
+  - `spec/schemas/metadata_output.phase_b.draft.schema.json`
+  - `spec/schemas/metadata_output.phase_c.draft.schema.json`
+- Updated reporting/validation/blueprint docs for autonomous phase decisions.
+- Added policy engine tests: `tests/test_policy_engine.py`.
+
+### Risks
+- Threshold calibration may initially be conservative and hold promotions longer.
+- Dashboard/report consumers must use reason codes to avoid opaque decisions.
+
+### Rollback Plan
+1. Revert this release commit.
+2. Remove policy engine and draft schemas.
+3. Keep existing M3 Phase A behavior unchanged.
+
+### ADR References
+- ADR-2026-001
+- ADR-2026-002

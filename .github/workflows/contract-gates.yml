@@ -27,4 +27,4 @@ jobs:
 
       - name: Unit tests
         run: |
-          python -m unittest tests/test_contract_builders.py tests/test_metadata_contracts.py
+          python -m unittest tests/test_contract_builders.py tests/test_metadata_contracts.py tests/test_policy_engine.py tests/test_policy_calibration_report.py tests/test_policy_enforcement.py

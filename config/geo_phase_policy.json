@@ -1,0 +1,110 @@
+{
+  "policy_version": "1.1",
+  "phase": {
+    "current": "A",
+    "allow_human_approval_only": true,
+    "human_may_approve_but_not_define": true
+  },
+  "geo_readiness": {
+    "warning_metric": "geo_readiness_warning_count",
+    "evaluation_window_weeks": 4,
+    "escalation": {
+      "yellow": {
+        "min_weekly_warning_count": 3,
+        "sustained_increase_weeks": 2
+      },
+      "red": {
+        "min_weekly_warning_count": 5,
+        "sustained_increase_weeks": 3
+      }
+    },
+    "incident_rules": {
+      "create_incident_on_level": [
+        "yellow",
+        "red"
+      ],
+      "auto_hold_on_level": [
+        "red"
+      ],
+      "auto_hold_when_incident_open": true
+    }
+  },
+  "phase_b_transition": {
+    "from_phase": "A",
+    "to_phase": "B",
+    "minimum_published_videos": 10,
+    "maximum_published_videos": 30,
+    "stability_window_weeks": 4,
+    "ctr": {
+      "max_relative_range": 0.2,
+      "min_data_points": 4
+    },
+    "avd": {
+      "max_relative_range": 0.2,
+      "min_data_points": 4
+    },
+    "source_evidence": {
+      "require_contract_ready": true,
+      "minimum_linkage_pass_rate": 0.98,
+      "minimum_research_source_coverage": 0.95
+    },
+    "exceptions": {
+      "insufficient_data_action": "hold",
+      "incident_open_action": "hold",
+      "manual_override_allowed": false
+    },
+    "rollback": {
+      "enabled": true,
+      "trigger_window_weeks": 2,
+      "ctr_drop_vs_baseline": 0.2,
+      "avd_drop_vs_baseline": 0.2,
+      "source_linkage_minimum": 0.95,
+      "action": "revert_to_phase_A"
+    }
+  },
+  "decision_enforcement": {
+    "require_action_or_signed_override": true,
+    "unknown_reason_code_action": "hard_fail",
+    "override": {
+      "allowed": true,
+      "max_ttl_hours": 168,
+      "required_fields": [
+        "actor_id",
+        "approved_by",
+        "justification",
+        "created_at",
+        "expires_at",
+        "signature",
+        "scope"
+      ]
+    },
+    "reason_code_actions": {
+      "GEO_WARN_RED_THRESHOLD": "AUTO_HOLD_AND_OPEN_INCIDENT",
+      "GEO_WARN_YELLOW_THRESHOLD": "OPEN_INCIDENT_AND_REMEDIATE",
+      "OPEN_INCIDENT_HOLD": "BLOCK_PROMOTION_UNTIL_RESOLVED",
+      "VIDEO_COUNT_BELOW_MINIMUM": "HOLD_PROMOTION",
+      "VIDEO_COUNT_ABOVE_PHASE_B_WINDOW": "HOLD_PROMOTION",
+      "CTR_DATA_INSUFFICIENT": "HOLD_PROMOTION_PENDING_DATA",
+      "AVD_DATA_INSUFFICIENT": "HOLD_PROMOTION_PENDING_DATA",
+      "CTR_STABILITY_FAIL": "HOLD_PROMOTION_AND_KPI_REVIEW",
+      "AVD_STABILITY_FAIL": "HOLD_PROMOTION_AND_RETENTION_REVIEW",
+      "SOURCE_CONTRACT_NOT_READY": "BLOCK_PROMOTION_AND_FIX_SOURCE_CONTRACT",
+      "SOURCE_LINKAGE_PASS_RATE_FAIL": "BLOCK_PROMOTION_AND_FIX_LINKAGE",
+      "RESEARCH_SOURCE_COVERAGE_FAIL": "BLOCK_PROMOTION_AND_FIX_RESEARCH_COVERAGE",
+      "decision_hold_pending_info": "HOLD_PENDING_INFO_COLLECTION",
+      "OVERRIDE_REJECTED": "REJECT_OVERRIDE_AND_REQUIRE_REAPPROVAL"
+    }
+  },
+  "dashboard": {
+    "required_panels": [
+      "phase_state",
+      "phase_hold_reason_codes",
+      "ctr_trend",
+      "avd_trend",
+      "metadata_experiment_success_rate",
+      "geo_readiness_warning_count",
+      "source_linkage_pass_rate"
+    ],
+    "must_answer": "Why can/can't the system promote to Phase B right now?"
+  }
+}

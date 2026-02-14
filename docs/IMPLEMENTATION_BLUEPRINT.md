@@ -173,3 +173,35 @@ Legacy reference module removed: `lib/scene_contract_builder.py` has been delete
 - ADR record: `spec/ADR.md` (`ADR-2026-001`).
 - Release tracking: `spec/RELEASE_NOTES.md` (`v1.1.0-m3`).
 - Regeneration contract linkage: `spec/EVOLUTION_CONTRACT.md` metadata-row policy.
+
+
+## M3.5 Policy-Driven Autonomy Upgrade
+
+### Deterministic Policy Assets
+- Config: `config/geo_phase_policy.json`
+- Evaluator: `lib/policy_engine.py`
+- CLI report: `scripts/phase_state_report.py`
+- Input schema/sample: `spec/schemas/phase_state_input.schema.json`, `spec/samples/phase_state_input_sample.json`
+
+### Autonomous Decision Contract
+- GEO escalation and incident/hold outcomes are machine-evaluated.
+- Phase A → B promotion is a deterministic state transition, not free-form human judgment.
+- Human approval is allowed only after machine criteria already pass.
+
+### Phase B/C Preparation (Locked Drafts)
+- Draft-only schemas are added and not active:
+  - `metadata_output.phase_b.draft.schema.json`
+  - `metadata_output.phase_c.draft.schema.json`
+- Source evidence is first-class via `spec/SOURCE_EVIDENCE_CONTRACT.md` and `source_evidence_contract.schema.json`.
+
+
+## M4 — Decision Enforcement & Accountability
+- Decision outputs are binding: each reason code maps to mandatory action or explicit signed override.
+- Unknown reason codes fail the decision path.
+- Override records are TTL-bounded and auditable.
+- Decision provenance includes policy version, evaluated timestamp, input snapshot, and decision hash.
+- Weekly calibration reports false-hold / false-promote rates to prevent policy drift.
+- GEO Phase B/C fields remain draft-only and inactive during M4.
+
+- Operational closure check now computes `decision_action_closure_rate`, `out_of_band_action_count`, and `provenance_linkage_coverage`.
+- Every promotion/incident/hold artifact must carry matching `decision_hash` for audit replay.
