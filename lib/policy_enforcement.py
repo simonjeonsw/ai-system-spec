@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import datetime, timezone
 from typing import Any, Dict, List
 
 
@@ -76,3 +77,92 @@ def evaluate_decision_action_closure(
         "missing_required_actions": missing_required_actions,
         "closure_ok": closure_ok,
     }
+
+
+def evaluate_calibration_label_staleness(
+    historical_outcomes: List[Dict[str, Any]] | None,
+    *,
+    max_age_days: int = 7,
+    reference_time: datetime | None = None,
+) -> Dict[str, Any]:
+    """Evaluate label freshness for policy calibration governance."""
+
+    outcomes = _safe_list(historical_outcomes)
+    now = reference_time or datetime.now(timezone.utc)
+
+    stale = 0
+    missing_timestamp = 0
+    fresh = 0
+    oldest_age_days = 0.0
+
+    for item in outcomes:
+        if not isinstance(item, dict):
+            missing_timestamp += 1
+            stale += 1
+            continue
+
+        raw_ts = item.get("labeled_at")
+        if not raw_ts:
+            missing_timestamp += 1
+            stale += 1
+            continue
+
+        try:
+            labeled_at = datetime.fromisoformat(str(raw_ts))
+        except ValueError:
+            missing_timestamp += 1
+            stale += 1
+            continue
+
+        if labeled_at.tzinfo is None:
+            labeled_at = labeled_at.replace(tzinfo=timezone.utc)
+
+        age_days = max((now - labeled_at).total_seconds() / 86400.0, 0.0)
+        oldest_age_days = max(oldest_age_days, age_days)
+
+        if age_days > max_age_days:
+            stale += 1
+        else:
+            fresh += 1
+
+    total = len(outcomes)
+    stale_rate = (stale / total) if total else 0.0
+
+    return {
+        "total_labels": total,
+        "fresh_label_count": fresh,
+        "stale_label_count": stale,
+        "missing_label_timestamp_count": missing_timestamp,
+        "stale_label_rate": stale_rate,
+        "oldest_label_age_days": oldest_age_days,
+        "governance_ok": stale_rate == 0.0,
+    }
+
+
+def check_phase_state(payload: Dict[str, Any]) -> Dict[str, Any]:
+    """Run full policy, enforcement, and calibration-governance checks."""
+
+    from lib.policy_engine import PhaseEvaluationInput, evaluate_phase_state
+
+    data = PhaseEvaluationInput(
+        published_videos=payload["published_videos"],
+        ctr_weekly=payload["ctr_weekly"],
+        avd_weekly=payload["avd_weekly"],
+        geo_readiness_warning_count_weekly=payload["geo_readiness_warning_count_weekly"],
+        source_contract_ready=payload["source_contract_ready"],
+        source_linkage_pass_rate=payload["source_linkage_pass_rate"],
+        research_source_coverage=payload["research_source_coverage"],
+        incident_open=payload.get("incident_open", False),
+        override_record=payload.get("override_record"),
+    )
+    decision = evaluate_phase_state(data, historical_outcomes=payload.get("historical_outcomes"))
+    decision["operational_enforcement"] = evaluate_decision_action_closure(
+        decision,
+        executed_actions=payload.get("executed_actions"),
+        action_artifacts=payload.get("action_artifacts"),
+        observed_operations=payload.get("observed_operations"),
+    )
+    decision["calibration_governance"] = evaluate_calibration_label_staleness(
+        payload.get("historical_outcomes")
+    )
+    return decision
