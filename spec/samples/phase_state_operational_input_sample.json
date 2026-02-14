@@ -1,0 +1,67 @@
+{
+  "published_videos": 8,
+  "ctr_weekly": [
+    0.061,
+    0.039
+  ],
+  "avd_weekly": [
+    42.0,
+    35.0
+  ],
+  "geo_readiness_warning_count_weekly": [
+    2,
+    4,
+    6,
+    7
+  ],
+  "source_contract_ready": false,
+  "source_linkage_pass_rate": 0.91,
+  "research_source_coverage": 0.87,
+  "incident_open": true,
+  "override_record": {
+    "actor_id": "ops_lead",
+    "approved_by": "vp_ops",
+    "justification": "force release",
+    "created_at": "2026-01-01T00:00:00+00:00",
+    "expires_at": "2026-01-15T00:00:00+00:00",
+    "signature": "signed-payload",
+    "scope": "phase_b_promotion"
+  },
+  "historical_outcomes": [
+    {
+      "label": "correct_hold",
+      "labeled_at": "2026-02-10T00:00:00+00:00"
+    },
+    {
+      "label": "false_promote",
+      "labeled_at": "2026-01-10T00:00:00+00:00"
+    }
+  ],
+  "executed_actions": [
+    "AUTO_HOLD_AND_OPEN_INCIDENT"
+  ],
+  "action_artifacts": [
+    {
+      "artifact_id": "inc-8801",
+      "artifact_type": "incident",
+      "decision_hash": "2dd23c13eaa3dbb920c965a2f4511f4aa420e5d781395f5e2fa469c8965a9c7d"
+    },
+    {
+      "artifact_id": "rel-5501",
+      "artifact_type": "release",
+      "decision_hash": "external-unlinked"
+    }
+  ],
+  "observed_operations": [
+    {
+      "operation": "INCIDENT_OPENED",
+      "operation_id": "op-1",
+      "decision_hash": "2dd23c13eaa3dbb920c965a2f4511f4aa420e5d781395f5e2fa469c8965a9c7d"
+    },
+    {
+      "operation": "PROMOTION_EXECUTED",
+      "operation_id": "op-2",
+      "decision_hash": "external-unlinked"
+    }
+  ]
+}
